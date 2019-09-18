@@ -149,10 +149,21 @@ class _LoginMain extends State<LoginMain> {
                       ),
                     ),
                     whiteSpaceH(20),
-                    Text(
-                      "바로시작",
-                      style: TextStyle(
-                          foreground: Paint()..shader = startGradient, fontSize: 14),
+                    GestureDetector(
+                      onTap: (){
+                        Navigator.of(context).pushNamed("/Home");
+                      },
+                      child: Container(
+                        width: MediaQuery.of(context).size.width,
+                        color: White,
+                        child: Center(
+                          child: Text(
+                            "바로시작",
+                            style: TextStyle(
+                                foreground: Paint()..shader = startGradient, fontSize: 14),
+                          ),
+                        ),
+                      ),
                     )
                   ],
                 ),

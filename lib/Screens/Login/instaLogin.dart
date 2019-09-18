@@ -8,9 +8,23 @@ class InstaLogin extends StatefulWidget {
 }
 
 class _InstaLogin extends State<InstaLogin> {
-
   String redirectUrl = "http://laonstory.com";
   String testClientId = "6b1dffbc60234670a25aa8336334bf0e";
+
+  String instaLoginUrl;
+  String loadCompleteUrl;
+
+  bool firstLoad = false;
+
+  WebViewController _webViewController;
+
+  @override
+  void initState() {
+    super.initState();
+
+    instaLoginUrl =
+        'https://www.instagram.com/oauth/authorize/?client_id=${testClientId}&redirect_uri=${redirectUrl}&response_type=token';
+  }
 
   instaAppBar() => PreferredSize(
         preferredSize: Size.fromHeight(40),
@@ -32,7 +46,10 @@ class _InstaLogin extends State<InstaLogin> {
                     alignment: Alignment.centerRight,
                     child: Text(
                       "취소",
-                      style: TextStyle(fontSize: 14, color: mainColor, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          fontSize: 14,
+                          color: mainColor,
+                          fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
@@ -45,25 +62,44 @@ class _InstaLogin extends State<InstaLogin> {
   @override
   Widget build(BuildContext context) {
     // TODO: implement build
-    return Scaffold(
-      backgroundColor: White,
-      appBar: instaAppBar(),
-      resizeToAvoidBottomInset: true,
-      body: WebView(
-          initialUrl: 'https://www.instagram.com/oauth/authorize/?client_id=${testClientId}&redirect_uri=${redirectUrl}&response_type=code',
-          javascriptMode: JavascriptMode.unrestricted,
-          onPageFinished: (url) {
-            print(url);
-            if (url.contains('laonstory')) {
-//              List<String> test = url.split("=");
-//              print("test : " + test[1]);
-//              print(instaUserInfo(test[1]));
-//              Navigator.of(context).pop();
-            }
-//            print("finished:" + url);
-          },
-        ),
+    return WillPopScope(
+        onWillPop: () {
+          if (loadCompleteUrl == null) {
+            Navigator.of(context).pop();
+          } else {
+            _webViewController.currentUrl().then((value) {
+              if (value != loadCompleteUrl) {
+                _webViewController.goBack();
+              } else {
+                Navigator.of(context).pop();
+              }
+            });
+          }
+          return null;
+        },
+        child: Scaffold(
+          backgroundColor: White,
+          appBar: instaAppBar(),
+          resizeToAvoidBottomInset: true,
+          body: WebView(
+            initialUrl: instaLoginUrl,
+            javascriptMode: JavascriptMode.unrestricted,
+            onWebViewCreated: (_webController) {
+              _webViewController = _webController;
+            },
+            onPageFinished: (url) {
+              if (firstLoad == false) {
+                loadCompleteUrl = url;
+                firstLoad = true;
+              }
 
-    );
+              if (url.contains('laonstory')) {
+                List<String> access_token = url.split("=");
+                print(access_token[1]);
+                Navigator.of(context).pop();
+              }
+            },
+          ),
+        ));
   }
 }
