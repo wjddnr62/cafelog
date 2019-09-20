@@ -85,15 +85,17 @@ class _InstaLogin extends State<InstaLogin> {
             initialUrl: instaLoginUrl,
             javascriptMode: JavascriptMode.unrestricted,
             onWebViewCreated: (_webController) {
+              _webController.clearCache();
               _webViewController = _webController;
             },
             onPageFinished: (url) {
+
               if (firstLoad == false) {
                 loadCompleteUrl = url;
                 firstLoad = true;
               }
 
-              if (url.contains('laonstory')) {
+              if (url.contains('access_token')) {
                 List<String> access_token = url.split("=");
                 print(access_token[1]);
                 Navigator.of(context).pop();
