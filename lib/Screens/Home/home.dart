@@ -1,6 +1,7 @@
 import 'package:cafelog/Util/whiteSpace.dart';
 import 'package:cafelog/colors.dart';
 import 'package:flutter/material.dart';
+import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 class Home extends StatefulWidget {
   @override
@@ -32,9 +33,18 @@ class _Home extends State<Home> {
   ];
 
   BoxDecoration tagDecoration = BoxDecoration(
-    borderRadius: BorderRadius.circular(5),
-    color: Color.fromARGB(255, 247, 247, 247)
-  );
+      borderRadius: BorderRadius.circular(5),
+      color: Color.fromARGB(255, 247, 247, 247));
+
+  PanelController _panelController = PanelController();
+
+  int upPanelMenuType = 0; // 0 == 홈, 1 == 인기카페, 2 == 내 주변, 3 == 로그인
+
+  final upPanelColor = const Color.fromARGB(255, 219, 219, 219);
+  final mainUpPanelText =
+      TextStyle(fontSize: 14.0, color: Black, fontWeight: FontWeight.bold);
+  final mainUpPanelHoverText =
+      TextStyle(fontSize: 14.0, color: mainColor, fontWeight: FontWeight.bold);
 
   homeAppBar() => AppBar(
         elevation: 0.0,
@@ -80,7 +90,7 @@ class _Home extends State<Home> {
           return Padding(
             padding: EdgeInsets.only(right: 5),
             child: GestureDetector(
-              onTap: (){
+              onTap: () {
                 print("태그 클릭 : " + tagListItem[position]);
               },
               child: Container(
@@ -88,7 +98,10 @@ class _Home extends State<Home> {
                 height: 30,
                 decoration: tagDecoration,
                 child: Center(
-                  child: Text(tagListItem[position], style: TextStyle(fontSize: 12, color: Black),),
+                  child: Text(
+                    tagListItem[position],
+                    style: TextStyle(fontSize: 12, color: Black),
+                  ),
                 ),
               ),
             ),
@@ -97,88 +110,252 @@ class _Home extends State<Home> {
         scrollDirection: Axis.horizontal,
       );
 
+  upPanelMenu(menuType, menuName) => menuType == 3
+      ? Expanded(
+          flex: 2,
+          child: upPanelMenuType == menuType
+              ? GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      upPanelMenuType = menuType;
+                    });
+                  },
+                  child: Container(
+                    color: Colors.white,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Padding(
+                          padding: EdgeInsets.only(top: 20 / 2),
+                          child: Text(
+                            menuName,
+                            style: mainUpPanelHoverText,
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.only(top: 5),
+                          child: Icon(
+                            Icons.brightness_1,
+                            size: 5,
+                            color: mainColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      upPanelMenuType = menuType;
+                    });
+                  },
+                  child: Container(
+                    color: Colors.white,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Container(
+                          color: Colors.white,
+                          child: Padding(
+                            padding: EdgeInsets.only(top: 20 / 2),
+                            child: Text(
+                              menuName,
+                              style: mainUpPanelText,
+                            ),
+                          ),
+                        ),
+                        whiteSpaceH(10)
+                      ],
+                    ),
+                  ),
+                ),
+        )
+      : Expanded(
+          child: upPanelMenuType == menuType
+              ? Container(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        upPanelMenuType = menuType;
+                      });
+                    },
+                    child: Container(
+                      color: Colors.white,
+                      child: Column(
+                        children: <Widget>[
+                          Padding(
+                            padding: EdgeInsets.only(top: 20 / 2),
+                            child: Text(
+                              menuName,
+                              style: mainUpPanelHoverText,
+                            ),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.only(top: 5),
+                            child: Icon(
+                              Icons.brightness_1,
+                              size: 5,
+                              color: mainColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              : GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      upPanelMenuType = menuType;
+                    });
+                  },
+                  child: Container(
+                    color: Colors.white,
+                    child: Column(
+                      children: <Widget>[
+                        Container(
+                          color: Colors.white,
+                          child: Padding(
+                            padding: EdgeInsets.only(top: 20 / 2),
+                            child: Text(
+                              menuName,
+                              style: mainUpPanelText,
+                            ),
+                          ),
+                        ),
+                        whiteSpaceH(10)
+                      ],
+                    ),
+                  ),
+                ),
+        );
 
+  slidingUpPanelBody() => SlidingUpPanel(
+        controller: _panelController,
+        minHeight: 60,
+        maxHeight: MediaQuery.of(context).size.height -
+            (MediaQuery.of(context).size.height / 6),
+        isDraggable: false,
+        borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(12.0), topRight: Radius.circular(12.0)),
+        border: Border.all(color: upPanelColor, width: 0.1),
+        backdropEnabled: false,
+        parallaxEnabled: false,
+        boxShadow: [BoxShadow(color: Colors.transparent)],
+        panel: Container(
+          width: MediaQuery.of(context).size.width,
+          height: MediaQuery.of(context).size.height,
+        ),
+        collapsed: Container(
+          width: MediaQuery.of(context).size.width,
+          height: MediaQuery.of(context).size.height,
+          child: Column(
+            children: <Widget>[
+//              Padding(
+//                padding: EdgeInsets.only(top: 5.0),
+//                child: Container(
+//                  width: 50,
+//                  height: 5,
+//                  decoration: BoxDecoration(
+//                    borderRadius: BorderRadius.circular(16.0),
+//                    color: Color.fromARGB(255, 216, 216, 216),
+//                  ),
+//                ),
+//              ),
+              Padding(
+                padding: EdgeInsets.only(top: 5),
+                child: Row(
+                  children: <Widget>[
+                    upPanelMenu(0, "홈"),
+                    upPanelMenu(1, "인기카페"),
+                    upPanelMenu(2, "내 주변"),
+                    upPanelMenu(3, "로그인")
+                  ],
+                ),
+              )
+            ],
+          ),
+        ),
+        body: body(),
+      );
 
-  @override
-  Widget build(BuildContext context) {
-    // TODO: implement build
-    return Scaffold(
-      appBar: homeAppBar(),
-      backgroundColor: White,
-      resizeToAvoidBottomInset: true,
-      body: SingleChildScrollView(
+  menuBar(content) => GestureDetector(
+        onTap: () {
+          if (content == "인기") {
+            if (filterButton == true) {
+              setState(() {
+                filterButton = false;
+              });
+            }
+          } else if (content == "최신") {
+            if (filterButton == false) {
+              setState(() {
+                filterButton = true;
+              });
+            }
+          }
+        },
+        child: content == "인기"
+            ? filterButton == false
+                ? Container(
+                    decoration: selectFilterDeco,
+                    width: 50,
+                    height: 30,
+                    child: Center(
+                      child: Text(
+                        content,
+                        style: selectFilterStyle,
+                      ),
+                    ),
+                  )
+                : Container(
+                    width: 50,
+                    height: 30,
+                    color: White,
+                    child: Center(
+                      child: Text(
+                        content,
+                        style: nonSelectFilterStyle,
+                      ),
+                    ),
+                  )
+            : filterButton == true
+                ? Container(
+                    decoration: selectFilterDeco,
+                    width: 50,
+                    height: 30,
+                    child: Center(
+                      child: Text(
+                        content,
+                        style: selectFilterStyle,
+                      ),
+                    ),
+                  )
+                : Container(
+                    width: 50,
+                    height: 30,
+                    color: White,
+                    child: Center(
+                      child: Text(
+                        content,
+                        style: nonSelectFilterStyle,
+                      ),
+                    ),
+                  ),
+      );
+
+  body() => SingleChildScrollView(
         child: Column(
           children: <Widget>[
             Padding(
               padding: EdgeInsets.only(left: 15),
               child: Row(
                 children: <Widget>[
-                  GestureDetector(
-                    onTap: () {
-                      if (filterButton == true) {
-                        setState(() {
-                          filterButton = false;
-                        });
-                      }
-                    },
-                    child: filterButton == false
-                        ? Container(
-                            decoration: selectFilterDeco,
-                            width: 50,
-                            height: 30,
-                            child: Center(
-                              child: Text(
-                                "인기",
-                                style: selectFilterStyle,
-                              ),
-                            ),
-                          )
-                        : Container(
-                            width: 50,
-                            height: 30,
-                            color: White,
-                            child: Center(
-                              child: Text(
-                                "인기",
-                                style: nonSelectFilterStyle,
-                              ),
-                            ),
-                          ),
-                  ),
+                  menuBar("인기"),
                   Padding(
                     padding: EdgeInsets.only(left: 15),
-                    child: GestureDetector(
-                      onTap: () {
-                        if (filterButton == false) {
-                          setState(() {
-                            filterButton = true;
-                          });
-                        }
-                      },
-                      child: filterButton == true
-                          ? Container(
-                              decoration: selectFilterDeco,
-                              width: 50,
-                              height: 30,
-                              child: Center(
-                                child: Text(
-                                  "최신",
-                                  style: selectFilterStyle,
-                                ),
-                              ),
-                            )
-                          : Container(
-                              width: 50,
-                              height: 30,
-                              color: White,
-                              child: Center(
-                                child: Text(
-                                  "최신",
-                                  style: nonSelectFilterStyle,
-                                ),
-                              ),
-                            ),
-                    ),
+                    child: menuBar("최신"),
                   )
                 ],
               ),
@@ -192,7 +369,16 @@ class _Home extends State<Home> {
             )
           ],
         ),
-      ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    // TODO: implement build
+    return Scaffold(
+      appBar: homeAppBar(),
+      backgroundColor: White,
+      resizeToAvoidBottomInset: true,
+      body: slidingUpPanelBody(),
     );
   }
 }
