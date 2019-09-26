@@ -40,6 +40,9 @@ class _Home extends State<Home> {
       borderRadius: BorderRadius.circular(5),
       color: Color.fromARGB(255, 247, 247, 247));
 
+  BoxDecoration tagClickDecoration =
+      BoxDecoration(borderRadius: BorderRadius.circular(5), color: mainColor);
+
   PanelController _panelController = PanelController();
 
   int upPanelMenuType = 0; // 0 == 홈, 1 == 인기카페, 2 == 내 주변, 3 == 로그인
@@ -49,11 +52,19 @@ class _Home extends State<Home> {
       TextStyle(fontSize: 14.0, color: Black, fontWeight: FontWeight.bold);
   final mainUpPanelHoverText =
       TextStyle(fontSize: 14.0, color: mainColor, fontWeight: FontWeight.bold);
-  final instaPostDataNameText = TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: White, shadows: [
-    Shadow(
-      color: Black, blurRadius: 5
-    )
-  ]);
+  final instaPostDataNameText = TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.bold,
+      color: White,
+      shadows: [Shadow(color: Black, blurRadius: 5)]);
+
+  bool keywordSearching = false;
+  bool directSearching = false;
+
+  String keyword = "";
+  String directKeyword = "";
+
+  int clickNum;
 
   @override
   void initState() {
@@ -84,7 +95,9 @@ class _Home extends State<Home> {
         }
       }
     }
-    print(instaPostLeftData.length.toString() + ", " + instaPostRightData.length.toString());
+    print(instaPostLeftData.length.toString() +
+        ", " +
+        instaPostRightData.length.toString());
   }
 
   homeAppBar() => AppBar(
@@ -115,6 +128,9 @@ class _Home extends State<Home> {
         leading: IconButton(
           onPressed: () {
             print("검색");
+            setState(() {
+              directSearching = true;
+            });
           },
           icon: Icon(
             Icons.search,
@@ -125,6 +141,82 @@ class _Home extends State<Home> {
         actions: <Widget>[whiteSpaceW(MediaQuery.of(context).size.width / 5)],
       );
 
+  searchingAppBar() => AppBar(
+        automaticallyImplyLeading: false,
+        title: Padding(
+          padding: EdgeInsets.only(top: 5, bottom: 5),
+          child: Container(
+            width: MediaQuery.of(context).size.width,
+            child: Row(
+//              mainAxisAlignment: MainAxisAlignment.start,
+//              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.max,
+              children: <Widget>[
+                Expanded(
+                  flex: 6,
+                  child: Container(
+                      width: MediaQuery.of(context).size.width,
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          color: Color.fromARGB(255, 240, 240, 240)),
+                      child: Row(
+                        children: <Widget>[
+                          Padding(
+                            padding: EdgeInsets.only(left: 10),
+                            child: Icon(
+                              Icons.search,
+                              color: Color.fromARGB(255, 122, 122, 122),
+                              size: 34,
+                            ),
+                          ),
+                          Expanded(
+                            child: TextFormField(
+                              decoration: InputDecoration(
+                                  hintStyle: TextStyle(
+                                      fontSize: 12,
+                                      color:
+                                          Color.fromARGB(255, 167, 167, 167)),
+                                  hintText: "키워드로 카페 기록을 검색해보세요.",
+                                  border: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                  contentPadding: EdgeInsets.only(
+                                      top: 10, bottom: 10, left: 5)),
+                            ),
+                          )
+                        ],
+                      )),
+                ),
+                Expanded(
+                  child: Center(
+                    child: Padding(
+                      padding: EdgeInsets.only(left: 10),
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            directSearching = false;
+                          });
+                        },
+                        child: Container(
+                          color: White,
+                          child: Text(
+                            "취소",
+                            style: TextStyle(color: mainColor, fontSize: 14),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              ],
+            ),
+          ),
+        ),
+        backgroundColor: White,
+        elevation: 0.0,
+//        title: ,
+      );
+
   tagList() => ListView.builder(
         itemCount: tagListItem.length,
         itemBuilder: (context, position) {
@@ -132,16 +224,32 @@ class _Home extends State<Home> {
             padding: EdgeInsets.only(right: 5),
             child: GestureDetector(
               onTap: () {
+                setState(() {
+                  if (clickNum == position) {
+                    clickNum = null;
+                    keyword = "";
+                    keywordSearching = false;
+                    // 선택해제
+                  } else {
+                    clickNum = position;
+                    keyword = tagListItem[position];
+                    keywordSearching = true;
+                    // 선택
+                  }
+                });
                 print("태그 클릭 : " + tagListItem[position]);
               },
               child: Container(
                 width: 60,
                 height: 30,
-                decoration: tagDecoration,
+                decoration:
+                    clickNum == position ? tagClickDecoration : tagDecoration,
                 child: Center(
                   child: Text(
                     tagListItem[position],
-                    style: TextStyle(fontSize: 12, color: Black),
+                    style: clickNum == position
+                        ? TextStyle(fontSize: 12, color: White)
+                        : TextStyle(fontSize: 12, color: Black),
                   ),
                 ),
               ),
@@ -167,7 +275,7 @@ class _Home extends State<Home> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: <Widget>[
                         Padding(
-                          padding: EdgeInsets.only(top: 20 / 2),
+                          padding: EdgeInsets.only(top: 30 / 2),
                           child: Text(
                             menuName,
                             style: mainUpPanelHoverText,
@@ -199,7 +307,7 @@ class _Home extends State<Home> {
                         Container(
                           color: Colors.white,
                           child: Padding(
-                            padding: EdgeInsets.only(top: 20 / 2),
+                            padding: EdgeInsets.only(top: 30 / 2),
                             child: Text(
                               menuName,
                               style: mainUpPanelText,
@@ -226,7 +334,7 @@ class _Home extends State<Home> {
                       child: Column(
                         children: <Widget>[
                           Padding(
-                            padding: EdgeInsets.only(top: 20 / 2),
+                            padding: EdgeInsets.only(top: 30 / 2),
                             child: Text(
                               menuName,
                               style: mainUpPanelHoverText,
@@ -258,7 +366,7 @@ class _Home extends State<Home> {
                         Container(
                           color: Colors.white,
                           child: Padding(
-                            padding: EdgeInsets.only(top: 20 / 2),
+                            padding: EdgeInsets.only(top: 30 / 2),
                             child: Text(
                               menuName,
                               style: mainUpPanelText,
@@ -386,6 +494,39 @@ class _Home extends State<Home> {
                   ),
       );
 
+  keywordSearch(keyword) {
+    if (keyword != null && keyword != "") {
+      return Padding(
+        padding: EdgeInsets.only(bottom: 150, left: 35, top: 20),
+        child: Container(
+//          color: Black,
+          width: MediaQuery.of(context).size.width,
+//          height: MediaQuery.of(context).size.height,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              ClipOval(
+                child: Container(
+                  width: 15,
+                  height: 15,
+                  color: mainColor,
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.only(top: 10),
+                child: Text(
+                  "검색하신 키워드로\n기록이 없습니다.",
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                ),
+              )
+            ],
+          ),
+        ),
+      );
+    }
+  }
+
   instaCafePost() => Padding(
         padding: EdgeInsets.only(top: 20, bottom: 150, left: 15, right: 15),
         child: Container(
@@ -400,7 +541,7 @@ class _Home extends State<Home> {
                   itemBuilder: (context, position) {
                     if (instaPostLeftData.length != position) {
                       return GestureDetector(
-                        onTap: (){
+                        onTap: () {
                           print("left");
                         },
                         child: Stack(
@@ -416,10 +557,25 @@ class _Home extends State<Home> {
                                 ),
                               ),
                             ),
-                            Positioned(child: Text(instaPostLeftData[position].instaName, style: instaPostDataNameText,), bottom: 15, left: 5,),
-                            instaPostLeftData[position].img.length == 2 ? Positioned(
-                              child: Icon(Icons.photo_library, color: White, size: 14,), right: 5, bottom: 15,
-                            ) : Container()
+                            Positioned(
+                              child: Text(
+                                instaPostLeftData[position].instaName,
+                                style: instaPostDataNameText,
+                              ),
+                              bottom: 15,
+                              left: 5,
+                            ),
+                            instaPostLeftData[position].img.length == 2
+                                ? Positioned(
+                                    child: Icon(
+                                      Icons.photo_library,
+                                      color: White,
+                                      size: 14,
+                                    ),
+                                    right: 5,
+                                    bottom: 15,
+                                  )
+                                : Container()
                           ],
                         ),
                       );
@@ -437,7 +593,7 @@ class _Home extends State<Home> {
                   itemBuilder: (context, position) {
                     if (instaPostLeftData.length != position) {
                       return GestureDetector(
-                        onTap: (){
+                        onTap: () {
                           print("right");
                         },
                         child: Stack(
@@ -453,10 +609,25 @@ class _Home extends State<Home> {
                                 ),
                               ),
                             ),
-                            Positioned(child: Text(instaPostRightData[position].instaName, style: instaPostDataNameText,), bottom: 15, left: 5,),
-                            instaPostRightData[position].img.length == 2 ? Positioned(
-                              child: Icon(Icons.photo_library, color: White, size: 14,), right: 5, bottom: 15,
-                            ) : Container()
+                            Positioned(
+                              child: Text(
+                                instaPostRightData[position].instaName,
+                                style: instaPostDataNameText,
+                              ),
+                              bottom: 15,
+                              left: 5,
+                            ),
+                            instaPostRightData[position].img.length == 2
+                                ? Positioned(
+                                    child: Icon(
+                                      Icons.photo_library,
+                                      color: White,
+                                      size: 14,
+                                    ),
+                                    right: 5,
+                                    bottom: 15,
+                                  )
+                                : Container()
                           ],
                         ),
                       );
@@ -474,12 +645,12 @@ class _Home extends State<Home> {
         child: Column(
           children: <Widget>[
             Padding(
-              padding: EdgeInsets.only(left: 15),
+              padding: EdgeInsets.only(left: 15, top: 5),
               child: Row(
                 children: <Widget>[
                   menuBar("인기"),
                   Padding(
-                    padding: EdgeInsets.only(left: 15),
+                    padding: EdgeInsets.only(left: 15, top: 5),
                     child: menuBar("최신"),
                   )
                 ],
@@ -493,7 +664,12 @@ class _Home extends State<Home> {
               ),
             ),
             whiteSpaceH(10),
-            instaCafePost()
+            keywordSearching == true
+                ? whiteSpaceH(MediaQuery.of(context).size.height / 4.5)
+                : SizedBox(),
+            keywordSearching == false
+                ? instaCafePost()
+                : keywordSearch(keyword),
           ],
         ),
       );
@@ -502,7 +678,7 @@ class _Home extends State<Home> {
   Widget build(BuildContext context) {
     // TODO: implement build
     return Scaffold(
-      appBar: homeAppBar(),
+      appBar: directSearching == false ? homeAppBar() : searchingAppBar(),
       backgroundColor: White,
       resizeToAvoidBottomInset: true,
       body: slidingUpPanelBody(),
