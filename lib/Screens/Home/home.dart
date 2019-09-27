@@ -2,6 +2,8 @@ import 'package:cafelog/Model/instaPostData.dart';
 import 'package:cafelog/Util/whiteSpace.dart';
 import 'package:cafelog/colors.dart';
 import 'package:flutter/material.dart';
+import 'package:keyboard_visibility/keyboard_visibility.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 class Home extends StatefulWidget {
@@ -66,9 +68,49 @@ class _Home extends State<Home> {
 
   int clickNum;
 
+  AppBar searchAppBar;
+
+  int prefsInit = 0;
+  SharedPreferences prefs;
+  List<String> searchList = [];
+
+  bool keyBoardOn = false;
+
+  TextEditingController _searchController = TextEditingController();
+  FocusNode _searchNode = FocusNode();
+
+  prefInit() async {
+    if (prefsInit == 0) {
+      prefs = await SharedPreferences.getInstance();
+      prefsInit = 1;
+    }
+
+    searchList = prefs.getStringList("searchList");
+  }
+
+  prefSet(searchText) async {
+    searchList.add(searchText);
+    await prefs.setStringList("searchList", searchList);
+    prefInit();
+  }
+
+  searchChangeText() {
+    print("검색 내용 : " + _searchController.text);
+  }
+
   @override
   void initState() {
     super.initState();
+
+    KeyboardVisibilityNotification().addNewListener(onChange: (visible) {
+      setState(() {
+        print(visible);
+        keyBoardOn = visible;
+      });
+    });
+
+    prefInit();
+
     for (int i = 0; i < 10; i++) {
       List<String> image = List();
       if (i >= 0 && i < 5) {
@@ -95,9 +137,6 @@ class _Home extends State<Home> {
         }
       }
     }
-    print(instaPostLeftData.length.toString() +
-        ", " +
-        instaPostRightData.length.toString());
   }
 
   homeAppBar() => AppBar(
@@ -141,15 +180,13 @@ class _Home extends State<Home> {
         actions: <Widget>[whiteSpaceW(MediaQuery.of(context).size.width / 5)],
       );
 
-  searchingAppBar() => AppBar(
+  searchingAppBar() => searchAppBar = AppBar(
         automaticallyImplyLeading: false,
         title: Padding(
           padding: EdgeInsets.only(top: 5, bottom: 5),
           child: Container(
             width: MediaQuery.of(context).size.width,
             child: Row(
-//              mainAxisAlignment: MainAxisAlignment.start,
-//              crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.max,
               children: <Widget>[
                 Expanded(
@@ -171,6 +208,11 @@ class _Home extends State<Home> {
                           ),
                           Expanded(
                             child: TextFormField(
+                              controller: _searchController,
+                              focusNode: _searchNode,
+                              onChanged: (value) {
+                                print("value : " + value);
+                              },
                               decoration: InputDecoration(
                                   hintStyle: TextStyle(
                                       fontSize: 12,
@@ -187,6 +229,7 @@ class _Home extends State<Home> {
                       )),
                 ),
                 Expanded(
+                  flex: 1,
                   child: Center(
                     child: Padding(
                       padding: EdgeInsets.only(left: 10),
@@ -382,7 +425,7 @@ class _Home extends State<Home> {
 
   slidingUpPanelBody() => SlidingUpPanel(
         controller: _panelController,
-        minHeight: 60,
+        minHeight: keyBoardOn == false ? 60 : 0,
         maxHeight: MediaQuery.of(context).size.height -
             (MediaQuery.of(context).size.height / 6),
         isDraggable: false,
@@ -426,7 +469,7 @@ class _Home extends State<Home> {
             ],
           ),
         ),
-        body: body(),
+        body: directSearching == false ? body() : searchBody(),
       );
 
   menuBar(content) => GestureDetector(
@@ -672,6 +715,103 @@ class _Home extends State<Home> {
                 : keywordSearch(keyword),
           ],
         ),
+      );
+
+  search() => GestureDetector(
+        onTap: () {
+          print("검색하기");
+        },
+        child: Container(
+          width: 123,
+          height: 44,
+          decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(22),
+              color: Color.fromARGB(255, 167, 167, 167),
+              boxShadow: [
+                BoxShadow(
+                    color: Color.fromARGB(255, 219, 219, 219), blurRadius: 3)
+              ]),
+          child: Center(
+            child: Text("검색하기",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    color: White, fontWeight: FontWeight.bold, fontSize: 12)),
+          ),
+        ),
+      );
+
+  searchBody() => SingleChildScrollView(
+        child: Container(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height,
+            child: Stack(
+              children: <Widget>[
+                Column(
+                  mainAxisSize: MainAxisSize.max,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Padding(
+                      padding: EdgeInsets.only(left: 15, top: 5),
+                      child: Text(
+                        "인기 키워드",
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.only(left: 15, top: 10, right: 10),
+                      child: Container(
+                        height: 30,
+                        child: tagList(),
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.only(left: 15, top: 20),
+                      child: Text(
+                        "최근 검색 키워드",
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    (searchList == null)
+                        ? Padding(
+                            padding: EdgeInsets.only(top: 20),
+                            child: Center(
+                              child: Text(
+                                "최근 검색한 키워드가 없습니다.",
+                                style: TextStyle(
+                                    fontSize: 14,
+                                    color: Color.fromARGB(255, 158, 154, 154)),
+                              ),
+                            ),
+                          )
+                        : Container(),
+                  ],
+                ),
+                keyBoardOn == false
+                    ? Padding(
+                        padding: EdgeInsets.only(
+                            top: MediaQuery.of(context).size.height / 2),
+                        child: Center(
+                          child: search(),
+                        ),
+                      )
+                    : Positioned.fill(
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: search(),
+                  ),
+                  bottom: MediaQuery
+                      .of(context)
+                      .size
+                      .height -
+                      MediaQuery
+                          .of(context)
+                          .viewInsets
+                          .bottom + 20,
+                )
+              ],
+            )),
       );
 
   @override
