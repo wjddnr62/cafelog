@@ -146,6 +146,7 @@ class _Home extends State<Home> {
         title: GestureDetector(
           onTap: () {
             print("카페 지역 선택");
+            Navigator.of(context).pushNamed('/LocationSearch');
           },
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -817,11 +818,24 @@ class _Home extends State<Home> {
   @override
   Widget build(BuildContext context) {
     // TODO: implement build
-    return Scaffold(
-      appBar: directSearching == false ? homeAppBar() : searchingAppBar(),
-      backgroundColor: White,
-      resizeToAvoidBottomInset: true,
-      body: slidingUpPanelBody(),
+    return WillPopScope(
+      onWillPop: () {
+        if (directSearching == true) {
+          setState(() {
+            directSearching = false;
+          });
+        } else {
+          Navigator.of(context).pop();
+        }
+
+        return null;
+      },
+      child: Scaffold(
+        appBar: directSearching == false ? homeAppBar() : searchingAppBar(),
+        backgroundColor: White,
+        resizeToAvoidBottomInset: true,
+        body: slidingUpPanelBody(),
+      ),
     );
   }
 }
