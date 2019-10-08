@@ -1,4 +1,5 @@
 import 'package:cafelog/Model/instaPostData.dart';
+import 'package:cafelog/Screens/PopularityCafe/popularityCafe.dart';
 import 'package:cafelog/Util/whiteSpace.dart';
 import 'package:cafelog/colors.dart';
 import 'package:flutter/material.dart';
@@ -76,8 +77,11 @@ class _Home extends State<Home> {
 
   bool keyBoardOn = false;
 
-  TextEditingController _searchController = TextEditingController();
+  TextEditingController _searchController = TextEditingController(text: "");
   FocusNode _searchNode = FocusNode();
+
+  List<String> searchTagList = List();
+  bool tagOr = false;
 
   prefInit() async {
     if (prefsInit == 0) {
@@ -181,6 +185,93 @@ class _Home extends State<Home> {
         actions: <Widget>[whiteSpaceW(MediaQuery.of(context).size.width / 5)],
       );
 
+  searchOrTagList() => ListView.builder(
+        itemBuilder: (context, idx) {
+          print("iii : " +
+              idx.toString() +
+              ", " +
+              searchTagList.length.toString());
+          return idx == searchTagList.length - 1
+              ? Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Padding(
+                      padding: EdgeInsets.only(right: 0),
+                      child: Text(searchTagList[idx],
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: mainColor,
+                          )),
+                    ),
+                    Container(
+                      width: 80,
+                      child: TextFormField(
+                        controller: _searchController,
+                        focusNode: _searchNode,
+                        textInputAction: TextInputAction.next,
+                        style: TextStyle(
+                            fontSize: 14,
+                            color: Black,
+                            fontWeight: FontWeight.bold),
+                        onFieldSubmitted: (value) {
+                          if (value == null || value == " ") {
+                            _searchController.text = "";
+                          } else {
+                            setState(() {
+                              searchTagList.add(value);
+                              _searchController.text = "";
+                              FocusScope.of(context).requestFocus(_searchNode);
+                            });
+                          }
+
+                        },
+                        onChanged: (value) {
+                          print("value : " + value);
+                          if (value == null || value == " ") {
+                            _searchController.text = "";
+                          } else {
+                            if (value.contains(" ")) {
+                              setState(() {
+                                searchTagList.add(value);
+                                _searchController.text = "";
+                                FocusScope.of(context)
+                                    .requestFocus(_searchNode);
+                              });
+                            }
+                          }
+                        },
+                        decoration: InputDecoration(
+                            hintStyle: TextStyle(
+                                fontSize: 14,
+                                color: Color.fromARGB(255, 167, 167, 167)),
+                            hintText: "키워드 추가",
+                            border: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            contentPadding:
+                                EdgeInsets.only(top: 5, bottom: 5, left: 5)),
+                      ),
+                    )
+                  ],
+                )
+              : Padding(
+                  padding: EdgeInsets.only(right: 5),
+                  child: Center(
+                    child: Text(searchTagList[idx],
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: mainColor,
+                        )),
+                  ),
+                );
+        },
+        itemCount: searchTagList.length,
+        scrollDirection: Axis.horizontal,
+//        shrinkWrap: true,
+      );
+
   searchingAppBar() => searchAppBar = AppBar(
         automaticallyImplyLeading: false,
         title: Padding(
@@ -207,25 +298,48 @@ class _Home extends State<Home> {
                               size: 34,
                             ),
                           ),
-                          Expanded(
-                            child: TextFormField(
-                              controller: _searchController,
-                              focusNode: _searchNode,
-                              onChanged: (value) {
-                                print("value : " + value);
-                              },
-                              decoration: InputDecoration(
-                                  hintStyle: TextStyle(
-                                      fontSize: 12,
-                                      color:
-                                          Color.fromARGB(255, 167, 167, 167)),
-                                  hintText: "키워드로 카페 기록을 검색해보세요.",
-                                  border: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                  contentPadding: EdgeInsets.only(
-                                      top: 10, bottom: 10, left: 5)),
-                            ),
-                          )
+                          // 태그 or list 들어갈 부분
+                          tagOr == false
+                              ? Expanded(
+                                  child: TextFormField(
+                                    controller: _searchController,
+                                    focusNode: _searchNode,
+                                    textInputAction: TextInputAction.next,
+                                    onFieldSubmitted: (value) {
+                                      setState(() {
+                                        searchTagList.add(value);
+                                        _searchController.text = "";
+                                        tagOr = true;
+                                        FocusScope.of(context)
+                                            .requestFocus(_searchNode);
+                                      });
+                                    },
+                                    onChanged: (value) {
+                                      if (value.contains(" ")) {
+                                        setState(() {
+                                          searchTagList.add(value);
+                                          tagOr = true;
+                                          FocusScope.of(context)
+                                              .requestFocus(_searchNode);
+                                        });
+                                      } else {}
+                                      print("value : " + value);
+                                    },
+                                    decoration: InputDecoration(
+                                        hintStyle: TextStyle(
+                                            fontSize: 14,
+                                            color: Color.fromARGB(
+                                                255, 167, 167, 167)),
+                                        hintText: "키워드로 카페 기록을 검색해보세요.",
+                                        border: InputBorder.none,
+                                        focusedBorder: InputBorder.none,
+                                        contentPadding: EdgeInsets.only(
+                                            top: 10, bottom: 10, left: 5)),
+                                  ),
+                                )
+                              : Expanded(
+                                  child: searchOrTagList(),
+                                )
                         ],
                       )),
                 ),
@@ -470,7 +584,9 @@ class _Home extends State<Home> {
             ],
           ),
         ),
-        body: directSearching == false ? body() : searchBody(),
+        body: directSearching == false
+            ? upPanelMenuType == 1 ? PopularityCafe() : body()
+            : searchBody(),
       );
 
   menuBar(content) => GestureDetector(
@@ -798,19 +914,14 @@ class _Home extends State<Home> {
                         ),
                       )
                     : Positioned.fill(
-                  child: Align(
-                    alignment: Alignment.bottomCenter,
-                    child: search(),
-                  ),
-                  bottom: MediaQuery
-                      .of(context)
-                      .size
-                      .height -
-                      MediaQuery
-                          .of(context)
-                          .viewInsets
-                          .bottom + 20,
-                )
+                        child: Align(
+                          alignment: Alignment.bottomCenter,
+                          child: search(),
+                        ),
+                        bottom: MediaQuery.of(context).size.height -
+                            MediaQuery.of(context).viewInsets.bottom +
+                            20,
+                      )
               ],
             )),
       );

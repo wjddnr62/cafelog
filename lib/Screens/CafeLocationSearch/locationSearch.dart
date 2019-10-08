@@ -35,7 +35,7 @@ class _LocationSearch extends State<LocationSearch> {
     _cafeList.add(CafeLocationSearchData(
         cafeCount: 583,
         img: "assets/test/test3.png",
-        locationName: "연트럴파크(연희동)",
+        locationName: "연트럴파크(연희동)ddddd",
         personCount: 103821));
     _cafeList.add(CafeLocationSearchData(
         cafeCount: 777,
@@ -85,6 +85,31 @@ class _LocationSearch extends State<LocationSearch> {
                                           Color.fromARGB(255, 219, 219, 219),
                                           blurRadius: 7),
                                     ]),
+                                child: Padding(
+                                  padding: EdgeInsets.only(top: 90),
+                                  child: Column(
+                                    children: <Widget>[
+                                      Padding(
+                                        padding: EdgeInsets.only(left: 5, right: 5),
+                                        child: Text("# ${_cafeList[idx].locationName}", overflow: TextOverflow.ellipsis, style: TextStyle(
+                                          color: Black, fontSize: 16, fontWeight: FontWeight.bold,
+                                        ),),
+                                      ),
+                                      Padding(
+                                        padding: EdgeInsets.only(top: 30),
+                                        child: Text("카페 ${_cafeList[idx].cafeCount} 곳", style: TextStyle(
+                                            fontSize: 12, color: Black
+                                        ),),
+                                      ),
+                                      Padding(
+                                        padding: EdgeInsets.only(top: 20),
+                                        child: Text("다녀온 사람 ${numberFormat.format(_cafeList[idx].personCount)} 명", style: TextStyle(
+                                          color: Color.fromARGB(255, 167, 167, 167), fontSize: 12, fontWeight: FontWeight.w600
+                                        ),),
+                                      )
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
                             Padding(
