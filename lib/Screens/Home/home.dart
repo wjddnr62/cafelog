@@ -1,11 +1,21 @@
+import 'dart:convert';
+
+import 'package:badges/badges.dart';
+import 'package:cafelog/Bloc/mainBloc.dart';
+import 'package:cafelog/Model/autoTagData.dart';
 import 'package:cafelog/Model/instaPostData.dart';
 import 'package:cafelog/Screens/PopularityCafe/popularityCafe.dart';
 import 'package:cafelog/Util/whiteSpace.dart';
 import 'package:cafelog/colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:keyboard_visibility/keyboard_visibility.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
+
+customErrorWidget(context, error) {
+  return Container();
+}
 
 class Home extends StatefulWidget {
   @override
@@ -13,6 +23,8 @@ class Home extends StatefulWidget {
 }
 
 class _Home extends State<Home> {
+  MainBloc _mainBloc = MainBloc();
+
   bool filterButton = false;
 
   BoxDecoration selectFilterDeco =
@@ -22,18 +34,18 @@ class _Home extends State<Home> {
       TextStyle(color: Color.fromARGB(255, 122, 122, 122), fontSize: 12);
 
   List<String> tagListItem = [
-    "#마카롱",
-    "#흑당라떼",
-    "#케이크",
-    "#베이커리",
-    "#레스토랑",
-    "#테스트",
-    "#테스트2",
-    "#테스트3",
-    "#테스트4",
-    "#테스트5",
-    "#테스트6",
-    "#테스트7"
+    "마카롱",
+    "흑당라떼",
+    "케이크",
+    "베이커리",
+    "레스토랑",
+    "테스트",
+    "테스트2",
+    "테스트3",
+    "테스트4",
+    "테스트5",
+    "테스트6",
+    "테스트7"
   ];
 
   List<InstaPostData> instaPostLeftData = [];
@@ -82,6 +94,12 @@ class _Home extends State<Home> {
 
   List<String> searchTagList = List();
   bool tagOr = false;
+  bool addKeyWord = false;
+
+  List<AutoTag> autoTagList = List();
+  bool autoTag = false;
+
+  ScrollController _scrollController = ScrollController();
 
   prefInit() async {
     if (prefsInit == 0) {
@@ -99,12 +117,21 @@ class _Home extends State<Home> {
   }
 
   searchChangeText() {
-    print("검색 내용 : " + _searchController.text);
+    print("검색 내용 : " + _searchController.text.length.toString());
+  }
+
+  lastTagMove() {
+//    if (_scrollController.hasClients)
+//      print("test");
+//    _scrollController.animateTo(_scrollController.offset, duration: Duration(milliseconds: 500), curve: Curves.linear);
   }
 
   @override
   void initState() {
     super.initState();
+
+    _searchController = TextEditingController(text: "");
+    _searchNode = FocusNode();
 
     KeyboardVisibilityNotification().addNewListener(onChange: (visible) {
       setState(() {
@@ -186,85 +213,166 @@ class _Home extends State<Home> {
       );
 
   searchOrTagList() => ListView.builder(
+        shrinkWrap: true,
+        controller: _scrollController,
         itemBuilder: (context, idx) {
           print("iii : " +
               idx.toString() +
               ", " +
               searchTagList.length.toString());
           return idx == searchTagList.length - 1
-              ? Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Padding(
-                      padding: EdgeInsets.only(right: 0),
-                      child: Text(searchTagList[idx],
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            color: mainColor,
-                          )),
-                    ),
-                    Container(
-                      width: 80,
-                      child: TextFormField(
-                        controller: _searchController,
-                        focusNode: _searchNode,
-                        textInputAction: TextInputAction.next,
-                        style: TextStyle(
-                            fontSize: 14,
-                            color: Black,
-                            fontWeight: FontWeight.bold),
-                        onFieldSubmitted: (value) {
-                          if (value == null || value == " ") {
-                            _searchController.text = "";
-                          } else {
+              ? GestureDetector(
+                  onTap: () {
+                    print("rowtouch");
+                    FocusScope.of(context).requestFocus(_searchNode);
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Padding(
+                        padding: EdgeInsets.only(right: 0),
+                        child: GestureDetector(
+                          onTap: () {
                             setState(() {
-                              searchTagList.add(value);
-                              _searchController.text = "";
-                              FocusScope.of(context).requestFocus(_searchNode);
+                              searchTagList.removeAt(idx);
+                              if (searchTagList.length < 1) {
+                                tagOr = false;
+                              }
                             });
-                          }
-
-                        },
-                        onChanged: (value) {
-                          print("value : " + value);
-                          if (value == null || value == " ") {
-                            _searchController.text = "";
-                          } else {
-                            if (value.contains(" ")) {
+                          },
+                          child: Badge(
+                            badgeContent: Padding(
+                              padding: EdgeInsets.all(0),
+                              child: Icon(
+                                Icons.clear,
+                                size: 12,
+                                color: Black,
+                              ),
+                            ),
+                            child: Text(searchTagList[idx],
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: mainColor,
+                                )),
+                            badgeColor: Colors.transparent,
+                            elevation: 0.0,
+                            position:
+                                BadgePosition.topRight(top: -10, right: -10),
+                          ),
+                        ),
+                      ),
+                      Container(
+                        width: 150,
+                        child: TextFormField(
+                          controller: _searchController,
+                          focusNode: _searchNode,
+                          textInputAction: TextInputAction.next,
+                          style: TextStyle(
+                              fontSize: 14,
+                              color: Black,
+                              fontWeight: FontWeight.bold),
+                          onFieldSubmitted: (value) {
+                            if (value == null || value == " " || value == "") {
+                              _searchController.text = "";
+                            } else {
                               setState(() {
                                 searchTagList.add(value);
+                                lastTagMove();
+                                autoTagList.clear();
+                                autoTag = false;
                                 _searchController.text = "";
                                 FocusScope.of(context)
                                     .requestFocus(_searchNode);
                               });
                             }
-                          }
-                        },
-                        decoration: InputDecoration(
-                            hintStyle: TextStyle(
-                                fontSize: 14,
-                                color: Color.fromARGB(255, 167, 167, 167)),
-                            hintText: "키워드 추가",
-                            border: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                            contentPadding:
-                                EdgeInsets.only(top: 5, bottom: 5, left: 5)),
-                      ),
-                    )
-                  ],
-                )
-              : Padding(
-                  padding: EdgeInsets.only(right: 5),
-                  child: Center(
-                    child: Text(searchTagList[idx],
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          color: mainColor,
-                        )),
+                          },
+                          onChanged: (value) {
+//                          print("value : " + value);
+                            if (value != null &&
+                                value != "" &&
+                                value.isNotEmpty) {
+                              setState(() {
+                                autoTag = true;
+                                _mainBloc.getKeyword(value);
+//                              getAutoTag();
+                              });
+                            } else {
+                              setState(() {
+                                autoTag = false;
+                              });
+                            }
+
+                            if (value == null || value == " ") {
+                              _searchController.text = "";
+                            } else {
+                              if (value.contains(" ")) {
+                                if (addKeyWord == false) {
+                                  setState(() {
+                                    searchTagList.add(value);
+                                    lastTagMove();
+                                    _searchController.text = "";
+                                    addKeyWord = true;
+                                    autoTag = false;
+                                    autoTagList.clear();
+                                    FocusScope.of(context)
+                                        .requestFocus(_searchNode);
+                                  });
+                                }
+                              }
+                              if (value == "") {
+                                addKeyWord = false;
+                              }
+                            }
+                          },
+                          decoration: InputDecoration(
+                              hintStyle: TextStyle(
+                                  fontSize: 14,
+                                  color: Color.fromARGB(255, 167, 167, 167)),
+                              hintText: "키워드 추가",
+                              border: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              contentPadding:
+                                  EdgeInsets.only(top: 5, bottom: 5, left: 5)),
+                        ),
+                      )
+                    ],
                   ),
+                )
+              : GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      searchTagList.removeAt(idx);
+                      if (searchTagList.length < 1) {
+                        tagOr = false;
+                      }
+                    });
+                  },
+                  child: Padding(
+                      padding: EdgeInsets.only(right: 5),
+                      child: Center(
+                        child: Badge(
+                          badgeContent: Padding(
+                            padding: EdgeInsets.all(0),
+                            child: Icon(
+                              Icons.clear,
+                              size: 12,
+                              color: Black,
+                            ),
+                          ),
+                          child: Text(searchTagList[idx],
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: mainColor,
+                              )),
+                          badgeColor: Colors.transparent,
+                          elevation: 0.0,
+                          position:
+                              BadgePosition.topRight(top: -10, right: -10),
+                        ),
+                      )),
                 );
         },
         itemCount: searchTagList.length,
@@ -301,28 +409,67 @@ class _Home extends State<Home> {
                           // 태그 or list 들어갈 부분
                           tagOr == false
                               ? Expanded(
-                                  child: TextFormField(
-                                    controller: _searchController,
+                                  child: TextField(
                                     focusNode: _searchNode,
+                                    controller: _searchController,
                                     textInputAction: TextInputAction.next,
-                                    onFieldSubmitted: (value) {
-                                      setState(() {
-                                        searchTagList.add(value);
+                                    onSubmitted: (value) {
+                                      if (value == null ||
+                                          value == " " ||
+                                          value == "") {
                                         _searchController.text = "";
-                                        tagOr = true;
-                                        FocusScope.of(context)
-                                            .requestFocus(_searchNode);
-                                      });
-                                    },
-                                    onChanged: (value) {
-                                      if (value.contains(" ")) {
+                                      } else {
                                         setState(() {
                                           searchTagList.add(value);
+                                          lastTagMove();
+                                          autoTagList.clear();
+                                          _searchController.text = "";
                                           tagOr = true;
+                                          autoTag = false;
                                           FocusScope.of(context)
                                               .requestFocus(_searchNode);
                                         });
-                                      } else {}
+                                      }
+                                    },
+                                    onChanged: (value) {
+                                      if (value != null &&
+                                          value != "" &&
+                                          value.isNotEmpty) {
+                                        setState(() {
+                                          autoTag = true;
+                                          _mainBloc.getKeyword(value);
+//                                          getAutoTag();
+                                        });
+                                      } else {
+                                        setState(() {
+                                          autoTag = false;
+                                        });
+                                      }
+
+                                      if (value == null || value == " ") {
+                                        _searchController.text = "";
+                                      } else {
+                                        if (value.contains(" ")) {
+                                          print("check");
+                                          if (addKeyWord == false) {
+                                            setState(() {
+                                              searchTagList
+                                                  .add(_searchController.text);
+                                              lastTagMove();
+                                              tagOr = true;
+                                              addKeyWord = true;
+                                              autoTag = false;
+                                              _searchController.text = "";
+                                              autoTagList.clear();
+                                              FocusScope.of(context)
+                                                  .requestFocus(_searchNode);
+                                            });
+                                          }
+                                        } else {}
+                                      }
+                                      if (value == "") {
+                                        addKeyWord = false;
+                                      }
                                       print("value : " + value);
                                     },
                                     decoration: InputDecoration(
@@ -351,7 +498,12 @@ class _Home extends State<Home> {
                       child: GestureDetector(
                         onTap: () {
                           setState(() {
+                            searchTagList.clear();
+                            autoTagList.clear();
+                            tagOr = false;
+                            addKeyWord = false;
                             directSearching = false;
+                            _searchController.text = "";
                           });
                         },
                         child: Container(
@@ -375,26 +527,46 @@ class _Home extends State<Home> {
 //        title: ,
       );
 
-  tagList() => ListView.builder(
+  tagList(type) => ListView.builder(
         itemCount: tagListItem.length,
         itemBuilder: (context, position) {
           return Padding(
             padding: EdgeInsets.only(right: 5),
             child: GestureDetector(
               onTap: () {
-                setState(() {
-                  if (clickNum == position) {
-                    clickNum = null;
-                    keyword = "";
-                    keywordSearching = false;
-                    // 선택해제
-                  } else {
-                    clickNum = position;
-                    keyword = tagListItem[position];
-                    keywordSearching = true;
-                    // 선택
-                  }
-                });
+                if (type == 0) {
+                  setState(() {
+                    bool autoing = false;
+                    if (clickNum == position) {
+                      clickNum = null;
+                      keyword = "";
+                      keywordSearching = false;
+                      if (autoing) {
+                        autoTag = true;
+                        autoing = false;
+                      }
+                      // 선택해제
+                    } else {
+                      clickNum = position;
+                      keyword = tagListItem[position];
+                      keywordSearching = true;
+                      if (autoTag) {
+                        autoTag = false;
+                        autoing = true;
+                      }
+                      // 선택
+                    }
+                  });
+                } else if (type == 1) {
+                  setState(() {
+                    searchTagList.add(tagListItem[position]);
+                    lastTagMove();
+                    tagOr = true;
+                    autoTag = false;
+                    _searchController.text = "";
+                    autoTagList.clear();
+                  });
+                }
                 print("태그 클릭 : " + tagListItem[position]);
               },
               child: Container(
@@ -404,7 +576,7 @@ class _Home extends State<Home> {
                     clickNum == position ? tagClickDecoration : tagDecoration,
                 child: Center(
                   child: Text(
-                    tagListItem[position],
+                    "#${tagListItem[position]}",
                     style: clickNum == position
                         ? TextStyle(fontSize: 12, color: White)
                         : TextStyle(fontSize: 12, color: Black),
@@ -820,7 +992,7 @@ class _Home extends State<Home> {
               padding: EdgeInsets.only(left: 15, top: 10, right: 10),
               child: Container(
                 height: 30,
-                child: tagList(),
+                child: tagList(0),
               ),
             ),
             whiteSpaceH(10),
@@ -879,30 +1051,246 @@ class _Home extends State<Home> {
                       padding: EdgeInsets.only(left: 15, top: 10, right: 10),
                       child: Container(
                         height: 30,
-                        child: tagList(),
+                        child: tagList(1),
                       ),
                     ),
-                    Padding(
-                      padding: EdgeInsets.only(left: 15, top: 20),
-                      child: Text(
-                        "최근 검색 키워드",
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    (searchList == null)
-                        ? Padding(
-                            padding: EdgeInsets.only(top: 20),
-                            child: Center(
-                              child: Text(
-                                "최근 검색한 키워드가 없습니다.",
-                                style: TextStyle(
-                                    fontSize: 14,
-                                    color: Color.fromARGB(255, 158, 154, 154)),
+                    autoTag == false
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Padding(
+                                padding: EdgeInsets.only(left: 15, top: 20),
+                                child: Text(
+                                  "최근 검색 키워드",
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold),
+                                ),
                               ),
-                            ),
+                              (searchList == null)
+                                  ? Padding(
+                                      padding: EdgeInsets.only(top: 20),
+                                      child: Center(
+                                        child: Text(
+                                          "최근 검색한 키워드가 없습니다.",
+                                          style: TextStyle(
+                                              fontSize: 14,
+                                              color: Color.fromARGB(
+                                                  255, 158, 154, 154)),
+                                        ),
+                                      ),
+                                    )
+                                  : Container(),
+                            ],
                           )
-                        : Container(),
+                        : StreamBuilder(
+                            stream: _mainBloc.getAutoTag(),
+                            builder: (context, snapshot) {
+                              if (snapshot.hasError) {
+                                print("error");
+                              }
+                              if (snapshot.hasData) {
+                                if (snapshot.data != null &&
+                                    snapshot.data.isNotEmpty) {
+                                  List<dynamic> valueList = json
+                                      .decode(snapshot.data)['data']['tags'];
+                                  autoTagList.clear();
+
+                                  for (int i = 0; i < valueList.length; i++) {
+                                    autoTagList.add(AutoTag(
+                                        id: valueList[i]['id'],
+                                        name: valueList[i]['name']));
+                                  }
+
+                                  if (autoTagList != null &&
+                                      autoTagList.isNotEmpty &&
+                                      autoTagList.length >= 0) {
+                                    return ListView.builder(
+                                      itemBuilder: (context, idx) {
+                                        if (idx < autoTagList.length &&
+                                            idx >= 0) {
+//                                  print("length : " + autoTagList.length.toString());
+
+                                          bool firstStart = autoTagList[idx]
+                                                      .name
+                                                      .indexOf(_searchController
+                                                          .text) ==
+                                                  0
+                                              ? true
+                                              : false;
+                                          bool twoWord = true;
+                                          String firstWord,
+                                              middleWord,
+                                              finishWord;
+
+                                          if (autoTagList != null &&
+                                              autoTagList.isNotEmpty &&
+                                              _searchController.text.length >
+                                                  0 &&
+                                              autoTagList[idx].name.length !=
+                                                  0) {
+                                            if (firstStart) {
+                                              firstWord = autoTagList[idx]
+                                                  .name
+                                                  .substring(
+                                                      autoTagList[idx]
+                                                          .name
+                                                          .indexOf(
+                                                              _searchController
+                                                                  .text),
+                                                      autoTagList[idx]
+                                                              .name
+                                                              .indexOf(
+                                                                  _searchController
+                                                                      .text) +
+                                                          _searchController
+                                                              .text.length);
+                                              middleWord = autoTagList[idx]
+                                                  .name
+                                                  .substring(autoTagList[idx]
+                                                          .name
+                                                          .indexOf(
+                                                              _searchController
+                                                                  .text) +
+                                                      1);
+                                            } else {
+                                              firstWord = autoTagList[idx]
+                                                  .name
+                                                  .substring(
+                                                      0,
+                                                      autoTagList[idx]
+                                                          .name
+                                                          .indexOf(
+                                                              _searchController
+                                                                  .text));
+                                              middleWord = autoTagList[idx]
+                                                  .name
+                                                  .substring(
+                                                      autoTagList[idx]
+                                                          .name
+                                                          .indexOf(
+                                                              _searchController
+                                                                  .text),
+                                                      autoTagList[idx]
+                                                              .name
+                                                              .indexOf(
+                                                                  _searchController
+                                                                      .text) +
+                                                          _searchController
+                                                              .text.length);
+                                              finishWord = autoTagList[idx]
+                                                  .name
+                                                  .substring(autoTagList[idx]
+                                                          .name
+                                                          .indexOf(
+                                                              _searchController
+                                                                  .text) +
+                                                      1);
+                                              twoWord = false;
+                                            }
+                                          }
+                                          return Padding(
+                                            padding: EdgeInsets.only(
+                                                left: 20, top: 20),
+                                            child: Container(
+                                              color: White,
+                                              child: GestureDetector(
+                                                onTap: () {
+                                                  print(
+                                                      "clickTag : ${autoTagList[idx].name}");
+                                                  setState(() {
+                                                    searchTagList.add(
+                                                        autoTagList[idx].name);
+                                                    lastTagMove();
+                                                    tagOr = true;
+                                                    autoTag = false;
+                                                    _searchController.text = "";
+                                                    autoTagList.clear();
+                                                    FocusScope.of(context)
+                                                        .requestFocus(
+                                                            _searchNode);
+                                                  });
+                                                },
+                                                child: RichText(
+                                                  text: TextSpan(
+                                                      text: "#",
+                                                      style: TextStyle(
+                                                          color: Black,
+                                                          fontSize: 14),
+                                                      children: <TextSpan>[
+                                                        twoWord == true
+                                                            ? TextSpan(
+                                                                text: firstWord,
+                                                                style: TextStyle(
+                                                                    fontSize:
+                                                                        14,
+                                                                    color:
+                                                                        Black))
+                                                            : TextSpan(
+                                                                text: firstWord,
+                                                                style: TextStyle(
+                                                                    fontSize:
+                                                                        14,
+                                                                    color: Color
+                                                                        .fromARGB(
+                                                                            255,
+                                                                            135,
+                                                                            135,
+                                                                            135))),
+                                                        twoWord == true
+                                                            ? TextSpan(
+                                                                text:
+                                                                    middleWord,
+                                                                style: TextStyle(
+                                                                    fontSize:
+                                                                        14,
+                                                                    color: Color
+                                                                        .fromARGB(
+                                                                            255,
+                                                                            135,
+                                                                            135,
+                                                                            135)))
+                                                            : TextSpan(
+                                                                text:
+                                                                    middleWord,
+                                                                style: TextStyle(
+                                                                    fontSize:
+                                                                        14,
+                                                                    color:
+                                                                        Black)),
+                                                        twoWord == false
+                                                            ? TextSpan(
+                                                                text:
+                                                                    finishWord,
+                                                                style: TextStyle(
+                                                                    fontSize:
+                                                                        14,
+                                                                    color: Color
+                                                                        .fromARGB(
+                                                                            255,
+                                                                            135,
+                                                                            135,
+                                                                            135)))
+                                                            : TextSpan()
+                                                      ]),
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                        return Container();
+                                      },
+                                      shrinkWrap: true,
+                                      itemCount: 5,
+                                    );
+                                  } else {
+                                    return Container();
+                                  }
+                                }
+                              }
+                              return Container();
+                            },
+                          )
                   ],
                 ),
                 keyBoardOn == false
@@ -929,10 +1317,18 @@ class _Home extends State<Home> {
   @override
   Widget build(BuildContext context) {
     // TODO: implement build
+    ErrorWidget.builder = (error) {
+      return customErrorWidget(context, error);
+    };
     return WillPopScope(
       onWillPop: () {
         if (directSearching == true) {
           setState(() {
+            _searchController.text = "";
+            autoTagList.clear();
+            searchTagList.clear();
+            tagOr = false;
+            addKeyWord = false;
             directSearching = false;
           });
         } else {

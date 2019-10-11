@@ -1,10 +1,11 @@
 class PopularityCafeData {
+  final int result;
   final String picture;
   final String name;
   final int userNum;
   final int recentNum;
 
-  PopularityCafeData({this.picture, this.name, this.userNum, this.recentNum});
+  PopularityCafeData({this.result, this.picture, this.name, this.userNum, this.recentNum});
 
   factory PopularityCafeData.fromJson(Map<dynamic, dynamic> map) {
     if (map['result'] == 1) {
