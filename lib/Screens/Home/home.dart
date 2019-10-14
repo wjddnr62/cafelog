@@ -85,7 +85,7 @@ class _Home extends State<Home> {
 
   int prefsInit = 0;
   SharedPreferences prefs;
-  List<String> searchList = [];
+  List<String> searchList;
 
   bool keyBoardOn = false;
 
@@ -99,7 +99,9 @@ class _Home extends State<Home> {
   List<AutoTag> autoTagList = List();
   bool autoTag = false;
 
-  ScrollController _scrollController = ScrollController();
+  ScrollController _scrollController;
+
+  bool searchEnable = false;
 
   prefInit() async {
     if (prefsInit == 0) {
@@ -107,11 +109,21 @@ class _Home extends State<Home> {
       prefsInit = 1;
     }
 
-    searchList = prefs.getStringList("searchList");
+    if (prefs.getStringList("searchList").isNotEmpty)
+      setState(() {
+        searchList = prefs.getStringList("searchList");
+      });
   }
 
-  prefSet(searchText) async {
-    searchList.add(searchText);
+  prefSet() async {
+    await prefs.setStringList("searchList", searchList);
+    prefInit();
+  }
+
+  prefSetValue(searchText) async {
+    setState(() {
+      searchList.add(searchText);
+    });
     await prefs.setStringList("searchList", searchList);
     prefInit();
   }
@@ -122,13 +134,48 @@ class _Home extends State<Home> {
 
   lastTagMove() {
 //    if (_scrollController.hasClients)
-//      print("test");
-//    _scrollController.animateTo(_scrollController.offset, duration: Duration(milliseconds: 500), curve: Curves.linear);
+    print("test");
+    print(searchTagList.length.toString());
+    if (searchTagList.length > 0) {
+      _scrollController.animateTo(_scrollController.position.maxScrollExtent,
+          duration: Duration(milliseconds: 300), curve: Curves.easeOut);
+    }
+  }
+
+  setSearchEnable(value) {
+    if (value.length > 0) {
+      setState(() {
+        searchEnable = true;
+      });
+    } else if (value.length == 0) {
+      setState(() {
+        searchEnable = false;
+      });
+    }
+  }
+
+  addTagList(value) {
+    searchTagList.add(value);
+    if (searchTagList.length > 0) {
+      setState(() {
+        searchEnable = true;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
   void initState() {
     super.initState();
+
+    searchList = List();
+
+    _scrollController = ScrollController();
 
     _searchController = TextEditingController(text: "");
     _searchNode = FocusNode();
@@ -237,11 +284,13 @@ class _Home extends State<Home> {
                             setState(() {
                               searchTagList.removeAt(idx);
                               if (searchTagList.length < 1) {
+                                searchEnable = false;
                                 tagOr = false;
                               }
                             });
                           },
                           child: Badge(
+                            toAnimate: false,
                             badgeContent: Padding(
                               padding: EdgeInsets.all(0),
                               child: Icon(
@@ -278,17 +327,18 @@ class _Home extends State<Home> {
                               _searchController.text = "";
                             } else {
                               setState(() {
-                                searchTagList.add(value);
-                                lastTagMove();
+                                addTagList(value);
                                 autoTagList.clear();
                                 autoTag = false;
                                 _searchController.text = "";
                                 FocusScope.of(context)
                                     .requestFocus(_searchNode);
                               });
+                              lastTagMove();
                             }
                           },
                           onChanged: (value) {
+                            setSearchEnable(value);
 //                          print("value : " + value);
                             if (value != null &&
                                 value != "" &&
@@ -310,8 +360,7 @@ class _Home extends State<Home> {
                               if (value.contains(" ")) {
                                 if (addKeyWord == false) {
                                   setState(() {
-                                    searchTagList.add(value);
-                                    lastTagMove();
+                                    addTagList(value);
                                     _searchController.text = "";
                                     addKeyWord = true;
                                     autoTag = false;
@@ -319,6 +368,7 @@ class _Home extends State<Home> {
                                     FocusScope.of(context)
                                         .requestFocus(_searchNode);
                                   });
+                                  lastTagMove();
                                 }
                               }
                               if (value == "") {
@@ -345,6 +395,7 @@ class _Home extends State<Home> {
                     setState(() {
                       searchTagList.removeAt(idx);
                       if (searchTagList.length < 1) {
+                        searchEnable = false;
                         tagOr = false;
                       }
                     });
@@ -353,6 +404,7 @@ class _Home extends State<Home> {
                       padding: EdgeInsets.only(right: 5),
                       child: Center(
                         child: Badge(
+                          toAnimate: false,
                           badgeContent: Padding(
                             padding: EdgeInsets.all(0),
                             child: Icon(
@@ -420,8 +472,7 @@ class _Home extends State<Home> {
                                         _searchController.text = "";
                                       } else {
                                         setState(() {
-                                          searchTagList.add(value);
-                                          lastTagMove();
+                                          addTagList(value);
                                           autoTagList.clear();
                                           _searchController.text = "";
                                           tagOr = true;
@@ -429,9 +480,12 @@ class _Home extends State<Home> {
                                           FocusScope.of(context)
                                               .requestFocus(_searchNode);
                                         });
+                                        lastTagMove();
                                       }
                                     },
                                     onChanged: (value) {
+                                      setSearchEnable(value);
+
                                       if (value != null &&
                                           value != "" &&
                                           value.isNotEmpty) {
@@ -504,6 +558,7 @@ class _Home extends State<Home> {
                             addKeyWord = false;
                             directSearching = false;
                             _searchController.text = "";
+                            searchEnable = false;
                           });
                         },
                         child: Container(
@@ -559,13 +614,13 @@ class _Home extends State<Home> {
                   });
                 } else if (type == 1) {
                   setState(() {
-                    searchTagList.add(tagListItem[position]);
-                    lastTagMove();
+                    addTagList(tagListItem[position]);
                     tagOr = true;
                     autoTag = false;
                     _searchController.text = "";
                     autoTagList.clear();
                   });
+                  lastTagMove();
                 }
                 print("태그 클릭 : " + tagListItem[position]);
               },
@@ -848,7 +903,7 @@ class _Home extends State<Home> {
               Padding(
                 padding: EdgeInsets.only(top: 10),
                 child: Text(
-                  "검색하신 키워드로\n기록이 없습니다.",
+                  "검색하신 키워드에\n기록이 없습니다.",
                   style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                 ),
               )
@@ -1009,13 +1064,30 @@ class _Home extends State<Home> {
   search() => GestureDetector(
         onTap: () {
           print("검색하기");
+          if (searchEnable) {
+            // 검색한 결과를 메인으로 리턴
+            setState(() {
+              for (int i = 0; i < searchTagList.length; i++) {
+                prefSetValue(searchTagList[i]);
+              }
+              _searchController.text = "";
+              autoTagList.clear();
+              searchTagList.clear();
+              tagOr = false;
+              addKeyWord = false;
+              directSearching = false;
+              searchEnable = false;
+            });
+          }
         },
         child: Container(
           width: 123,
           height: 44,
           decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(22),
-              color: Color.fromARGB(255, 167, 167, 167),
+              color: searchEnable == true
+                  ? mainColor
+                  : Color.fromARGB(255, 167, 167, 167),
               boxShadow: [
                 BoxShadow(
                     color: Color.fromARGB(255, 219, 219, 219), blurRadius: 3)
@@ -1058,16 +1130,49 @@ class _Home extends State<Home> {
                         ? Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
-                              Padding(
-                                padding: EdgeInsets.only(left: 15, top: 20),
-                                child: Text(
-                                  "최근 검색 키워드",
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              (searchList == null)
+                              searchList.length == 0
+                                  ? Padding(
+                                      padding:
+                                          EdgeInsets.only(left: 15, top: 20),
+                                      child: Text(
+                                        "최근 검색 키워드",
+                                        style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    )
+                                  : Padding(
+                                      padding: EdgeInsets.only(
+                                          left: 15, right: 20, top: 20),
+                                      child: Row(
+                                        children: <Widget>[
+                                          Expanded(
+                                            child: Text(
+                                              "최근 검색 키워드",
+                                              style: TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                          GestureDetector(
+                                            onTap: () {
+                                              setState(() {
+                                                searchList.clear();
+                                                prefSet();
+                                              });
+                                            },
+                                            child: Text(
+                                              "전체삭제",
+                                              style: TextStyle(
+                                                  fontSize: 14,
+                                                  color: mainColor,
+                                                  fontWeight: FontWeight.w600),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                              (searchList.length == 0)
                                   ? Padding(
                                       padding: EdgeInsets.only(top: 20),
                                       child: Center(
@@ -1080,7 +1185,49 @@ class _Home extends State<Home> {
                                         ),
                                       ),
                                     )
-                                  : Container(),
+                                  : Container(
+                                      width: MediaQuery.of(context).size.width,
+                                      height: keyBoardOn == false ? MediaQuery.of(context).size.height / 2 : MediaQuery.of(context).size.height / 5.5,
+                                      child: ListView.builder(
+                                        itemBuilder: (context, idx) {
+                                          return Padding(
+                                            padding: EdgeInsets.only(
+                                                left: 15, right: 35, top: 10, bottom: 10),
+                                            child: Container(
+                                              width: MediaQuery.of(context)
+                                                  .size
+                                                  .width,
+                                              child: Row(
+                                                children: <Widget>[
+                                                  Expanded(
+                                                    child: Text(
+                                                      searchList[idx],
+                                                      style: TextStyle(
+                                                          color: Black,
+                                                          fontSize: 14),
+                                                    ),
+                                                  ),
+                                                  GestureDetector(
+                                                    onTap: () {
+                                                      searchList.removeAt(idx);
+                                                      prefSet();
+                                                    },
+                                                    child: Text(
+                                                      "X",
+                                                      style: TextStyle(
+                                                          color: Black,
+                                                          fontSize: 14),
+                                                    ),
+                                                  )
+                                                ],
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        shrinkWrap: true,
+                                        itemCount: searchList.length,
+                                      ),
+                                    ),
                             ],
                           )
                         : StreamBuilder(
@@ -1199,9 +1346,8 @@ class _Home extends State<Home> {
                                                   print(
                                                       "clickTag : ${autoTagList[idx].name}");
                                                   setState(() {
-                                                    searchTagList.add(
+                                                    addTagList(
                                                         autoTagList[idx].name);
-                                                    lastTagMove();
                                                     tagOr = true;
                                                     autoTag = false;
                                                     _searchController.text = "";
@@ -1210,6 +1356,7 @@ class _Home extends State<Home> {
                                                         .requestFocus(
                                                             _searchNode);
                                                   });
+                                                  lastTagMove();
                                                 },
                                                 child: RichText(
                                                   text: TextSpan(
@@ -1330,6 +1477,7 @@ class _Home extends State<Home> {
             tagOr = false;
             addKeyWord = false;
             directSearching = false;
+            searchEnable = false;
           });
         } else {
           Navigator.of(context).pop();
