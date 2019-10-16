@@ -4,6 +4,7 @@ import 'package:badges/badges.dart';
 import 'package:cafelog/Bloc/mainBloc.dart';
 import 'package:cafelog/Model/autoTagData.dart';
 import 'package:cafelog/Model/instaPostData.dart';
+import 'package:cafelog/Screens/CafeLocationSearch/locationSearch.dart';
 import 'package:cafelog/Screens/PopularityCafe/popularityCafe.dart';
 import 'package:cafelog/Util/whiteSpace.dart';
 import 'package:cafelog/colors.dart';
@@ -102,6 +103,9 @@ class _Home extends State<Home> {
   ScrollController _scrollController;
 
   bool searchEnable = false;
+
+  bool cafeSelect = true;
+  String cafeLocation = "전체카페";
 
   prefInit() async {
     if (prefsInit == 0) {
@@ -222,15 +226,31 @@ class _Home extends State<Home> {
         centerTitle: true,
         backgroundColor: White,
         title: GestureDetector(
-          onTap: () {
+          onTap: () async {
             print("카페 지역 선택");
-            Navigator.of(context).pushNamed('/LocationSearch');
+            setState(() {
+              cafeSelect = false;
+            });
+            await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => LocationSearch(
+                    cafeLocation: cafeLocation,
+                  ),
+                )).then((result) {
+              setState(() {
+                cafeLocation = result.toString();
+                cafeSelect = true;
+                _mainBloc.setStreet(cafeLocation);
+                print("aa : " + cafeLocation);
+              });
+            });
           },
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               Text(
-                "전체카페",
+                cafeLocation,
                 style: TextStyle(
                     fontSize: 18, fontWeight: FontWeight.bold, color: Black),
               ),
@@ -345,7 +365,7 @@ class _Home extends State<Home> {
                                 value.isNotEmpty) {
                               setState(() {
                                 autoTag = true;
-                                _mainBloc.getKeyword(value);
+                                _mainBloc.setKeyword(value);
 //                              getAutoTag();
                               });
                             } else {
@@ -491,7 +511,7 @@ class _Home extends State<Home> {
                                           value.isNotEmpty) {
                                         setState(() {
                                           autoTag = true;
-                                          _mainBloc.getKeyword(value);
+                                          _mainBloc.setKeyword(value);
 //                                          getAutoTag();
                                         });
                                       } else {
@@ -773,10 +793,12 @@ class _Home extends State<Home> {
         isDraggable: false,
         borderRadius: BorderRadius.only(
             topLeft: Radius.circular(12.0), topRight: Radius.circular(12.0)),
-        border: Border.all(color: upPanelColor, width: 0.1),
+//        border: Border.all(color: upPanelColor, width: 0.1),
         backdropEnabled: false,
         parallaxEnabled: false,
-        boxShadow: [BoxShadow(color: Colors.transparent)],
+        boxShadow: [
+          BoxShadow(color: Color.fromARGB(255, 219, 219, 219), blurRadius: 7)
+        ],
         panel: Container(
           width: MediaQuery.of(context).size.width,
           height: MediaQuery.of(context).size.height,
@@ -812,7 +834,11 @@ class _Home extends State<Home> {
           ),
         ),
         body: directSearching == false
-            ? upPanelMenuType == 1 ? PopularityCafe() : body()
+            ? upPanelMenuType == 1
+                ? cafeSelect ? PopularityCafe(
+                      cafeLocation: cafeLocation,
+                    ) : Container()
+                : body()
             : searchBody(),
       );
 
@@ -1187,12 +1213,19 @@ class _Home extends State<Home> {
                                     )
                                   : Container(
                                       width: MediaQuery.of(context).size.width,
-                                      height: keyBoardOn == false ? MediaQuery.of(context).size.height / 2 : MediaQuery.of(context).size.height / 5.5,
+                                      height: keyBoardOn == false
+                                          ? MediaQuery.of(context).size.height /
+                                              2
+                                          : MediaQuery.of(context).size.height /
+                                              5.5,
                                       child: ListView.builder(
                                         itemBuilder: (context, idx) {
                                           return Padding(
                                             padding: EdgeInsets.only(
-                                                left: 15, right: 35, top: 10, bottom: 10),
+                                                left: 15,
+                                                right: 35,
+                                                top: 10,
+                                                bottom: 10),
                                             child: Container(
                                               width: MediaQuery.of(context)
                                                   .size
