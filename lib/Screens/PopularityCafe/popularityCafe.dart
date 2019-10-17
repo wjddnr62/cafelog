@@ -208,23 +208,27 @@ class _PopularityCafe extends State<PopularityCafe> {
                 padding: EdgeInsets.only(top: 15, bottom: 60),
                 child: ListView.builder(
                   itemBuilder: (context, idx) {
-                    return Padding(
-                      padding: EdgeInsets.only(
-                          left: 15, right: 15, top: 5, bottom: 5),
-                      child: Row(
-                        children: <Widget>[
-                          Text(
-                            "${idx + 1}",
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 11,
-                                color: Color.fromARGB(255, 167, 167, 167)),
-                          ),
-                          Expanded(
-                            child: Padding(
-                              padding: EdgeInsets.only(left: 15,),
-                              child: Stack(
-                                children: <Widget>[
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).pushNamed('/CafeDetail');
+                      },
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                            left: 15, right: 15, top: 5, bottom: 5),
+                        child: Row(
+                          children: <Widget>[
+                            Text(
+                              "${idx + 1}",
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11,
+                                  color: Color.fromARGB(255, 167, 167, 167)),
+                            ),
+                            Expanded(
+                              child: Padding(
+                                padding: EdgeInsets.only(left: 15,),
+                                child: Stack(
+                                  children: <Widget>[
 //                                  Positioned(
 //                                    left: 15,
 //                                    right: 1,
@@ -333,29 +337,30 @@ class _PopularityCafe extends State<PopularityCafe> {
                                       ),
                                     ),
 //                                  ),
-                                  Positioned(
-                                    top: 2,
-                                    child: CachedNetworkImage(
-                                      imageUrl: _cafeList[idx].picture,
-                                      imageBuilder: (context, imageProvider) =>
-                                          ClipRRect(
-                                        borderRadius:
-                                            BorderRadius.circular(8.0),
-                                        child: Image(
-                                          image: imageProvider,
-                                          fit: BoxFit.fill,
-                                          width: 40,
-                                          height: 40,
-                                        ),
+                                    Positioned(
+                                      top: 2,
+                                      child: CachedNetworkImage(
+                                        imageUrl: _cafeList[idx].picture,
+                                        imageBuilder: (context, imageProvider) =>
+                                            ClipRRect(
+                                              borderRadius:
+                                              BorderRadius.circular(8.0),
+                                              child: Image(
+                                                image: imageProvider,
+                                                fit: BoxFit.fill,
+                                                width: 40,
+                                                height: 40,
+                                              ),
+                                            ),
                                       ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                          )
-                        ],
-                      ),
+                            )
+                          ],
+                        ),
+                      )
                     );
                   },
                   shrinkWrap: true,
@@ -379,12 +384,6 @@ class _PopularityCafe extends State<PopularityCafe> {
   @override
   Widget build(BuildContext context) {
     // TODO: implement build
-
-    print("ssss " + widget.cafeLocation);
-    setState(() {
-
-    });
-
     return SingleChildScrollView(
       child: Column(
         children: <Widget>[

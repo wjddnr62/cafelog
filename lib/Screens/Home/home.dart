@@ -10,6 +10,7 @@ import 'package:cafelog/Util/whiteSpace.dart';
 import 'package:cafelog/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:keyboard_visibility/keyboard_visibility.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
@@ -176,6 +177,8 @@ class _Home extends State<Home> {
   @override
   void initState() {
     super.initState();
+
+//    cal();
 
     searchList = List();
 

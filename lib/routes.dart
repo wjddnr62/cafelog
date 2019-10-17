@@ -3,6 +3,7 @@ route file
  */
 
 import 'package:cafelog/Screens/CafeLocationSearch/locationSearch.dart';
+import 'package:cafelog/Screens/PopularityCafe/cafeDetail.dart';
 
 import 'Screens/Home/home.dart';
 import 'Screens/Login/instaLogin.dart';
@@ -15,4 +16,5 @@ final routes = {
   '/InstaLogin': (context) => InstaLogin(),
   '/Home': (context) => Home(),
   '/LocationSearch' : (context) => LocationSearch(),
+  '/CafeDetail' : (context) => CafeDetail()
 };
