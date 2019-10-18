@@ -352,6 +352,14 @@ class _PopularityCafe extends State<PopularityCafe> {
                                                 height: 40,
                                               ),
                                             ),
+//                                        placeholder: (context, url) => ClipRRect(
+//                                          borderRadius: BorderRadius.circular(8.0),
+//                                          child: Image.asset("assets/defaultImage.png", width: 40, height: 40, fit: BoxFit.fill,),
+//                                        ),
+                                        errorWidget: (context, url, error) => ClipRRect(
+                                          borderRadius: BorderRadius.circular(8.0),
+                                          child: Image.asset("assets/defaultImage.png", width: 40, height: 40, fit: BoxFit.fill,),
+                                        ),
                                       ),
                                     ),
                                   ],
