@@ -8,6 +8,7 @@ import 'package:cafelog/Screens/PopularityCafe/cafeDetail.dart';
 import 'Screens/Home/home.dart';
 import 'Screens/Login/instaLogin.dart';
 import 'Screens/Login/loginMain.dart';
+import 'Screens/PopularityCafe/cafeLocation.dart';
 import 'Screens/splash.dart';
 
 final routes = {
@@ -16,5 +17,6 @@ final routes = {
   '/InstaLogin': (context) => InstaLogin(),
   '/Home': (context) => Home(),
   '/LocationSearch' : (context) => LocationSearch(),
-  '/CafeDetail' : (context) => CafeDetail()
+  '/CafeDetail' : (context) => CafeDetail(),
+  '/CafeLocation' : (context) => CafeLocation(),
 };

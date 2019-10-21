@@ -3,12 +3,16 @@ import 'dart:math' show cos, sqrt, asin;
 import 'package:cafelog/Model/instaPostData.dart';
 import 'package:cafelog/Model/popularMenu.dart';
 import 'package:cafelog/Util/whiteSpace.dart';
+import 'package:cafelog/Widgets/snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../colors.dart';
+import 'cafeLocation.dart';
 
 class CafeDetail extends StatefulWidget {
   @override
@@ -45,6 +49,24 @@ class _CafeDetail extends State<CafeDetail> {
 
   List<InstaPostData> instaPostLeftData = [];
   List<InstaPostData> instaPostRightData = [];
+
+  Map<PermissionGroup, PermissionStatus> permissions;
+
+  Future<bool> permissionCheck() async {
+    permissions = await PermissionHandler()
+        .requestPermissions([PermissionGroup.location]);
+    PermissionStatus permission = await PermissionHandler()
+        .checkPermissionStatus(PermissionGroup.location);
+
+    print("check: " + permission.toString());
+    bool pass = false;
+
+    if (permission == PermissionStatus.granted) {
+      pass = true;
+    }
+
+    return pass;
+  }
 
   cal() {
     // 거리 계산 메소드 이용
@@ -429,7 +451,29 @@ class _CafeDetail extends State<CafeDetail> {
                                           child: Padding(
                                             padding: EdgeInsets.only(right: 25),
                                             child: GestureDetector(
-                                              onTap: () {},
+                                              onTap: () {
+                                                permissionCheck().then((pass) {
+                                                  if (pass == true) {
+                                                    //37.468443, 126.887603
+                                                    Navigator.of(context)
+                                                        .push(MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          CafeLocation(
+                                                        latLng: LatLng(
+                                                            37.468443,
+                                                            126.887603),
+                                                        cafeAddress:
+                                                            cafeAddress,
+                                                      ),
+                                                    ));
+                                                  } else {
+                                                    CafeLogSnackBarWithOk(
+                                                        context: context,
+                                                        msg: "위치 권한을 동의해주세요.",
+                                                        okMsg: "확인");
+                                                  }
+                                                });
+                                              },
                                               child: Text(
                                                 "지도보기",
                                                 style: TextStyle(
@@ -501,95 +545,124 @@ class _CafeDetail extends State<CafeDetail> {
                                       onTap: () {
                                         print('전화걸기');
                                         return showDialog(
-                                            context: context,
-                                            builder: (context) {
-                                              return AlertDialog(
-                                                backgroundColor: Color.fromARGB(255, 248, 248, 248),
-                                                elevation: 0.0,
-                                                contentPadding: EdgeInsets.zero,
-                                                shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                    BorderRadius.circular(
-                                                        14)),
-                                                content:  Container(
-                                                  width: 270,
-                                                  height: 150,
-                                                  decoration: BoxDecoration(
-                                                    borderRadius:
-                                                    BorderRadius.circular(
-                                                        14),),
-                                                  child: Column(
-                                                    children: <Widget>[
-                                                      whiteSpaceH(20),
-                                                      Center(
-                                                        child: Text(
-                                                          "02-1234-5678",
-                                                          style: TextStyle(
-                                                              color: Black,
-                                                              fontWeight:
-                                                              FontWeight.bold,
-                                                              fontSize: 17),
-                                                        ),
-                                                      ),
-                                                      whiteSpaceH(5),
-                                                      Center(
-                                                        child: Text(
-                                                          "위의 번호로 전화하시겠습니까?",
-                                                          style: TextStyle(
-                                                              fontSize: 13,
-                                                              color: Black),
-                                                        ),
-                                                      ),
-                                                      whiteSpaceH(35),
-                                                      Container(
-                                                        width: MediaQuery.of(context).size.width,
-                                                        height: 1,
-                                                        color: Color.fromRGBO(0, 0, 0, 0.15),
-                                                      ),
-                                                      Row(
-                                                        children: <Widget>[
-                                                          Expanded(
-                                                            child: RaisedButton(
-                                                              onPressed: (){
-                                                                launch("tel:0212345678");
-                                                              },
-                                                              elevation: 0.0,
-                                                              color: Color.fromARGB(255, 248, 248, 248),
-                                                              child: Center(
-                                                                child: Text("전화걸기", style: TextStyle(
-                                                                  fontSize: 17, fontWeight: FontWeight.bold,
-                                                                  color: Color.fromARGB(255, 0, 122, 255)
-                                                                ),),
-                                                              ),
-                                                            ),
-                                                          ),
-                                                          Container(
-                                                              width: 1,
-                                                              height: 54,
-                                                              color: Color.fromRGBO(0, 0, 0, 0.15),
-                                                            ),
-                                                          Expanded(
-                                                            child: RaisedButton(
-                                                              onPressed: (){
-                                                                Navigator.of(context).pop();
-                                                              },
-                                                              elevation: 0.0,
-                                                              color: Color.fromARGB(255, 248, 248, 248),
-                                                              child: Center(
-                                                                child: Text("취소", style: TextStyle(
-                                                                    fontSize: 17, fontWeight: FontWeight.bold,
-                                                                    color: Color.fromARGB(255, 0, 122, 255)
-                                                                ),),
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      )
-                                                    ],
-                                                  ),
+                                          context: context,
+                                          builder: (context) {
+                                            return AlertDialog(
+                                              backgroundColor: Color.fromARGB(
+                                                  255, 248, 248, 248),
+                                              elevation: 0.0,
+                                              contentPadding: EdgeInsets.zero,
+                                              shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          14)),
+                                              content: Container(
+                                                width: 270,
+                                                height: 150,
+                                                decoration: BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.circular(14),
                                                 ),
-                                              );
-                                            },
+                                                child: Column(
+                                                  children: <Widget>[
+                                                    whiteSpaceH(20),
+                                                    Center(
+                                                      child: Text(
+                                                        "02-1234-5678",
+                                                        style: TextStyle(
+                                                            color: Black,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            fontSize: 17),
+                                                      ),
+                                                    ),
+                                                    whiteSpaceH(5),
+                                                    Center(
+                                                      child: Text(
+                                                        "위의 번호로 전화하시겠습니까?",
+                                                        style: TextStyle(
+                                                            fontSize: 13,
+                                                            color: Black),
+                                                      ),
+                                                    ),
+//                                                      whiteSpaceH(35),
+//                                                      Container(
+//                                                        width: MediaQuery.of(context).size.width,
+//                                                        height: 1,
+//                                                        color: Color.fromRGBO(0, 0, 0, 0.15),
+//                                                      ),
+//                                                      Row(
+//                                                        children: <Widget>[
+//                                                          Expanded(
+//                                                            child: RaisedButton(
+//                                                              onPressed: (){
+//                                                                launch("tel:0212345678");
+//                                                              },
+//                                                              elevation: 0.0,
+//                                                              color: Color.fromARGB(255, 248, 248, 248),
+//                                                              child: Center(
+//                                                                child: Text("전화걸기", style: TextStyle(
+//                                                                  fontSize: 17, fontWeight: FontWeight.bold,
+//                                                                  color: Color.fromARGB(255, 0, 122, 255)
+//                                                                ),),
+//                                                              ),
+//                                                            ),
+//                                                          ),
+//                                                          Container(
+//                                                              width: 1,
+//                                                              height: 54,
+//                                                              color: Color.fromRGBO(0, 0, 0, 0.15),
+//                                                            ),
+//                                                          Expanded(
+//                                                            child: RaisedButton(
+//                                                              onPressed: (){
+//                                                                Navigator.of(context).pop();
+//                                                              },
+//                                                              elevation: 0.0,
+//                                                              color: Color.fromARGB(255, 248, 248, 248),
+//                                                              child: Center(
+//                                                                child: Text("취소", style: TextStyle(
+//                                                                    fontSize: 17, fontWeight: FontWeight.bold,
+//                                                                    color: Color.fromARGB(255, 0, 122, 255)
+//                                                                ),),
+//                                                              ),
+//                                                            ),
+//                                                          ),
+//                                                        ],
+//                                                      )
+                                                  ],
+                                                ),
+                                              ),
+                                              actions: <Widget>[
+                                                FlatButton(
+                                                  child: Text(
+                                                    "전화걸기",
+                                                    style: TextStyle(
+                                                        color: mainColor,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 17),
+                                                  ),
+                                                  onPressed: () {
+                                                    launch("tel:0212345678");
+                                                  },
+                                                ),
+                                                FlatButton(
+                                                  child: Text(
+                                                    "취소",
+                                                    style: TextStyle(
+                                                        color: mainColor,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 17),
+                                                  ),
+                                                  onPressed: () {
+                                                    Navigator.of(context).pop();
+                                                  },
+                                                )
+                                              ],
+                                            );
+                                          },
                                         );
                                       },
                                       child: Text(
@@ -859,14 +932,14 @@ class _CafeDetail extends State<CafeDetail> {
             child: Stack(
               children: <Widget>[
                 Padding(
-                  padding: EdgeInsets.only(left: 20, bottom: 20),
+                  padding: EdgeInsets.only(left: 15, bottom: 15),
                   child: Align(
                     alignment: Alignment.bottomLeft,
                     child: favoriteFab(),
                   ),
                 ),
                 Padding(
-                  padding: EdgeInsets.only(right: 20, bottom: 20),
+                  padding: EdgeInsets.only(right: 15, bottom: 15),
                   child: Align(
                     alignment: Alignment.bottomRight,
                     child: backFab(),

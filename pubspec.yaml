@@ -26,7 +26,7 @@ dependencies:
   gradient_text: ^1.0.2
   flushbar: ^1.8.1
   flutter_swiper: ^1.1.6
-  sliding_up_panel: ^0.3.4
+  sliding_up_panel: ^0.3.6
   camera: ^0.5.3
   path_provider: ^1.2.0
   path: ^1.6.2
@@ -40,7 +40,11 @@ dependencies:
   keyboard_visibility: ^0.5.6
   badges: ^1.1.0
   cached_network_image: ^2.0.0-rc
-  url_launcher: ^5.2.2
+  url_launcher: ^5.2.3
+  google_maps_flutter: ^0.5.21+8
+  permission_handler: ^3.3.0
+  location: ^2.3.5
+  flutter_appavailability: ^0.0.21
 
 dev_dependencies:
   flutter_test:

@@ -114,7 +114,7 @@ class _Home extends State<Home> {
       prefsInit = 1;
     }
 
-    if (prefs.getStringList("searchList").isNotEmpty)
+    if (prefs.getStringList("searchList") != null && prefs.getStringList("searchList").isNotEmpty)
       setState(() {
         searchList = prefs.getStringList("searchList");
       });
