@@ -45,6 +45,7 @@ dependencies:
   permission_handler: ^3.3.0
   location: ^2.3.5
   flutter_appavailability: ^0.0.21
+  pull_to_refresh: ^1.5.7
 
 dev_dependencies:
   flutter_test:

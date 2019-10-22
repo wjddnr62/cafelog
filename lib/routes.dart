@@ -4,6 +4,8 @@ route file
 
 import 'package:cafelog/Screens/CafeLocationSearch/locationSearch.dart';
 import 'package:cafelog/Screens/PopularityCafe/cafeDetail.dart';
+import 'package:cafelog/Screens/PopularityCafe/naverCafeInfo.dart';
+import 'package:cafelog/Screens/PopularityCafe/storeDetail.dart';
 
 import 'Screens/Home/home.dart';
 import 'Screens/Login/instaLogin.dart';
@@ -19,4 +21,6 @@ final routes = {
   '/LocationSearch' : (context) => LocationSearch(),
   '/CafeDetail' : (context) => CafeDetail(),
   '/CafeLocation' : (context) => CafeLocation(),
+  '/StoreDetail' : (context) => StoreDetail(),
+  '/NaverCafeInfo' : (context) => NaverCafeInfo(),
 };

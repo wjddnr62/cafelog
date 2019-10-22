@@ -703,7 +703,9 @@ class _CafeDetail extends State<CafeDetail> {
                                   whiteSpaceH(20),
                                   Center(
                                     child: GestureDetector(
-                                      onTap: () {},
+                                      onTap: () {
+                                        Navigator.of(context).pushNamed('/StoreDetail');
+                                      },
                                       child: Text(
                                         "정보 더보기",
                                         style: TextStyle(
@@ -828,7 +830,7 @@ class _CafeDetail extends State<CafeDetail> {
                                   menuExist ? whiteSpaceH(60) : Container(),
                                   GestureDetector(
                                     onTap: () {
-                                      print("네이버");
+                                      Navigator.of(context).pushNamed('/NaverCafeInfo');
                                     },
                                     child: Container(
                                       width: 200,
