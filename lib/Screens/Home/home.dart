@@ -161,6 +161,7 @@ class _Home extends State<Home> {
 
   addTagList(value) {
     searchTagList.add(value);
+    print("listLength : " + searchTagList.length.toString());
     if (searchTagList.length > 0) {
       setState(() {
         searchEnable = true;
@@ -361,20 +362,21 @@ class _Home extends State<Home> {
                             }
                           },
                           onChanged: (value) {
-                            setSearchEnable(value);
 //                          print("value : " + value);
-                            if (value != null &&
-                                value != "" &&
-                                value.isNotEmpty) {
-                              setState(() {
-                                autoTag = true;
-                                _mainBloc.setKeyword(value);
-//                              getAutoTag();
-                              });
-                            } else {
+                            if (value == null ||
+                                value == "" ||
+                                value == " ") {
                               setState(() {
                                 autoTag = false;
                               });
+                            } else {
+                              setState(() {
+                                autoTag = true;
+                                setSearchEnable(value);
+                                _mainBloc.setKeyword(value);
+//                              getAutoTag();
+                              });
+
                             }
 
                             if (value == null || value == " ") {
@@ -468,6 +470,7 @@ class _Home extends State<Home> {
                   flex: 6,
                   child: Container(
                       width: MediaQuery.of(context).size.width,
+                      height: 40,
                       decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(10),
                           color: Color.fromARGB(255, 240, 240, 240)),
@@ -484,11 +487,11 @@ class _Home extends State<Home> {
                           // 태그 or list 들어갈 부분
                           tagOr == false
                               ? Expanded(
-                                  child: TextField(
+                                  child: TextFormField(
                                     focusNode: _searchNode,
                                     controller: _searchController,
                                     textInputAction: TextInputAction.next,
-                                    onSubmitted: (value) {
+                                    onFieldSubmitted: (value) {
                                       if (value == null ||
                                           value == " " ||
                                           value == "") {
@@ -496,10 +499,10 @@ class _Home extends State<Home> {
                                       } else {
                                         setState(() {
                                           addTagList(value);
-                                          autoTagList.clear();
                                           _searchController.text = "";
                                           tagOr = true;
                                           autoTag = false;
+                                          autoTagList.clear();
                                           FocusScope.of(context)
                                               .requestFocus(_searchNode);
                                         });
@@ -507,23 +510,25 @@ class _Home extends State<Home> {
                                       }
                                     },
                                     onChanged: (value) {
-                                      setSearchEnable(value);
-
-                                      if (value != null &&
-                                          value != "" &&
-                                          value.isNotEmpty) {
+                                      print("value51 : " + value);
+                                      if (value == null ||
+                                          value == "" ||
+                                          value == " ") {
                                         setState(() {
+                                          autoTag = false;
+                                          setSearchEnable(value);
+                                        });
+                                      } else {
+                                        print("check123");
+                                        setState(() {
+                                          setSearchEnable(value);
                                           autoTag = true;
                                           _mainBloc.setKeyword(value);
 //                                          getAutoTag();
                                         });
-                                      } else {
-                                        setState(() {
-                                          autoTag = false;
-                                        });
                                       }
 
-                                      if (value == null || value == " ") {
+                                      if (value == null || value == " " || value == "") {
                                         _searchController.text = "";
                                       } else {
                                         if (value.contains(" ")) {
@@ -532,7 +537,6 @@ class _Home extends State<Home> {
                                             setState(() {
                                               searchTagList
                                                   .add(_searchController.text);
-                                              lastTagMove();
                                               tagOr = true;
                                               addKeyWord = true;
                                               autoTag = false;
@@ -541,13 +545,13 @@ class _Home extends State<Home> {
                                               FocusScope.of(context)
                                                   .requestFocus(_searchNode);
                                             });
+                                            lastTagMove();
                                           }
                                         } else {}
                                       }
                                       if (value == "") {
                                         addKeyWord = false;
                                       }
-                                      print("value : " + value);
                                     },
                                     decoration: InputDecoration(
                                         hintStyle: TextStyle(
@@ -582,6 +586,7 @@ class _Home extends State<Home> {
                             directSearching = false;
                             _searchController.text = "";
                             searchEnable = false;
+                            autoTag = false;
                           });
                         },
                         child: Container(
@@ -1514,6 +1519,7 @@ class _Home extends State<Home> {
             addKeyWord = false;
             directSearching = false;
             searchEnable = false;
+            autoTag = false;
           });
         } else {
           Navigator.of(context).pop();

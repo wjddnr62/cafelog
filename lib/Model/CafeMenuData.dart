@@ -9,7 +9,7 @@ class CafeMenuData {
   int priceType; // 0 = 통합, 1 = 핫 아이스 각각
   String description;
   String menuOptions;
-  bool popularityMenu; // 5개 까지만 true 가 됨
+  bool popularityMenu = false; // 5개 까지만 true 가 됨
 
   CafeMenuData({this.menuImg,
     this.menuName,

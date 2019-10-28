@@ -4,7 +4,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cafelog/Bloc/mainBloc.dart';
 import 'package:cafelog/Model/popularityCafeData.dart';
 import 'package:cafelog/Util/whiteSpace.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../../colors.dart';

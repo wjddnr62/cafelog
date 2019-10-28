@@ -50,6 +50,8 @@ class _CafeDetail extends State<CafeDetail> {
   List<InstaPostData> instaPostLeftData = [];
   List<InstaPostData> instaPostRightData = [];
 
+  bool loading = false;
+
   Map<PermissionGroup, PermissionStatus> permissions;
 
   Future<bool> permissionCheck() async {
@@ -452,8 +454,12 @@ class _CafeDetail extends State<CafeDetail> {
                                             padding: EdgeInsets.only(right: 25),
                                             child: GestureDetector(
                                               onTap: () {
+                                                setState(() {
+                                                  loading = true;
+                                                });
                                                 permissionCheck().then((pass) {
                                                   if (pass == true) {
+                                                    print("pass");
                                                     //37.468443, 126.887603
                                                     Navigator.of(context)
                                                         .push(MaterialPageRoute(
@@ -466,6 +472,9 @@ class _CafeDetail extends State<CafeDetail> {
                                                             cafeAddress,
                                                       ),
                                                     ));
+                                                    setState(() {
+                                                      loading = false;
+                                                    });
                                                   } else {
                                                     CafeLogSnackBarWithOk(
                                                         context: context,
@@ -585,51 +594,6 @@ class _CafeDetail extends State<CafeDetail> {
                                                             color: Black),
                                                       ),
                                                     ),
-//                                                      whiteSpaceH(35),
-//                                                      Container(
-//                                                        width: MediaQuery.of(context).size.width,
-//                                                        height: 1,
-//                                                        color: Color.fromRGBO(0, 0, 0, 0.15),
-//                                                      ),
-//                                                      Row(
-//                                                        children: <Widget>[
-//                                                          Expanded(
-//                                                            child: RaisedButton(
-//                                                              onPressed: (){
-//                                                                launch("tel:0212345678");
-//                                                              },
-//                                                              elevation: 0.0,
-//                                                              color: Color.fromARGB(255, 248, 248, 248),
-//                                                              child: Center(
-//                                                                child: Text("전화걸기", style: TextStyle(
-//                                                                  fontSize: 17, fontWeight: FontWeight.bold,
-//                                                                  color: Color.fromARGB(255, 0, 122, 255)
-//                                                                ),),
-//                                                              ),
-//                                                            ),
-//                                                          ),
-//                                                          Container(
-//                                                              width: 1,
-//                                                              height: 54,
-//                                                              color: Color.fromRGBO(0, 0, 0, 0.15),
-//                                                            ),
-//                                                          Expanded(
-//                                                            child: RaisedButton(
-//                                                              onPressed: (){
-//                                                                Navigator.of(context).pop();
-//                                                              },
-//                                                              elevation: 0.0,
-//                                                              color: Color.fromARGB(255, 248, 248, 248),
-//                                                              child: Center(
-//                                                                child: Text("취소", style: TextStyle(
-//                                                                    fontSize: 17, fontWeight: FontWeight.bold,
-//                                                                    color: Color.fromARGB(255, 0, 122, 255)
-//                                                                ),),
-//                                                              ),
-//                                                            ),
-//                                                          ),
-//                                                        ],
-//                                                      )
                                                   ],
                                                 ),
                                               ),
@@ -704,7 +668,8 @@ class _CafeDetail extends State<CafeDetail> {
                                   Center(
                                     child: GestureDetector(
                                       onTap: () {
-                                        Navigator.of(context).pushNamed('/StoreDetail');
+                                        Navigator.of(context)
+                                            .pushNamed('/StoreDetail');
                                       },
                                       child: Text(
                                         "정보 더보기",
@@ -817,20 +782,26 @@ class _CafeDetail extends State<CafeDetail> {
                                         ),
                                   menuExist ? whiteSpaceH(60) : whiteSpaceH(90),
                                   menuExist
-                                      ? Center(
-                                          child: Text(
-                                            "메뉴 더보기",
-                                            style: TextStyle(
-                                                color: mainColor,
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w600),
+                                      ? GestureDetector(
+                                          onTap: () {
+                                            Navigator.of(context).pushNamed("/CafeMenu");
+                                          },
+                                          child: Center(
+                                            child: Text(
+                                              "메뉴 더보기",
+                                              style: TextStyle(
+                                                  color: mainColor,
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w600),
+                                            ),
                                           ),
                                         )
                                       : Container(),
                                   menuExist ? whiteSpaceH(60) : Container(),
                                   GestureDetector(
                                     onTap: () {
-                                      Navigator.of(context).pushNamed('/NaverCafeInfo');
+                                      Navigator.of(context)
+                                          .pushNamed('/NaverCafeInfo');
                                     },
                                     child: Container(
                                       width: 200,
@@ -950,6 +921,12 @@ class _CafeDetail extends State<CafeDetail> {
               ],
             ),
           ),
+          loading == true
+              ? Positioned.fill(
+                  child: Center(
+                  child: CircularProgressIndicator(),
+                ))
+              : Container()
         ],
       ),
     );
