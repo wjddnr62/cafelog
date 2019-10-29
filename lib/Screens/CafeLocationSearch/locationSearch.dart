@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cafelog/Bloc/mainBloc.dart';
 import 'package:cafelog/Model/streetsData.dart';
+import 'package:cafelog/Util/numberFormat.dart';
 import 'package:cafelog/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -20,7 +21,6 @@ class _LocationSearch extends State<LocationSearch> {
   MainBloc _mainBloc = MainBloc();
   String cafeLoadTitle = "";
   List<StreetsData> _cafeList = List();
-  final numberFormat = NumberFormat("#,###");
   String cafeLocation;
 
   @override

@@ -1,4 +1,5 @@
 import 'package:cafelog/Model/CafeMenuData.dart';
+import 'package:cafelog/Util/numberFormat.dart';
 import 'package:cafelog/Util/whiteSpace.dart';
 import 'package:flutter/material.dart';
 
@@ -62,7 +63,7 @@ class _CafeMenu extends State<CafeMenu> {
           popularityMenu: true,
           priceType: 0,
           price: 44000,
-          menuImg: "aseets/test/test4.png"))
+          menuImg: "assets/test/test4.png"))
       ..add(CafeMenuData(
           menuName: "뉴욕초코커피케이크",
           atePerson: 224,
@@ -184,11 +185,504 @@ class _CafeMenu extends State<CafeMenu> {
     );
   }
 
+  listSet(idx, menuNum) {
+    return ListView.builder(
+      physics: NeverScrollableScrollPhysics(),
+      itemBuilder: (context, num) {
+        if (idx != 0) {
+          if (menuNameList[idx - 1] == _cafeMenuData[num].menuType) {
+            menuNum++;
+            return Padding(
+              padding: EdgeInsets.only(top: 5, bottom: 5),
+              child: Container(
+                height: _cafeMenuData[num].menuOptions != null ? 90 : 70,
+                child: Stack(
+                  children: <Widget>[
+                    whiteSpaceW(15),
+                    Positioned.fill(
+                      left: 30,
+                      child: Container(
+                        width: MediaQuery.of(context).size.width,
+                        height: MediaQuery.of(context).size.height,
+                        decoration: BoxDecoration(
+                          color: White,
+                          borderRadius: BorderRadius.circular(5),
+                          boxShadow: [
+                            BoxShadow(
+                                color: Color.fromARGB(255, 167, 167, 167),
+                                blurRadius: 7)
+                          ],
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: <Widget>[
+                            _cafeMenuData[num].menuImg != null
+                                ? whiteSpaceW(40)
+                                : whiteSpaceW(10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Expanded(
+                                    flex: _cafeMenuData[num].description != null
+                                        ? 2
+                                        : 3,
+                                    child: Padding(
+                                      padding: EdgeInsets.only(top: 10),
+                                      child: Text(
+                                        "${_cafeMenuData[num].menuName}",
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 16,
+                                            color: Black),
+                                      ),
+                                    ),
+                                  ),
+                                  _cafeMenuData[num].description != null
+                                      ? Expanded(
+                                          child: Text(
+                                            _cafeMenuData[num].description,
+                                            style: TextStyle(
+                                              color: Color.fromARGB(
+                                                  255, 106, 106, 106),
+                                              fontSize: 10,
+                                            ),
+                                          ),
+                                        )
+                                      : Container(),
+                                  Expanded(
+                                    flex: 1,
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: <Widget>[
+                                        Text(
+                                          "먹어본 사람",
+                                          style: TextStyle(
+                                              color: Color.fromARGB(
+                                                  255, 167, 167, 167),
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w600),
+                                        ),
+                                        _cafeMenuData[num].priceType == 0
+                                            ? whiteSpaceW(20)
+                                            : whiteSpaceW(10),
+                                        Expanded(
+                                          child: Text(
+                                            _cafeMenuData[num]
+                                                .atePerson
+                                                .toString(),
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 10,
+                                                color: Black),
+                                          ),
+                                        ),
+                                        whiteSpaceW(10),
+//                                                                        Spacer(flex: 1,),
+                                        Align(
+                                          alignment: Alignment.centerRight,
+                                          child: _cafeMenuData[num].priceType ==
+                                                  0
+                                              ? Text(
+                                                  "${numberFormat.format(_cafeMenuData[num].price)}원",
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontSize: 12,
+                                                      color: Color.fromARGB(
+                                                          255, 102, 102, 102)),
+                                                )
+                                              : Row(
+                                                  children: <Widget>[
+                                                    ClipOval(
+                                                      child: Container(
+                                                        width: 10,
+                                                        height: 10,
+                                                        color: Color.fromARGB(
+                                                            255, 224, 32, 32),
+                                                      ),
+                                                    ),
+                                                    whiteSpaceW(3),
+                                                    Text(
+                                                      "${numberFormat.format(_cafeMenuData[num].hot)}원",
+                                                      style: TextStyle(
+                                                          color: Color.fromARGB(
+                                                              255,
+                                                              102,
+                                                              102,
+                                                              102),
+                                                          fontSize: 12,
+                                                          fontWeight:
+                                                              FontWeight.bold),
+                                                    ),
+                                                    whiteSpaceW(5),
+                                                    ClipOval(
+                                                      child: Container(
+                                                        width: 10,
+                                                        height: 10,
+                                                        color: Color.fromARGB(
+                                                            255, 0, 145, 255),
+                                                      ),
+                                                    ),
+                                                    whiteSpaceW(3),
+                                                    Text(
+                                                      "${numberFormat.format(_cafeMenuData[num].ice)}원",
+                                                      style: TextStyle(
+                                                          color: Color.fromARGB(
+                                                              255,
+                                                              102,
+                                                              102,
+                                                              102),
+                                                          fontSize: 12,
+                                                          fontWeight:
+                                                              FontWeight.bold),
+                                                    ),
+                                                  ],
+                                                ),
+                                        ),
+                                        whiteSpaceW(10)
+                                      ],
+                                    ),
+                                  ),
+                                  whiteSpaceH(10),
+                                  _cafeMenuData[num].menuOptions != null
+                                      ? Expanded(
+                                          child: Align(
+                                            alignment: Alignment.centerRight,
+                                            child: Padding(
+                                              padding:
+                                                  EdgeInsets.only(right: 10),
+                                              child: Text(
+                                                _cafeMenuData[num].menuOptions,
+                                                style: TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 12,
+                                                    color: Color.fromARGB(
+                                                        255, 102, 102, 102)),
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                      : Container(),
+                                  _cafeMenuData[num].menuOptions != null
+                                      ? whiteSpaceH(10)
+                                      : Container()
+                                ],
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.topLeft,
+                      child: _cafeMenuData[num].menuImg != null
+                          ? whiteSpaceW(10)
+                          : Container(),
+                    ),
+                    Align(
+                      alignment: Alignment.topLeft,
+                      child: _cafeMenuData[num].menuImg != null
+                          ? Padding(
+                              padding: EdgeInsets.only(top: 5),
+                              child: Container(
+                                width: 60,
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  boxShadow: [
+                                    BoxShadow(
+                                        color:
+                                            Color.fromARGB(255, 219, 219, 219),
+                                        blurRadius: 7)
+                                  ],
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Image.asset(
+                                    _cafeMenuData[num].menuImg,
+                                    fit: BoxFit.fill,
+                                    width: 60,
+                                    height: 60,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : Container(),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+        } else {
+          if (_cafeMenuData[num].popularityMenu != null) {
+            if (_cafeMenuData[num].popularityMenu == true) {
+              menuNum++;
+              return Padding(
+                padding: EdgeInsets.only(top: 5, bottom: 5),
+                child: Container(
+                  height: _cafeMenuData[num].menuOptions != null ? 90 : 70,
+                  child: Row(
+                    children: <Widget>[
+                      Text(
+                        "${menuNum}",
+                        style: TextStyle(
+                            color: Color.fromARGB(255, 167, 167, 167),
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold),
+                      ),
+                      whiteSpaceW(15),
+                      Expanded(
+                        child: Container(
+                          width: MediaQuery.of(context).size.width,
+                          height: MediaQuery.of(context).size.height,
+                          decoration: BoxDecoration(
+                            color: White,
+                            borderRadius: BorderRadius.circular(5),
+                            boxShadow: [
+                              BoxShadow(
+                                  color: Color.fromARGB(255, 167, 167, 167),
+                                  blurRadius: 7)
+                            ],
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: <Widget>[
+                              Align(
+                                alignment: Alignment.topLeft,
+                                child: _cafeMenuData[num].menuImg != null
+                                    ? whiteSpaceW(10)
+                                    : Container(),
+                              ),
+                              Align(
+                                alignment: Alignment.topCenter,
+                                child: _cafeMenuData[num].menuImg != null
+                                    ? Padding(
+                                        padding: EdgeInsets.only(top: 5),
+                                        child: Container(
+                                          width: 60,
+                                          height: 60,
+                                          decoration: BoxDecoration(
+                                            boxShadow: [
+                                              BoxShadow(
+                                                  color: Color.fromARGB(
+                                                      255, 219, 219, 219),
+                                                  blurRadius: 7)
+                                            ],
+                                          ),
+                                          child: ClipRRect(
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                            child: Image.asset(
+                                              _cafeMenuData[num].menuImg,
+                                              fit: BoxFit.fill,
+                                              width: 60,
+                                              height: 60,
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                    : Container(),
+                              ),
+                              whiteSpaceW(10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: <Widget>[
+                                    Expanded(
+                                      flex:
+                                          _cafeMenuData[num].description != null
+                                              ? 2
+                                              : 3,
+                                      child: Padding(
+                                        padding: EdgeInsets.only(top: 10),
+                                        child: Text(
+                                          "${_cafeMenuData[num].menuName}",
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 16,
+                                              color: Black),
+                                        ),
+                                      ),
+                                    ),
+                                    _cafeMenuData[num].description != null
+                                        ? Expanded(
+                                            child: Text(
+                                              _cafeMenuData[num].description,
+                                              style: TextStyle(
+                                                color: Color.fromARGB(
+                                                    255, 106, 106, 106),
+                                                fontSize: 10,
+                                              ),
+                                            ),
+                                          )
+                                        : Container(),
+                                    Expanded(
+                                      flex: 1,
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: <Widget>[
+                                          Text(
+                                            "먹어본 사람",
+                                            style: TextStyle(
+                                                color: Color.fromARGB(
+                                                    255, 167, 167, 167),
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w600),
+                                          ),
+                                          _cafeMenuData[num].priceType == 0
+                                              ? whiteSpaceW(20)
+                                              : whiteSpaceW(10),
+                                          Expanded(
+                                            child: Text(
+                                              _cafeMenuData[num]
+                                                  .atePerson
+                                                  .toString(),
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 10,
+                                                  color: Black),
+                                            ),
+                                          ),
+                                          whiteSpaceW(10),
+                                          Align(
+                                            alignment: Alignment.centerRight,
+                                            child: _cafeMenuData[num]
+                                                        .priceType ==
+                                                    0
+                                                ? Text(
+                                                    "${numberFormat.format(_cafeMenuData[num].price)}원",
+                                                    style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        fontSize: 12,
+                                                        color: Color.fromARGB(
+                                                            255,
+                                                            102,
+                                                            102,
+                                                            102)),
+                                                  )
+                                                : Row(
+                                                    children: <Widget>[
+                                                      ClipOval(
+                                                        child: Container(
+                                                          width: 10,
+                                                          height: 10,
+                                                          color: Color.fromARGB(
+                                                              255, 224, 32, 32),
+                                                        ),
+                                                      ),
+                                                      whiteSpaceW(3),
+                                                      Text(
+                                                        "${numberFormat.format(_cafeMenuData[num].hot)}원",
+                                                        style: TextStyle(
+                                                            color:
+                                                                Color.fromARGB(
+                                                                    255,
+                                                                    102,
+                                                                    102,
+                                                                    102),
+                                                            fontSize: 12,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold),
+                                                      ),
+                                                      whiteSpaceW(5),
+                                                      ClipOval(
+                                                        child: Container(
+                                                          width: 10,
+                                                          height: 10,
+                                                          color: Color.fromARGB(
+                                                              255, 0, 145, 255),
+                                                        ),
+                                                      ),
+                                                      whiteSpaceW(3),
+                                                      Text(
+                                                        "${numberFormat.format(_cafeMenuData[num].ice)}원",
+                                                        style: TextStyle(
+                                                            color:
+                                                                Color.fromARGB(
+                                                                    255,
+                                                                    102,
+                                                                    102,
+                                                                    102),
+                                                            fontSize: 12,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold),
+                                                      ),
+                                                    ],
+                                                  ),
+                                          ),
+                                          whiteSpaceW(10)
+                                        ],
+                                      ),
+                                    ),
+                                    whiteSpaceH(10),
+                                    _cafeMenuData[num].menuOptions != null
+                                        ? Expanded(
+                                            child: Align(
+                                              alignment: Alignment.centerRight,
+                                              child: Padding(
+                                                padding:
+                                                    EdgeInsets.only(right: 10),
+                                                child: Text(
+                                                  _cafeMenuData[num]
+                                                      .menuOptions,
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontSize: 12,
+                                                      color: Color.fromARGB(
+                                                          255, 102, 102, 102)),
+                                                ),
+                                              ),
+                                            ),
+                                          )
+                                        : Container(),
+                                    _cafeMenuData[num].menuOptions != null
+                                        ? whiteSpaceH(10)
+                                        : Container()
+                                  ],
+                                ),
+                              )
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+          }
+          return Container();
+        }
+        return Container();
+      },
+      shrinkWrap: true,
+      itemCount: _cafeMenuData.length,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // TODO: implement build
     return Scaffold(
       resizeToAvoidBottomInset: true,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.of(context).pop();
+        },
+        child: Icon(
+          Icons.arrow_back,
+          color: mainColor,
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0.6,
+      ),
       body: Padding(
         padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
         child: Container(
@@ -196,6 +690,7 @@ class _CafeMenu extends State<CafeMenu> {
           height: MediaQuery.of(context).size.height,
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               whiteSpaceH(15),
@@ -223,47 +718,52 @@ class _CafeMenu extends State<CafeMenu> {
                           physics: NeverScrollableScrollPhysics(),
                           padding: EdgeInsets.only(right: 10),
                           itemBuilder: (context, idx) {
-                            return selectMenu == "전체메뉴"
-                                ? idx == menuNameList.length + 1
-                                ? Container()
-                                : idx == 0
-                                ? menuOptions
-                                ? Row(
-                              children: <Widget>[
-                                Expanded(
-                                  child: Text(
-                                    "인기",
-                                    style: TextStyle(
-                                        fontSize: 20,
-                                        color: Black,
-                                        fontWeight:
-                                        FontWeight.bold),
-                                  ),
-                                ),
-                                Text(
-                                  "* 샷추가 300원, 테이크아웃시 500원 할인",
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      color: Black,
-                                      fontSize: 10),
-                                )
-                              ],
-                            )
-                                : Text(
-                              "인기",
-                              style: TextStyle(
-                                  fontSize: 20,
-                                  color: Black,
-                                  fontWeight: FontWeight.bold),
-                            )
-                                : Text(
-                              idx == 0 ? "" : menuNameList[idx - 1],
-                              style: TextStyle(
-                                  fontSize: 20,
-                                  color: Black,
-                                  fontWeight: FontWeight.bold),
-                            )
-                                : Container();
+                            if (selectMenu == "전체메뉴") {
+                              return idx == menuNameList.length + 1
+                                  ? Container()
+                                  : idx == 0
+                                      ? menuOptions
+                                          ? Row(
+                                              children: <Widget>[
+                                                Expanded(
+                                                  child: Text(
+                                                    "인기",
+                                                    style: TextStyle(
+                                                        fontSize: 20,
+                                                        color: Black,
+                                                        fontWeight:
+                                                            FontWeight.bold),
+                                                  ),
+                                                ),
+                                                Text(
+                                                  "* 샷추가 300원, 테이크아웃시 500원 할인",
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: Black,
+                                                      fontSize: 10),
+                                                )
+                                              ],
+                                            )
+                                          : Text(
+                                              "인기",
+                                              style: TextStyle(
+                                                  fontSize: 20,
+                                                  color: Black,
+                                                  fontWeight: FontWeight.bold),
+                                            )
+                                      : Text(
+                                          idx == 0 ? "" : menuNameList[idx - 1],
+                                          style: TextStyle(
+                                              fontSize: 20,
+                                              color: Black,
+                                              fontWeight: FontWeight.bold),
+                                        );
+                            }
+                            return Container();
+//                            return selectMenu == "전체메뉴"
+//                                ?
+//                                : Container(width: 0, height: 0,);
                           },
                           separatorBuilder: (context, idx) {
                             int menuNum = 0;
@@ -271,46 +771,13 @@ class _CafeMenu extends State<CafeMenu> {
                               padding: EdgeInsets.only(top: 10, bottom: 10),
                               child: selectMenu == "전체메뉴"
                                   ? idx == 0
-                                  ? ListView.builder(
-                                physics: NeverScrollableScrollPhysics(),
-                                itemBuilder: (context, num) {
-                                  if (_cafeMenuData[num].popularityMenu !=
-                                      null) {
-                                    if (_cafeMenuData[num]
-                                        .popularityMenu ==
-                                        true) {
-                                      menuNum++;
-                                      return Row(
-                                        children: <Widget>[
-                                          Text("${menuNum}"),
-                                          Text("${_cafeMenuData[num].menuName}")
-                                        ],
-                                      );
-                                    }
-                                  }
-                                  return Container();
-                                },
-                                shrinkWrap: true,
-                                itemCount: _cafeMenuData.length,
-                              )
-                                  : ListView.builder(
-                                physics: NeverScrollableScrollPhysics(),
-                                itemBuilder: (context, num) {
-                                    if (menuNameList[idx - 1] == _cafeMenuData[num].menuType) {
-                                      menuNum++;
-                                      return Row(
-                                        children: <Widget>[
-                                          Text("${menuNum}"),
-                                          Text("${_cafeMenuData[num].menuName}")
-                                        ],
-                                      );
-                                    }
-                                  return Container();
-                                },
-                                shrinkWrap: true,
-                                itemCount: _cafeMenuData.length,
-                              )
-                                  : Container(),
+                                      ? listSet(idx, menuNum)
+                                      : listSet(idx, menuNum)
+                                  : idx != 0
+                                      ? selectMenu == menuNameList[idx - 1]
+                                          ? listSet(idx, menuNum)
+                                          : Container()
+                                      : Container(),
                             );
                           },
                           itemCount: menuNameList.length + 2,
@@ -322,7 +789,6 @@ class _CafeMenu extends State<CafeMenu> {
                   ),
                 ),
               )
-
             ],
           ),
         ),

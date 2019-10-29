@@ -2,6 +2,7 @@ import 'dart:math' show cos, sqrt, asin;
 
 import 'package:cafelog/Model/instaPostData.dart';
 import 'package:cafelog/Model/popularMenu.dart';
+import 'package:cafelog/Util/numberFormat.dart';
 import 'package:cafelog/Util/whiteSpace.dart';
 import 'package:cafelog/Widgets/snackbar.dart';
 import 'package:flutter/material.dart';
@@ -33,7 +34,6 @@ class _CafeDetail extends State<CafeDetail> {
   String cafeDes = "커피보다 스콘이 맛있는 카페";
   String cafeAddress = "서울특별시 중구 충무로9길 0223 1층 ACAFE";
 
-  final numberFormat = NumberFormat("#,###");
   int personNumAll = 52100;
   int personWeek = 500;
 
