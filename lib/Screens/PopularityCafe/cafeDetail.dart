@@ -52,6 +52,11 @@ class _CafeDetail extends State<CafeDetail> {
 
   bool loading = false;
 
+  ScrollController _scrollController = ScrollController();
+  int defaultLeftLength = 10;
+  int defaultRightLength = 10;
+  int maxLength = 57;
+
   Map<PermissionGroup, PermissionStatus> permissions;
 
   Future<bool> permissionCheck() async {
@@ -99,8 +104,34 @@ class _CafeDetail extends State<CafeDetail> {
       });
   }
 
+  checkEndList() {
+    if (_scrollController.offset >= _scrollController.position.maxScrollExtent &&
+        !_scrollController.position.outOfRange) {
+      setState(() {
+        if (defaultLeftLength != instaPostLeftData.length) {
+          if ((defaultLeftLength + 10) > instaPostLeftData.length) {
+            defaultLeftLength = instaPostLeftData.length;
+          } else {
+            defaultLeftLength += 10;
+          }
+        }
+
+        if (defaultRightLength != instaPostRightData.length) {
+          if ((defaultRightLength + 10) > instaPostRightData.length) {
+            defaultRightLength = instaPostRightData.length;
+          } else {
+            defaultRightLength += 10;
+          }
+        }
+
+      });
+      print("bottom");
+    }
+  }
+
   @override
   void initState() {
+    _scrollController.addListener(checkEndList);
     super.initState();
 
     gpsCheck();
@@ -114,29 +145,45 @@ class _CafeDetail extends State<CafeDetail> {
       ..add(PopularMenu(menuName: "베이컨파스타", eatPerson: 111))
       ..add(PopularMenu(menuName: "아메리칸브렉퍼스트", eatPerson: 213));
 
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < maxLength; i++) {
       List<String> image = List();
-      if (i >= 0 && i < 5) {
+      if (i >= 0 && i < maxLength / 2) {
         if (i == 2) {
           image.clear();
           image.add("assets/test/test${i + 1}.png");
           image.add("assets/test/test${i + 2}.png");
-          instaPostLeftData.add(InstaPostData(image, "@test${i}"));
+          instaPostLeftData.add(InstaPostData(image, "@test${i}", ""));
+        } else if (i >= 10) {
+          image.clear();
+          if (i.toString().contains("9")) {
+            image.add("assets/test/test${(i).toString().substring(0, 1)}.png");
+          } else {
+            image.add("assets/test/test${(i + 1).toString().substring(0, 1)}.png");
+          }
+          instaPostLeftData.add(InstaPostData(image, "@test${i}", ""));
         } else {
           image.clear();
-          image.add("assets/test/test${i + 1}.png");
-          instaPostLeftData.add(InstaPostData(image, "@test${i}"));
+          if (i.toString().contains("9")) {
+            image.add("assets/test/test${(i).toString().substring(0, 1)}.png");
+          } else {
+            image.add("assets/test/test${(i + 1).toString().substring(0, 1)}.png");
+          }
+          instaPostLeftData.add(InstaPostData(image, "@test${i}", ""));
         }
-      } else {
-        if (i == 7) {
+      } else if (i >= maxLength / 2 && i < maxLength) {
+        if (i == 32) {
           image.clear();
-          image.add("assets/test/test${i + 1}.png");
-          image.add("assets/test/test${i + 2}.png");
-          instaPostRightData.add(InstaPostData(image, "@test${i}"));
+          image.add("assets/test/test${1}.png");
+          image.add("assets/test/test${2}.png");
+          instaPostRightData.add(InstaPostData(image, "@test${i}", ""));
         } else {
           image.clear();
-          image.add("assets/test/test${i + 1}.png");
-          instaPostRightData.add(InstaPostData(image, "@test${i}"));
+          if (i.toString().contains("9")) {
+            image.add("assets/test/test${(i).toString().substring(0, 1)}.png");
+          } else {
+            image.add("assets/test/test${(i + 1).toString().substring(0, 1)}.png");
+          }
+          instaPostRightData.add(InstaPostData(image, "@test${i}", ""));
         }
       }
     }
@@ -179,14 +226,16 @@ class _CafeDetail extends State<CafeDetail> {
         child: Container(
           width: MediaQuery.of(context).size.width,
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Expanded(
                 child: ListView.builder(
                   physics: NeverScrollableScrollPhysics(),
                   shrinkWrap: true,
-                  itemCount: instaPostLeftData.length,
+                  itemCount: defaultLeftLength,
                   itemBuilder: (context, position) {
-                    if (instaPostLeftData.length != position) {
+//                    if (instaPostLeftData.length != position) {
+                  if (defaultLeftLength != position) {
                       return GestureDetector(
                         onTap: () {
                           print("left");
@@ -198,9 +247,11 @@ class _CafeDetail extends State<CafeDetail> {
                               child: Container(
                                 decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(10)),
-                                child: Image.asset(
-                                  instaPostLeftData[position].img[0],
-                                  fit: BoxFit.fill,
+                                child: ClipRRect(
+                                  child: Image.asset(
+                                    instaPostLeftData[position].img[0],
+                                    fit: BoxFit.fill,
+                                  ),
                                 ),
                               ),
                             ),
@@ -242,9 +293,10 @@ class _CafeDetail extends State<CafeDetail> {
                 child: ListView.builder(
                   physics: NeverScrollableScrollPhysics(),
                   shrinkWrap: true,
-                  itemCount: instaPostRightData.length,
+                  itemCount: defaultRightLength,
                   itemBuilder: (context, position) {
-                    if (instaPostLeftData.length != position) {
+//                    if (instaPostLeftData.length != position) {
+                  if (defaultRightLength != position) {
                       return GestureDetector(
                         onTap: () {
                           print("right");
@@ -784,7 +836,8 @@ class _CafeDetail extends State<CafeDetail> {
                                   menuExist
                                       ? GestureDetector(
                                           onTap: () {
-                                            Navigator.of(context).pushNamed("/CafeMenu");
+                                            Navigator.of(context)
+                                                .pushNamed("/CafeMenu");
                                           },
                                           child: Center(
                                             child: Text(
@@ -847,34 +900,39 @@ class _CafeDetail extends State<CafeDetail> {
                                               child: Padding(
                                                 padding:
                                                     EdgeInsets.only(right: 20),
-                                                child: Text(
-                                                  "전체보기",
-                                                  style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      color: mainColor,
-                                                      fontSize: 14),
+                                                child: GestureDetector(
+                                                  onTap: () {
+                                                    Navigator.of(context).pushNamed("/MorePicture");
+                                                  },
+                                                  child: Text(
+                                                    "전체보기",
+                                                    style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        color: mainColor,
+                                                        fontSize: 14),
+                                                  ),
                                                 ),
                                               ),
                                             ),
                                             whiteSpaceH(10),
                                             instaCafePost(),
                                             whiteSpaceH(40),
-                                            Center(
-                                              child: GestureDetector(
-                                                onTap: () {
-                                                  print("사진 더보기");
-                                                },
-                                                child: Text(
-                                                  "사진 더보기",
-                                                  style: TextStyle(
-                                                      fontSize: 14,
-                                                      color: mainColor,
-                                                      fontWeight:
-                                                          FontWeight.w600),
-                                                ),
-                                              ),
-                                            )
+//                                            Center(
+//                                              child: GestureDetector(
+//                                                onTap: () {
+//                                                  Navigator.of(context).pushNamed("/MorePicture");
+//                                                },
+//                                                child: Text(
+//                                                  "사진 더보기",
+//                                                  style: TextStyle(
+//                                                      fontSize: 14,
+//                                                      color: mainColor,
+//                                                      fontWeight:
+//                                                          FontWeight.w600),
+//                                                ),
+//                                              ),
+//                                            )
                                           ],
                                         )
                                       : Center(
@@ -899,6 +957,7 @@ class _CafeDetail extends State<CafeDetail> {
                     ),
                   ],
                 )),
+            controller: _scrollController,
           ),
           Container(
             height: MediaQuery.of(context).size.height,

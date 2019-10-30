@@ -4,6 +4,7 @@ route file
 
 import 'package:cafelog/Screens/CafeLocationSearch/locationSearch.dart';
 import 'package:cafelog/Screens/PopularityCafe/cafeDetail.dart';
+import 'package:cafelog/Screens/PopularityCafe/morePicture.dart';
 import 'package:cafelog/Screens/PopularityCafe/naverCafeInfo.dart';
 import 'package:cafelog/Screens/PopularityCafe/storeDetail.dart';
 
@@ -25,4 +26,5 @@ final routes = {
   '/StoreDetail': (context) => StoreDetail(),
   '/NaverCafeInfo': (context) => NaverCafeInfo(),
   '/CafeMenu': (context) => CafeMenu(),
+  '/MorePicture': (context) => MorePicture(),
 };

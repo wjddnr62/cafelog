@@ -204,22 +204,22 @@ class _Home extends State<Home> {
           image.clear();
           image.add("assets/test/test${i + 1}.png");
           image.add("assets/test/test${i + 2}.png");
-          instaPostLeftData.add(InstaPostData(image, "@test${i}"));
+          instaPostLeftData.add(InstaPostData(image, "@test${i}", ""));
         } else {
           image.clear();
           image.add("assets/test/test${i + 1}.png");
-          instaPostLeftData.add(InstaPostData(image, "@test${i}"));
+          instaPostLeftData.add(InstaPostData(image, "@test${i}", ""));
         }
       } else {
         if (i == 7) {
           image.clear();
           image.add("assets/test/test${i + 1}.png");
           image.add("assets/test/test${i + 2}.png");
-          instaPostRightData.add(InstaPostData(image, "@test${i}"));
+          instaPostRightData.add(InstaPostData(image, "@test${i}", ""));
         } else {
           image.clear();
           image.add("assets/test/test${i + 1}.png");
-          instaPostRightData.add(InstaPostData(image, "@test${i}"));
+          instaPostRightData.add(InstaPostData(image, "@test${i}", ""));
         }
       }
     }

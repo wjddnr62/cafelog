@@ -667,6 +667,94 @@ class _CafeMenu extends State<CafeMenu> {
     );
   }
 
+  setParentList(selectMenu) {
+    if (selectMenu == "전체메뉴") {
+      return ListView.separated(
+        physics: NeverScrollableScrollPhysics(),
+        padding: EdgeInsets.only(right: 10),
+        itemBuilder: (context, idx) {
+          if (selectMenu == "전체메뉴") {
+            return idx == menuNameList.length + 1
+                ? Container()
+                : idx == 0
+                ? menuOptions
+                ? Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    "인기",
+                    style: TextStyle(
+                        fontSize: 20,
+                        color: Black,
+                        fontWeight:
+                        FontWeight.bold),
+                  ),
+                ),
+                Text(
+                  "* 샷추가 300원, 테이크아웃시 500원 할인",
+                  style: TextStyle(
+                      fontWeight:
+                      FontWeight.w600,
+                      color: Black,
+                      fontSize: 10),
+                )
+              ],
+            )
+                : Text(
+              "인기",
+              style: TextStyle(
+                  fontSize: 20,
+                  color: Black,
+                  fontWeight: FontWeight.bold),
+            )
+                : Text(
+              idx == 0 ? "" : menuNameList[idx - 1],
+              style: TextStyle(
+                  fontSize: 20,
+                  color: Black,
+                  fontWeight: FontWeight.bold),
+            );
+          }
+          return Container();
+        },
+        separatorBuilder: (context, idx) {
+          int menuNum = 0;
+          return Padding(
+            padding: EdgeInsets.only(top: 10, bottom: 10),
+            child: selectMenu == "전체메뉴"
+                ? idx == 0
+                ? listSet(idx, menuNum)
+                : listSet(idx, menuNum)
+                : idx != 0
+                ? selectMenu == menuNameList[idx - 1]
+                ? listSet(idx, menuNum)
+                : Container()
+                : Text("test"),
+          );
+        },
+        itemCount: menuNameList.length + 2,
+        shrinkWrap: true,
+      );
+    } else {
+      List<CafeMenuData> _selectMenuData = List();
+      int selectLength = 0;
+      for (int i = 0; i < _cafeMenuData.length; i++) {
+        if (selectMenu == _cafeMenuData[i].menuName) {
+          _selectMenuData.add(_cafeMenuData[i]);
+        }
+      }
+      for (int i = 0; i < menuNameList.length; i++) {
+        if (selectMenu == menuNameList[i]) {
+          selectLength = i;
+        }
+      }
+      return Padding(
+        padding: EdgeInsets.only(top: 10, bottom: 10),
+        child: listSet(selectLength + 1, 0),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // TODO: implement build
@@ -714,75 +802,7 @@ class _CafeMenu extends State<CafeMenu> {
                       padding: EdgeInsets.only(left: 15, right: 10),
                       child: MediaQuery.removePadding(
                         context: context,
-                        child: ListView.separated(
-                          physics: NeverScrollableScrollPhysics(),
-                          padding: EdgeInsets.only(right: 10),
-                          itemBuilder: (context, idx) {
-                            if (selectMenu == "전체메뉴") {
-                              return idx == menuNameList.length + 1
-                                  ? Container()
-                                  : idx == 0
-                                      ? menuOptions
-                                          ? Row(
-                                              children: <Widget>[
-                                                Expanded(
-                                                  child: Text(
-                                                    "인기",
-                                                    style: TextStyle(
-                                                        fontSize: 20,
-                                                        color: Black,
-                                                        fontWeight:
-                                                            FontWeight.bold),
-                                                  ),
-                                                ),
-                                                Text(
-                                                  "* 샷추가 300원, 테이크아웃시 500원 할인",
-                                                  style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      color: Black,
-                                                      fontSize: 10),
-                                                )
-                                              ],
-                                            )
-                                          : Text(
-                                              "인기",
-                                              style: TextStyle(
-                                                  fontSize: 20,
-                                                  color: Black,
-                                                  fontWeight: FontWeight.bold),
-                                            )
-                                      : Text(
-                                          idx == 0 ? "" : menuNameList[idx - 1],
-                                          style: TextStyle(
-                                              fontSize: 20,
-                                              color: Black,
-                                              fontWeight: FontWeight.bold),
-                                        );
-                            }
-                            return Container();
-//                            return selectMenu == "전체메뉴"
-//                                ?
-//                                : Container(width: 0, height: 0,);
-                          },
-                          separatorBuilder: (context, idx) {
-                            int menuNum = 0;
-                            return Padding(
-                              padding: EdgeInsets.only(top: 10, bottom: 10),
-                              child: selectMenu == "전체메뉴"
-                                  ? idx == 0
-                                      ? listSet(idx, menuNum)
-                                      : listSet(idx, menuNum)
-                                  : idx != 0
-                                      ? selectMenu == menuNameList[idx - 1]
-                                          ? listSet(idx, menuNum)
-                                          : Container()
-                                      : Container(),
-                            );
-                          },
-                          itemCount: menuNameList.length + 2,
-                          shrinkWrap: true,
-                        ),
+                        child: setParentList(selectMenu),
                         removeTop: true,
                       ),
                     ),
