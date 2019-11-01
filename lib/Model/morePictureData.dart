@@ -2,9 +2,10 @@ class MorePictureData {
   List<String> _img;
   String _instaName;
   String _instaLink;
+  String _tag;
   int _type; // 0 = 업체사진, 1 = 매장사진, 2 = 메뉴사진, 3 = 카페에서
 
-  MorePictureData(this._img, this._instaName, this._instaLink, this._type);
+  MorePictureData(this._img, this._instaName, this._instaLink, this._type, this._tag);
 
   List<String> get img => _img;
 
@@ -28,6 +29,12 @@ class MorePictureData {
 
   set type(int value) {
     _type = value;
+  }
+
+  String get tag => _tag;
+
+  set tag(String value) {
+    _tag = value;
   }
 
 
