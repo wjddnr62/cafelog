@@ -1,6 +1,8 @@
 import 'package:cafelog/Util/whiteSpace.dart';
+import 'package:cafelog/Widgets/snackbar.dart';
 import 'package:cafelog/colors.dart';
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class LoginMain extends StatefulWidget {
   @override
@@ -40,6 +42,24 @@ class _LoginMain extends State<LoginMain> {
     Color.fromARGB(255, 255, 44, 85),
     Color.fromARGB(255, 252, 0, 49)
   ],).createShader(Rect.fromLTWH(0.0, 0.0, 200.0, 70.0));
+
+  Map<PermissionGroup, PermissionStatus> permissions;
+
+  Future<bool> permissionCheck() async {
+    permissions = await PermissionHandler()
+        .requestPermissions([PermissionGroup.location]);
+    PermissionStatus permission = await PermissionHandler()
+        .checkPermissionStatus(PermissionGroup.location);
+
+    print("check: " + permission.toString());
+    bool pass = false;
+
+    if (permission == PermissionStatus.granted) {
+      pass = true;
+    }
+
+    return pass;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -117,7 +137,16 @@ class _LoginMain extends State<LoginMain> {
                         padding: EdgeInsets.only(left: 15, right: 15),
                         child: RaisedButton(
                           onPressed: (){
-                            Navigator.of(context).pushNamed('/InstaLogin');
+                            permissionCheck().then((pass) {
+                              if (pass) {
+                                Navigator.of(context).pushNamed('/InstaLogin');
+                              } else {
+                                CafeLogSnackBarWithOk(
+                                    context: context,
+                                    msg: "위치 권한을 동의해주세요.",
+                                    okMsg: "확인");
+                              }
+                            });
                           },
                           color: Colors.white,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -151,7 +180,16 @@ class _LoginMain extends State<LoginMain> {
                     whiteSpaceH(20),
                     GestureDetector(
                       onTap: (){
-                        Navigator.of(context).pushNamed("/Home");
+                        permissionCheck().then((pass) {
+                          if (pass) {
+                            Navigator.of(context).pushNamed("/Home");
+                          } else {
+                            CafeLogSnackBarWithOk(
+                                context: context,
+                                msg: "위치 권한을 동의해주세요.",
+                                okMsg: "확인");
+                          }
+                        });
                       },
                       child: Container(
                         width: MediaQuery.of(context).size.width,

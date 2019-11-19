@@ -22,7 +22,7 @@ class MainProvider {
   Future<String> getPopularityCafe(street) async {
     if (street == null || street == "" || street == "전체카페") {
       // 전체 조회 api 완성시 변경
-      final response = await _client.get("${_baseUrl}cafe_crawler_api/api/streets/cafes?street=경리단길");
+      final response = await _client.get("${_baseUrl}cafe_crawler_api/api/streets/cafes?street=광화문");
 
       return utf8.decode(response.bodyBytes);
     } else {

@@ -5,15 +5,21 @@ import 'package:cafelog/Bloc/mainBloc.dart';
 import 'package:cafelog/Model/autoTagData.dart';
 import 'package:cafelog/Model/instaPostData.dart';
 import 'package:cafelog/Screens/CafeLocationSearch/locationSearch.dart';
+import 'package:cafelog/Screens/MyAround/myAround.dart';
 import 'package:cafelog/Screens/PopularityCafe/popularityCafe.dart';
 import 'package:cafelog/Util/whiteSpace.dart';
+import 'package:cafelog/Widgets/snackbar.dart';
 import 'package:cafelog/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geocoder/geocoder.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:keyboard_visibility/keyboard_visibility.dart';
+import 'package:location/location.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 customErrorWidget(context, error) {
   return Container();
@@ -52,6 +58,7 @@ class _Home extends State<Home> {
 
   List<InstaPostData> instaPostLeftData = [];
   List<InstaPostData> instaPostRightData = [];
+  List<InstaPostData> instaPostData = [];
 
   BoxDecoration tagDecoration = BoxDecoration(
       borderRadius: BorderRadius.circular(5),
@@ -114,7 +121,8 @@ class _Home extends State<Home> {
       prefsInit = 1;
     }
 
-    if (prefs.getStringList("searchList") != null && prefs.getStringList("searchList").isNotEmpty)
+    if (prefs.getStringList("searchList") != null &&
+        prefs.getStringList("searchList").isNotEmpty)
       setState(() {
         searchList = prefs.getStringList("searchList");
       });
@@ -169,6 +177,54 @@ class _Home extends State<Home> {
     }
   }
 
+  Map<PermissionGroup, PermissionStatus> permissions;
+
+  Future<bool> permissionCheck() async {
+    permissions = await PermissionHandler()
+        .requestPermissions([PermissionGroup.location]);
+    PermissionStatus permission = await PermissionHandler()
+        .checkPermissionStatus(PermissionGroup.location);
+
+    print("check: " + permission.toString());
+    bool pass = false;
+
+    if (permission == PermissionStatus.granted) {
+      pass = true;
+    }
+
+    return pass;
+  }
+
+  var currentLocation;
+  var location = new Location();
+  var address;
+  String userLocation = "";
+
+  getLocation() async {
+    try {
+      currentLocation = await location.getLocation();
+      final coordinates = new Coordinates(currentLocation.latitude, currentLocation.longitude);
+      var addresses = await Geocoder.local.findAddressesFromCoordinates(coordinates);
+      address = addresses.first;
+      print("${address.featureName}, ${address.addressLine}");
+      List<String> lines = address.addressLine.toString().split(" ");
+        setState(() {
+          userLocation = "";
+          for (int i = 0; i < lines.length; i++) {
+            print("lines : ${lines[i]}");
+            if (lines[i].contains("구")) {
+              userLocation += lines[i];
+            } else if (lines[i].contains("로")) {
+              userLocation += " " + lines[i];
+            }
+          }
+        });
+    } on Exception catch(e) {
+      getLocation();
+    }
+
+  }
+
   @override
   void dispose() {
     _scrollController.dispose();
@@ -178,7 +234,7 @@ class _Home extends State<Home> {
   @override
   void initState() {
     super.initState();
-
+    getLocation();
 //    cal();
 
     searchList = List();
@@ -204,22 +260,26 @@ class _Home extends State<Home> {
           image.clear();
           image.add("assets/test/test${i + 1}.png");
           image.add("assets/test/test${i + 2}.png");
-          instaPostLeftData.add(InstaPostData(image, "@test${i}", ""));
+//          instaPostLeftData.add(InstaPostData(image, "@test${i}", ""));
+          instaPostData.add(InstaPostData(image, "@test${i}", ""));
         } else {
           image.clear();
           image.add("assets/test/test${i + 1}.png");
-          instaPostLeftData.add(InstaPostData(image, "@test${i}", ""));
+//          instaPostLeftData.add(InstaPostData(image, "@test${i}", ""));
+          instaPostData.add(InstaPostData(image, "@test${i}", ""));
         }
       } else {
         if (i == 7) {
           image.clear();
           image.add("assets/test/test${i + 1}.png");
           image.add("assets/test/test${i + 2}.png");
-          instaPostRightData.add(InstaPostData(image, "@test${i}", ""));
+//          instaPostRightData.add(InstaPostData(image, "@test${i}", ""));
+          instaPostData.add(InstaPostData(image, "@test${i}", ""));
         } else {
           image.clear();
           image.add("assets/test/test${i + 1}.png");
-          instaPostRightData.add(InstaPostData(image, "@test${i}", ""));
+//          instaPostRightData.add(InstaPostData(image, "@test${i}", ""));
+          instaPostData.add(InstaPostData(image, "@test${i}", ""));
         }
       }
     }
@@ -229,43 +289,67 @@ class _Home extends State<Home> {
         elevation: 0.0,
         centerTitle: true,
         backgroundColor: White,
-        title: GestureDetector(
-          onTap: () async {
-            print("카페 지역 선택");
-            setState(() {
-              cafeSelect = false;
-            });
-            await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => LocationSearch(
-                    cafeLocation: cafeLocation,
-                  ),
-                )).then((result) {
-              setState(() {
-                cafeLocation = result.toString();
-                cafeSelect = true;
-                _mainBloc.setStreet(cafeLocation);
-                print("aa : " + cafeLocation);
-              });
-            });
-          },
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Text(
-                cafeLocation,
-                style: TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.bold, color: Black),
-              ),
-              Icon(
-                Icons.arrow_drop_down,
-                color: mainColor,
-                size: 18,
+        title: upPanelMenuType != 2
+            ? GestureDetector(
+                onTap: () async {
+                  print("카페 지역 선택");
+                  setState(() {
+                    cafeSelect = false;
+                  });
+                  await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => LocationSearch(
+                          cafeLocation: cafeLocation,
+                        ),
+                      )).then((result) {
+                    setState(() {
+                      cafeLocation = result.toString();
+                      cafeSelect = true;
+                      _mainBloc.setStreet(cafeLocation);
+                      print("aa : " + cafeLocation);
+                    });
+                  });
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Text(
+                      cafeLocation,
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Black),
+                    ),
+                    Icon(
+                      Icons.arrow_drop_down,
+                      color: mainColor,
+                      size: 18,
+                    )
+                  ],
+                ),
               )
-            ],
-          ),
-        ),
+            : GestureDetector(
+                onTap: () {},
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Icon(
+                      Icons.location_on,
+                      color: Color.fromARGB(255, 167, 167, 167),
+                      size: 14,
+                    ),
+                    whiteSpaceW(5),
+                    Text(
+                      userLocation,
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Black),
+                    ),
+                  ],
+                ),
+              ),
         // bloc 에 카페명 저장하여 관리
         leading: IconButton(
           onPressed: () {
@@ -280,7 +364,26 @@ class _Home extends State<Home> {
             size: 30,
           ),
         ),
-        actions: <Widget>[whiteSpaceW(MediaQuery.of(context).size.width / 5)],
+        actions: <Widget>[
+          upPanelMenuType != 2
+              ? whiteSpaceW(MediaQuery.of(context).size.width / 5)
+              : GestureDetector(
+                  onTap: () {
+                    print("현위치로");
+                    getLocation();
+                  },
+                  child: Center(
+                    child: Text(
+                      "현위치로",
+                      style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: mainColor),
+                    ),
+                  ),
+                ),
+          upPanelMenuType == 2 ? whiteSpaceW(20) : Container()
+        ],
       );
 
   searchOrTagList() => ListView.builder(
@@ -363,9 +466,7 @@ class _Home extends State<Home> {
                           },
                           onChanged: (value) {
 //                          print("value : " + value);
-                            if (value == null ||
-                                value == "" ||
-                                value == " ") {
+                            if (value == null || value == "" || value == " ") {
                               setState(() {
                                 autoTag = false;
                               });
@@ -376,7 +477,6 @@ class _Home extends State<Home> {
                                 _mainBloc.setKeyword(value);
 //                              getAutoTag();
                               });
-
                             }
 
                             if (value == null || value == " ") {
@@ -528,7 +628,9 @@ class _Home extends State<Home> {
                                         });
                                       }
 
-                                      if (value == null || value == " " || value == "") {
+                                      if (value == null ||
+                                          value == " " ||
+                                          value == "") {
                                         _searchController.text = "";
                                       } else {
                                         if (value.contains(" ")) {
@@ -593,7 +695,10 @@ class _Home extends State<Home> {
                           color: White,
                           child: Text(
                             "취소",
-                            style: TextStyle(color: mainColor, fontSize: 14),
+                            style: TextStyle(
+                                color: mainColor,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600),
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -768,9 +873,29 @@ class _Home extends State<Home> {
                 )
               : GestureDetector(
                   onTap: () {
-                    setState(() {
-                      upPanelMenuType = menuType;
-                    });
+                    print("check");
+                    if (menuType == 2) {
+                      permissionCheck().then((pass) {
+                        if (pass == true) {
+                          if (userLocation == "") {
+                            getLocation();
+                          }
+
+                          setState(() {
+                            upPanelMenuType = menuType;
+                          });
+                        } else {
+                          CafeLogSnackBarWithOk(
+                              context: context,
+                              msg: "위치 권한을 동의해주세요.",
+                              okMsg: "확인");
+                        }
+                      });
+                    } else {
+                      setState(() {
+                        upPanelMenuType = menuType;
+                      });
+                    }
                   },
                   child: Container(
                     color: Colors.white,
@@ -843,10 +968,12 @@ class _Home extends State<Home> {
         ),
         body: directSearching == false
             ? upPanelMenuType == 1
-                ? cafeSelect ? PopularityCafe(
-                      cafeLocation: cafeLocation,
-                    ) : Container()
-                : body()
+                ? cafeSelect
+                    ? PopularityCafe(
+                        cafeLocation: cafeLocation,
+                      )
+                    : Container()
+                : upPanelMenuType == 2 ? MyAround() : body()
             : searchBody(),
       );
 
@@ -949,117 +1076,57 @@ class _Home extends State<Home> {
   }
 
   instaCafePost() => Padding(
-        padding: EdgeInsets.only(top: 20, bottom: 150, left: 15, right: 15),
+        padding: EdgeInsets.only(top: 10, bottom: 150, left: 15, right: 15),
         child: Container(
-          width: MediaQuery.of(context).size.width,
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                child: ListView.builder(
-                  physics: NeverScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  itemCount: instaPostLeftData.length,
-                  itemBuilder: (context, position) {
-                    if (instaPostLeftData.length != position) {
-                      return GestureDetector(
-                        onTap: () {
-                          print("left");
-                        },
-                        child: Stack(
-                          children: <Widget>[
-                            Padding(
-                              padding: EdgeInsets.only(bottom: 10),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10)),
-                                child: Image.asset(
-                                  instaPostLeftData[position].img[0],
-                                  fit: BoxFit.fill,
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              child: Text(
-                                instaPostLeftData[position].instaName,
-                                style: instaPostDataNameText,
-                              ),
-                              bottom: 15,
-                              left: 5,
-                            ),
-                            instaPostLeftData[position].img.length == 2
-                                ? Positioned(
-                                    child: Icon(
-                                      Icons.photo_library,
-                                      color: White,
-                                      size: 14,
-                                    ),
-                                    right: 5,
-                                    bottom: 15,
-                                  )
-                                : Container()
-                          ],
+            width: MediaQuery.of(context).size.width,
+//          height: MediaQuery.of(context).size.height,
+            child: StaggeredGridView.countBuilder(
+              crossAxisCount: 2,
+              physics: NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              itemCount: instaPostData.length,
+              itemBuilder: (context, idx) => GestureDetector(
+                onTap: () {
+                  print("left");
+                },
+                child: Stack(
+                  children: <Widget>[
+                    Padding(
+                      padding: EdgeInsets.only(bottom: 10),
+                      child: Container(
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10)),
+                        child: Image.asset(
+                          instaPostData[idx].img[0],
+                          fit: BoxFit.fill,
                         ),
-                      );
-                    }
-                    return null;
-                  },
+                      ),
+                    ),
+                    Positioned(
+                      child: Text(
+                        instaPostData[idx].instaName,
+                        style: instaPostDataNameText,
+                      ),
+                      bottom: 15,
+                      left: 5,
+                    ),
+                    instaPostData[idx].img.length == 2
+                        ? Positioned(
+                            child: Icon(
+                              Icons.photo_library,
+                              color: White,
+                              size: 14,
+                            ),
+                            right: 5,
+                            bottom: 15,
+                          )
+                        : Container()
+                  ],
                 ),
               ),
-              whiteSpaceW(15),
-              Expanded(
-                child: ListView.builder(
-                  physics: NeverScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  itemCount: instaPostRightData.length,
-                  itemBuilder: (context, position) {
-                    if (instaPostLeftData.length != position) {
-                      return GestureDetector(
-                        onTap: () {
-                          print("right");
-                        },
-                        child: Stack(
-                          children: <Widget>[
-                            Padding(
-                              padding: EdgeInsets.only(bottom: 10),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10)),
-                                child: Image.asset(
-                                  instaPostRightData[position].img[0],
-                                  fit: BoxFit.fill,
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              child: Text(
-                                instaPostRightData[position].instaName,
-                                style: instaPostDataNameText,
-                              ),
-                              bottom: 15,
-                              left: 5,
-                            ),
-                            instaPostRightData[position].img.length == 2
-                                ? Positioned(
-                                    child: Icon(
-                                      Icons.photo_library,
-                                      color: White,
-                                      size: 14,
-                                    ),
-                                    right: 5,
-                                    bottom: 15,
-                                  )
-                                : Container()
-                          ],
-                        ),
-                      );
-                    }
-                    return null;
-                  },
-                ),
-              )
-            ],
-          ),
-        ),
+              staggeredTileBuilder: (idx) => StaggeredTile.fit(1),
+              crossAxisSpacing: 15.0,
+            )),
       );
 
   body() => SingleChildScrollView(

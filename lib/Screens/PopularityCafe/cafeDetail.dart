@@ -6,6 +6,7 @@ import 'package:cafelog/Util/numberFormat.dart';
 import 'package:cafelog/Util/whiteSpace.dart';
 import 'package:cafelog/Widgets/snackbar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
@@ -47,14 +48,16 @@ class _CafeDetail extends State<CafeDetail> {
 
   int allRecord = 25366;
 
-  List<InstaPostData> instaPostLeftData = [];
-  List<InstaPostData> instaPostRightData = [];
+//  List<InstaPostData> instaPostLeftData = [];
+//  List<InstaPostData> instaPostRightData = [];
+  List<InstaPostData> instaPostData = [];
 
   bool loading = false;
 
   ScrollController _scrollController = ScrollController();
-  int defaultLeftLength = 10;
-  int defaultRightLength = 10;
+//  int defaultLeftLength = 10;
+//  int defaultRightLength = 10;
+  int defaultLength = 10;
   int maxLength = 57;
 
   Map<PermissionGroup, PermissionStatus> permissions;
@@ -108,21 +111,28 @@ class _CafeDetail extends State<CafeDetail> {
     if (_scrollController.offset >= _scrollController.position.maxScrollExtent &&
         !_scrollController.position.outOfRange) {
       setState(() {
-        if (defaultLeftLength != instaPostLeftData.length) {
-          if ((defaultLeftLength + 10) > instaPostLeftData.length) {
-            defaultLeftLength = instaPostLeftData.length;
+        if (defaultLength != instaPostData.length) {
+          if ((defaultLength + 10) > instaPostData.length) {
+            defaultLength = instaPostData.length;
           } else {
-            defaultLeftLength += 10;
+            defaultLength += 10;
           }
         }
-
-        if (defaultRightLength != instaPostRightData.length) {
-          if ((defaultRightLength + 10) > instaPostRightData.length) {
-            defaultRightLength = instaPostRightData.length;
-          } else {
-            defaultRightLength += 10;
-          }
-        }
+//        if (defaultLeftLength != instaPostLeftData.length) {
+//          if ((defaultLeftLength + 10) > instaPostLeftData.length) {
+//            defaultLeftLength = instaPostLeftData.length;
+//          } else {
+//            defaultLeftLength += 10;
+//          }
+//        }
+//
+//        if (defaultRightLength != instaPostRightData.length) {
+//          if ((defaultRightLength + 10) > instaPostRightData.length) {
+//            defaultRightLength = instaPostRightData.length;
+//          } else {
+//            defaultRightLength += 10;
+//          }
+//        }
 
       });
       print("bottom");
@@ -152,7 +162,7 @@ class _CafeDetail extends State<CafeDetail> {
           image.clear();
           image.add("assets/test/test${i + 1}.png");
           image.add("assets/test/test${i + 2}.png");
-          instaPostLeftData.add(InstaPostData(image, "@test${i}", ""));
+          instaPostData.add(InstaPostData(image, "@test${i}", ""));
         } else if (i >= 10) {
           image.clear();
           if (i.toString().contains("9")) {
@@ -160,7 +170,7 @@ class _CafeDetail extends State<CafeDetail> {
           } else {
             image.add("assets/test/test${(i + 1).toString().substring(0, 1)}.png");
           }
-          instaPostLeftData.add(InstaPostData(image, "@test${i}", ""));
+          instaPostData.add(InstaPostData(image, "@test${i}", ""));
         } else {
           image.clear();
           if (i.toString().contains("9")) {
@@ -168,14 +178,14 @@ class _CafeDetail extends State<CafeDetail> {
           } else {
             image.add("assets/test/test${(i + 1).toString().substring(0, 1)}.png");
           }
-          instaPostLeftData.add(InstaPostData(image, "@test${i}", ""));
+          instaPostData.add(InstaPostData(image, "@test${i}", ""));
         }
       } else if (i >= maxLength / 2 && i < maxLength) {
         if (i == 32) {
           image.clear();
           image.add("assets/test/test${1}.png");
           image.add("assets/test/test${2}.png");
-          instaPostRightData.add(InstaPostData(image, "@test${i}", ""));
+          instaPostData.add(InstaPostData(image, "@test${i}", ""));
         } else {
           image.clear();
           if (i.toString().contains("9")) {
@@ -183,7 +193,7 @@ class _CafeDetail extends State<CafeDetail> {
           } else {
             image.add("assets/test/test${(i + 1).toString().substring(0, 1)}.png");
           }
-          instaPostRightData.add(InstaPostData(image, "@test${i}", ""));
+          instaPostData.add(InstaPostData(image, "@test${i}", ""));
         }
       }
     }
@@ -225,130 +235,59 @@ class _CafeDetail extends State<CafeDetail> {
         padding: EdgeInsets.only(left: 10, right: 10),
         child: Container(
           width: MediaQuery.of(context).size.width,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Expanded(
-                child: ListView.builder(
-                  physics: NeverScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  itemCount: defaultLeftLength,
-                  itemBuilder: (context, position) {
-//                    if (instaPostLeftData.length != position) {
-                  if (defaultLeftLength != position) {
-                      return GestureDetector(
-                        onTap: () {
-                          print("left");
-                        },
-                        child: Stack(
-                          children: <Widget>[
-                            Padding(
-                              padding: EdgeInsets.only(bottom: 10),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10)),
-                                child: ClipRRect(
-                                  child: Image.asset(
-                                    instaPostLeftData[position].img[0],
-                                    fit: BoxFit.fill,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              child: Text(
-                                instaPostLeftData[position].instaName,
-                                style: TextStyle(
+          child: StaggeredGridView.countBuilder(
+            crossAxisCount: 2,
+            physics: NeverScrollableScrollPhysics(),
+            shrinkWrap: true,
+            itemCount: defaultLength,
+            itemBuilder: (context, idx) => GestureDetector(
+              onTap: () {
+                print("postData");
+              },
+              child: Stack(
+                children: <Widget>[
+                  Padding(
+                    padding: EdgeInsets.only(bottom: 10),
+                    child: Container(
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10)),
+                      child: Image.asset(
+                        instaPostData[idx].img[0],
+                        fit: BoxFit.fill,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    child: Text(
+                      instaPostData[idx].instaName,
+                      style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
                                     color: White,
                                     shadows: [
                                       Shadow(color: Black, blurRadius: 5)
                                     ]),
-                              ),
-                              bottom: 15,
-                              left: 5,
-                            ),
-                            instaPostLeftData[position].img.length == 2
-                                ? Positioned(
-                                    child: Icon(
-                                      Icons.photo_library,
-                                      color: White,
-                                      size: 14,
-                                    ),
-                                    right: 5,
-                                    bottom: 15,
-                                  )
-                                : Container()
-                          ],
-                        ),
-                      );
-                    }
-                    return null;
-                  },
-                ),
+                    ),
+                    bottom: 15,
+                    left: 5,
+                  ),
+                  instaPostData[idx].img.length == 2
+                      ? Positioned(
+                    child: Icon(
+                      Icons.photo_library,
+                      color: White,
+                      size: 14,
+                    ),
+                    right: 5,
+                    bottom: 15,
+                  )
+                      : Container()
+                ],
               ),
-              whiteSpaceW(15),
-              Expanded(
-                child: ListView.builder(
-                  physics: NeverScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  itemCount: defaultRightLength,
-                  itemBuilder: (context, position) {
-//                    if (instaPostLeftData.length != position) {
-                  if (defaultRightLength != position) {
-                      return GestureDetector(
-                        onTap: () {
-                          print("right");
-                        },
-                        child: Stack(
-                          children: <Widget>[
-                            Padding(
-                              padding: EdgeInsets.only(bottom: 10),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10)),
-                                child: Image.asset(
-                                  instaPostRightData[position].img[0],
-                                  fit: BoxFit.fill,
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              child: Text(
-                                instaPostRightData[position].instaName,
-                                style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: White,
-                                    shadows: [
-                                      Shadow(color: Black, blurRadius: 5)
-                                    ]),
-                              ),
-                              bottom: 15,
-                              left: 5,
-                            ),
-                            instaPostRightData[position].img.length == 2
-                                ? Positioned(
-                                    child: Icon(
-                                      Icons.photo_library,
-                                      color: White,
-                                      size: 14,
-                                    ),
-                                    right: 5,
-                                    bottom: 15,
-                                  )
-                                : Container()
-                          ],
-                        ),
-                      );
-                    }
-                    return null;
-                  },
-                ),
-              )
-            ],
-          ),
+            ),
+            staggeredTileBuilder: (idx) => StaggeredTile.fit(1),
+            crossAxisSpacing: 15.0,
+          )
         ),
       );
 

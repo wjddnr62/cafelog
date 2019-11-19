@@ -159,6 +159,10 @@ class _LocationSearch extends State<LocationSearch> {
                                               height: 160,
                                             ),
                                           ),
+                                          errorWidget: (context, url, error) => ClipRRect(
+                                            borderRadius: BorderRadius.circular(8.0),
+                                            child: Image.asset("assets/defaultImage.png", width: 40, height: 40, fit: BoxFit.fill,),
+                                          ),
                                         )
 //                                    Image.asset(
 //                                      _cafeList[idx].img,

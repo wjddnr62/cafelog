@@ -2,6 +2,7 @@ import 'package:cafelog/Model/instaPostData.dart';
 import 'package:cafelog/Model/morePictureData.dart';
 import 'package:cafelog/Util/whiteSpace.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 import '../../colors.dart';
@@ -12,22 +13,41 @@ class MorePicture extends StatefulWidget {
 }
 
 class _MorePicture extends State<MorePicture> {
-  List<MorePictureData> morePictureLeftData = List();
-  List<MorePictureData> morePictureRightData = List();
-  List<MorePictureData> typeZeroLeftData = List();
-  List<MorePictureData> typeZeroRightData = List();
-  List<MorePictureData> typeOneLeftData = List();
-  List<MorePictureData> typeOneRightData = List();
-  List<MorePictureData> typeTwoLeftData = List();
-  List<MorePictureData> typeTwoRightData = List();
-  List<MorePictureData> typeThreeLeftData = List();
-  List<MorePictureData> typeThreeRightData = List();
+//  List<MorePictureData> morePictureLeftData = List();
+//  List<MorePictureData> morePictureRightData = List();
+
+  List<MorePictureData> morePictureData = List();
+
+//  List<MorePictureData> typeZeroLeftData = List();
+//  List<MorePictureData> typeZeroRightData = List();
+
+  List<MorePictureData> typeZeroData = List();
+
+//  List<MorePictureData> typeOneLeftData = List();
+//  List<MorePictureData> typeOneRightData = List();
+
+  List<MorePictureData> typeOneData = List();
+
+//  List<MorePictureData> typeTwoLeftData = List();
+//  List<MorePictureData> typeTwoRightData = List();
+
+  List<MorePictureData> typeTwoData = List();
+
+//  List<MorePictureData> typeThreeLeftData = List();
+//  List<MorePictureData> typeThreeRightData = List();
+
+  List<MorePictureData> typeThreeData = List();
+
   List<int> typeLength = [0, 0, 0, 0];
   int allLength = 0;
   int selectBox = 0;
-  int defaultLeftLength = 30;
-  int defaultRightLength = 30;
-  int maxLength = 60;
+
+//  int defaultLeftLength = 30;
+//  int defaultRightLength = 30;
+
+  int defaultLength = 60;
+
+  int maxLength = 120;
   ScrollController _scrollController = ScrollController();
   int addPost = 0;
   int allTagNum = 0;
@@ -50,7 +70,7 @@ class _MorePicture extends State<MorePicture> {
           image.clear();
           image.add("assets/test/test${1}.png");
           image.add("assets/test/test${2}.png");
-          morePictureLeftData
+          morePictureData
               .add(MorePictureData(image, "@test${i}", "", 2, "마카롱"));
         } else if (i >= 10) {
           image.clear();
@@ -60,8 +80,7 @@ class _MorePicture extends State<MorePicture> {
             image.add(
                 "assets/test/test${(i + 1).toString().substring(0, 1)}.png");
           }
-          morePictureLeftData
-              .add(MorePictureData(image, "@test${i}", "", 1, ""));
+          morePictureData.add(MorePictureData(image, "@test${i}", "", 1, ""));
         } else {
           image.clear();
           if (i.toString().contains("9")) {
@@ -70,8 +89,7 @@ class _MorePicture extends State<MorePicture> {
             image.add(
                 "assets/test/test${(i + 1).toString().substring(0, 1)}.png");
           }
-          morePictureLeftData
-              .add(MorePictureData(image, "@test${i}", "", 0, ""));
+          morePictureData.add(MorePictureData(image, "@test${i}", "", 0, ""));
         }
       } else if (addPost == 1) {
         addPost = 0;
@@ -79,8 +97,7 @@ class _MorePicture extends State<MorePicture> {
           image.clear();
           image.add("assets/test/test${1}.png");
           image.add("assets/test/test${2}.png");
-          morePictureRightData
-              .add(MorePictureData(image, "@test${i}", "", 3, ""));
+          morePictureData.add(MorePictureData(image, "@test${i}", "", 3, ""));
         } else if (i >= 10) {
           image.clear();
           if (i.toString().contains("9")) {
@@ -89,7 +106,7 @@ class _MorePicture extends State<MorePicture> {
             image.add(
                 "assets/test/test${(i + 1).toString().substring(0, 1)}.png");
           }
-          morePictureRightData
+          morePictureData
               .add(MorePictureData(image, "@test${i}", "", 2, "흑당라떼"));
         } else {
           image.clear();
@@ -99,29 +116,39 @@ class _MorePicture extends State<MorePicture> {
             image.add(
                 "assets/test/test${(i + 1).toString().substring(0, 1)}.png");
           }
-          morePictureRightData
-              .add(MorePictureData(image, "@test${i}", "", 0, ""));
+          morePictureData.add(MorePictureData(image, "@test${i}", "", 0, ""));
         }
       }
     }
+
+    int test = 0;
+
+    for (int i = 0; i < morePictureData.length; i++) {
+      if (morePictureData[i].type == 0) {
+        test += 1;
+      }
+    }
+
+    print("testLength : ${test}");
+
     tagName.clear();
 
     // type : 0 = 업체사진, 1 = 매장사진, 2 = 메뉴사진, 3 = 카페에서
-    for (int i = 0; i < morePictureLeftData.length; i++) {
-      if (morePictureLeftData[i].type == 0) {
+    for (int i = 0; i < morePictureData.length; i++) {
+      if (morePictureData[i].type == 0) {
         typeLength[0] += 1;
-      } else if (morePictureLeftData[i].type == 1) {
+      } else if (morePictureData[i].type == 1) {
         typeLength[1] += 1;
-      } else if (morePictureLeftData[i].type == 2) {
+      } else if (morePictureData[i].type == 2) {
         typeLength[2] += 1;
         if (tagName.length == 0) {
-          tagName.add(morePictureLeftData[i].tag);
+          tagName.add(morePictureData[i].tag);
         } else {
           int check = 0;
           for (int j = 0; j < tagName.length; j++) {
-            if (morePictureLeftData[i].tag != null &&
-                morePictureLeftData[i].tag != "") {
-              if (tagName[j] == morePictureLeftData[i].tag) {
+            if (morePictureData[i].tag != null &&
+                morePictureData[i].tag != "") {
+              if (tagName[j] == morePictureData[i].tag) {
                 check = 1;
                 break;
               } else {
@@ -131,47 +158,47 @@ class _MorePicture extends State<MorePicture> {
             }
           }
           if (check == 0) {
-            print("addTag : " + morePictureLeftData[i].tag);
-            tagName.add(morePictureLeftData[i].tag);
+            print("addTag : " + morePictureData[i].tag);
+            tagName.add(morePictureData[i].tag);
           }
         }
-      } else if (morePictureLeftData[i].type == 3) {
+      } else if (morePictureData[i].type == 3) {
         typeLength[3] += 1;
       }
     }
 
-    for (int i = 0; i < morePictureRightData.length; i++) {
-      if (morePictureRightData[i].type == 0) {
-        typeLength[0] += 1;
-      } else if (morePictureRightData[i].type == 1) {
-        typeLength[1] += 1;
-      } else if (morePictureRightData[i].type == 2) {
-        typeLength[2] += 1;
-        if (tagName.length == 0) {
-          tagName.add(morePictureRightData[i].tag);
-        } else {
-          int check = 0;
-          for (int j = 0; j < tagName.length; j++) {
-            if (morePictureRightData[i].tag != null &&
-                morePictureRightData[i].tag != "") {
-              if (tagName[j] == morePictureRightData[i].tag) {
-                check = 1;
-                break;
-              } else {
-//                print("rightTag : " + tagName[i] + ", " + morePictureRightData[i].tag);
-                check = 0;
-              }
-            }
-          }
-          if (check == 0) {
-            print("addTag : " + morePictureRightData[i].tag);
-            tagName.add(morePictureRightData[i].tag);
-          }
-        }
-      } else if (morePictureRightData[i].type == 3) {
-        typeLength[3] += 1;
-      }
-    }
+//    for (int i = 0; i < morePictureData.length; i++) {
+//      if (morePictureData[i].type == 0) {
+//        typeLength[0] += 1;
+//      } else if (morePictureData[i].type == 1) {
+//        typeLength[1] += 1;
+//      } else if (morePictureData[i].type == 2) {
+//        typeLength[2] += 1;
+//        if (tagName.length == 0) {
+//          tagName.add(morePictureData[i].tag);
+//        } else {
+//          int check = 0;
+//          for (int j = 0; j < tagName.length; j++) {
+//            if (morePictureData[i].tag != null &&
+//                morePictureData[i].tag != "") {
+//              if (tagName[j] == morePictureData[i].tag) {
+//                check = 1;
+//                break;
+//              } else {
+////                print("rightTag : " + tagName[i] + ", " + morePictureRightData[i].tag);
+//                check = 0;
+//              }
+//            }
+//          }
+//          if (check == 0) {
+//            print("addTag : " + morePictureData[i].tag);
+//            tagName.add(morePictureData[i].tag);
+//          }
+//        }
+//      } else if (morePictureData[i].type == 3) {
+//        typeLength[3] += 1;
+//      }
+//    }
 
     tagLength = List(tagName.length);
     print("tagLength : " +
@@ -182,21 +209,21 @@ class _MorePicture extends State<MorePicture> {
       tagLength[i] = 0;
     }
 
-    for (int i = 0; i < morePictureLeftData.length; i++) {
+    for (int i = 0; i < morePictureData.length; i++) {
       for (int j = 0; j < tagName.length; j++) {
-        if(tagName[j] == morePictureLeftData[i].tag) {
-           tagLength[j] += 1;
-        }
-      }
-    }
-
-    for (int i = 0; i < morePictureRightData.length; i++) {
-      for (int j = 0; j < tagName.length; j++) {
-        if(tagName[j] == morePictureRightData[i].tag) {
+        if (tagName[j] == morePictureData[i].tag) {
           tagLength[j] += 1;
         }
       }
     }
+//
+//    for (int i = 0; i < morePictureData.length; i++) {
+//      for (int j = 0; j < tagName.length; j++) {
+//        if (tagName[j] == morePictureData[i].tag) {
+//          tagLength[j] += 1;
+//        }
+//      }
+//    }
 
     for (int i = 0; i < tagLength.length; i++) {
       print("tagLengthCheck : " + tagLength[i].toString());
@@ -207,7 +234,7 @@ class _MorePicture extends State<MorePicture> {
     }
 
     setState(() {
-      allLength = morePictureLeftData.length + morePictureRightData.length;
+      allLength = morePictureData.length;
     });
   }
 
@@ -216,79 +243,125 @@ class _MorePicture extends State<MorePicture> {
             _scrollController.position.maxScrollExtent &&
         !_scrollController.position.outOfRange) {
       setState(() {
-        if (defaultLeftLength != morePictureLeftData.length) {
-          if ((defaultLeftLength + 10) > morePictureLeftData.length) {
-            defaultLeftLength = morePictureLeftData.length;
+        if (defaultLength != morePictureData.length) {
+          if ((defaultLength + 10) > morePictureData.length) {
+            defaultLength = morePictureData.length;
           } else {
-            defaultLeftLength += 10;
+            defaultLength += 10;
           }
         }
 
-        if (defaultRightLength != morePictureRightData.length) {
-          if ((defaultRightLength + 10) > morePictureRightData.length) {
-            defaultRightLength = morePictureRightData.length;
-          } else {
-            defaultRightLength += 10;
-          }
-        }
+//        if (defaultRightLength != morePictureRightData.length) {
+//          if ((defaultRightLength + 10) > morePictureRightData.length) {
+//            defaultRightLength = morePictureRightData.length;
+//          } else {
+//            defaultRightLength += 10;
+//          }
+//        }
       });
 //      print("bottom");
     }
   }
 
-  leftPost(position) {
-//    print("leftPosition : ${position}");
-    return GestureDetector(
-      onTap: () {
-        print("left");
-      },
-      child: Stack(
-        children: <Widget>[
-          Padding(
-            padding: EdgeInsets.only(bottom: 10),
-            child: Container(
-              decoration:
-                  BoxDecoration(borderRadius: BorderRadius.circular(10)),
-              child: ClipRRect(
-                child: Image.asset(
-                  morePictureLeftData[position].img[0],
-                  fit: BoxFit.fill,
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            child: Text(
-              morePictureLeftData[position].instaName,
-              style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: White,
-                  shadows: [Shadow(color: Black, blurRadius: 5)]),
-            ),
-            bottom: 15,
-            left: 5,
-          ),
-          morePictureLeftData[position].img.length == 2
-              ? Positioned(
-                  child: Icon(
-                    Icons.photo_library,
-                    color: White,
-                    size: 14,
-                  ),
-                  right: 5,
-                  bottom: 15,
-                )
-              : Container()
-        ],
-      ),
-    );
-  }
+//  leftPost(position) {
+////    print("leftPosition : ${position}");
+//    return GestureDetector(
+//      onTap: () {
+//        print("left");
+//      },
+//      child: Stack(
+//        children: <Widget>[
+//          Padding(
+//            padding: EdgeInsets.only(bottom: 10),
+//            child: Container(
+//              decoration:
+//                  BoxDecoration(borderRadius: BorderRadius.circular(10)),
+//              child: ClipRRect(
+//                child: Image.asset(
+//                  morePictureLeftData[position].img[0],
+//                  fit: BoxFit.fill,
+//                ),
+//              ),
+//            ),
+//          ),
+//          Positioned(
+//            child: Text(
+//              morePictureLeftData[position].instaName,
+//              style: TextStyle(
+//                  fontSize: 12,
+//                  fontWeight: FontWeight.bold,
+//                  color: White,
+//                  shadows: [Shadow(color: Black, blurRadius: 5)]),
+//            ),
+//            bottom: 15,
+//            left: 5,
+//          ),
+//          morePictureLeftData[position].img.length == 2
+//              ? Positioned(
+//                  child: Icon(
+//                    Icons.photo_library,
+//                    color: White,
+//                    size: 14,
+//                  ),
+//                  right: 5,
+//                  bottom: 15,
+//                )
+//              : Container()
+//        ],
+//      ),
+//    );
+//  }
+//
+//  rightPost(position) {
+//    return GestureDetector(
+//      onTap: () {
+//        print("right");
+//      },
+//      child: Stack(
+//        children: <Widget>[
+//          Padding(
+//            padding: EdgeInsets.only(bottom: 10),
+//            child: Container(
+//              decoration:
+//                  BoxDecoration(borderRadius: BorderRadius.circular(10)),
+//              child: Image.asset(
+//                morePictureRightData[position].img[0],
+//                fit: BoxFit.fill,
+//              ),
+//            ),
+//          ),
+//          Positioned(
+//            child: Text(
+//              morePictureRightData[position].instaName,
+//              style: TextStyle(
+//                  fontSize: 12,
+//                  fontWeight: FontWeight.bold,
+//                  color: White,
+//                  shadows: [Shadow(color: Black, blurRadius: 5)]),
+//            ),
+//            bottom: 15,
+//            left: 5,
+//          ),
+//          morePictureRightData[position].img.length == 2
+//              ? Positioned(
+//                  child: Icon(
+//                    Icons.photo_library,
+//                    color: White,
+//                    size: 14,
+//                  ),
+//                  right: 5,
+//                  bottom: 15,
+//                )
+//              : Container()
+//        ],
+//      ),
+//    );
+//  }
 
-  rightPost(position) {
+  post(idx) {
     return GestureDetector(
       onTap: () {
-        print("right");
+        print("postData");
       },
       child: Stack(
         children: <Widget>[
@@ -298,14 +371,14 @@ class _MorePicture extends State<MorePicture> {
               decoration:
                   BoxDecoration(borderRadius: BorderRadius.circular(10)),
               child: Image.asset(
-                morePictureRightData[position].img[0],
+                morePictureData[idx].img[0],
                 fit: BoxFit.fill,
               ),
             ),
           ),
           Positioned(
             child: Text(
-              morePictureRightData[position].instaName,
+              morePictureData[idx].instaName,
               style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
@@ -315,7 +388,7 @@ class _MorePicture extends State<MorePicture> {
             bottom: 15,
             left: 5,
           ),
-          morePictureRightData[position].img.length == 2
+          morePictureData[idx].img.length == 2
               ? Positioned(
                   child: Icon(
                     Icons.photo_library,
@@ -334,91 +407,131 @@ class _MorePicture extends State<MorePicture> {
   instaCafePost() => Padding(
         padding: EdgeInsets.only(left: 15, right: 15),
         child: Container(
-          width: MediaQuery.of(context).size.width,
+            width: MediaQuery.of(context).size.width,
 //          height: MediaQuery.of(context).size.height,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.max,
-            children: <Widget>[
-              Expanded(
-                child: ListView.builder(
-                  physics: NeverScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  itemCount: defaultLeftLength,
-                  itemBuilder: (context, position) {
-//                    print("checkPosition : ${position}, ${defaultLeftLength}");
-//                    print("selectBoxLeft : ${selectBox}");
-                    if (selectBox != 0) {
-                      if (selectBox - 1 == morePictureLeftData[position].type) {
+            child: StaggeredGridView.countBuilder(
+              crossAxisCount: 2,
+              physics: NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              itemCount: defaultLength,
+              itemBuilder: (context, idx) {
+                if (selectBox != 0) {
+                  if (selectBox - 1 == morePictureData[idx].type) {
 //                        print("check2 : ${selectBox - 1}, ${morePictureLeftData[position].type}");
-                        if (selectBox - 1 == 2) {
-                          if (tagSelect && (selectTagName == morePictureLeftData[position].tag)) {
-                            if (defaultLeftLength != position) {
-                              return rightPost(position);
-                            }
-                          } else if (!tagSelect) {
-                            if (defaultLeftLength != position) {
-                              return rightPost(position);
-                            }
-                          }
-                        } else {
-                          if (defaultLeftLength != position) {
-                            return rightPost(position);
-                          }
+                    if (selectBox - 1 == 2) {
+                      if (tagSelect &&
+                          (selectTagName == morePictureData[idx].tag)) {
+                        if (defaultLength != idx) {
+                          return post(idx);
+                        }
+                      } else if (!tagSelect) {
+                        if (defaultLength != idx) {
+                          return post(idx);
                         }
                       }
                     } else {
+                      if (defaultLength != idx) {
+                        return post(idx);
+                      }
+                    }
+                  }
+                } else {
 //                      print("check");
 //                      print("check : " + defaultLeftLength.toString() + ", " + position.toString());
-                      if (defaultLeftLength != position) {
-                        return leftPost(position);
-                      }
-                    }
+                  if (defaultLength != idx) {
+                    return post(idx);
+                  }
+                }
 
-                    return Container();
-                  },
-                ),
-              ),
-              whiteSpaceW(15),
-              Expanded(
-                child: ListView.builder(
-                  physics: NeverScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  itemCount: defaultRightLength,
-                  itemBuilder: (context, position) {
-//                    print("selectBoxRight : ${position}, ${morePictureRightData[position].type}");
-                    if (selectBox != 0) {
-//                      print("check3 : ${selectBox - 1}, type : ${morePictureRightData[position].type}");
-                      if (selectBox - 1 ==
-                          morePictureRightData[position].type) {
-                        if (selectBox - 1 == 2) {
-                          if (tagSelect && (selectTagName == morePictureRightData[position].tag)) {
-                            if (defaultRightLength != position) {
-                              return rightPost(position);
-                            }
-                          } else if (!tagSelect) {
-                            if (defaultRightLength != position) {
-                              return rightPost(position);
-                            }
-                          }
-                        } else {
-                          if (defaultRightLength != position) {
-                            return rightPost(position);
-                          }
-                        }
-                      }
-                    } else {
-                      if (defaultRightLength != position) {
-                        return rightPost(position);
-                      }
-                    }
-                    return Container();
-                  },
-                ),
-              )
-            ],
-          ),
-        ),
+                return Container();
+              },
+              staggeredTileBuilder: (idx) => StaggeredTile.fit(1),
+              crossAxisSpacing: 15.0,
+            )
+//          Row(
+
+//            crossAxisAlignment: CrossAxisAlignment.start,
+//            mainAxisSize: MainAxisSize.max,
+//            children: <Widget>[
+//              Expanded(
+//                child: ListView.builder(
+//                  physics: NeverScrollableScrollPhysics(),
+//                  shrinkWrap: true,
+//                  itemCount: defaultLength,
+//                  itemBuilder: (context, position) {
+////                    print("checkPosition : ${position}, ${defaultLeftLength}");
+////                    print("selectBoxLeft : ${selectBox}");
+//                    if (selectBox != 0) {
+//                      if (selectBox - 1 == morePictureData[position].type) {
+////                        print("check2 : ${selectBox - 1}, ${morePictureLeftData[position].type}");
+//                        if (selectBox - 1 == 2) {
+//                          if (tagSelect && (selectTagName == morePictureData[position].tag)) {
+//                            if (defaultLength != position) {
+//                              return rightPost(position);
+//                            }
+//                          } else if (!tagSelect) {
+//                            if (defaultLength != position) {
+//                              return rightPost(position);
+//                            }
+//                          }
+//                        } else {
+//                          if (defaultLength != position) {
+//                            return rightPost(position);
+//                          }
+//                        }
+//                      }
+//                    } else {
+////                      print("check");
+////                      print("check : " + defaultLeftLength.toString() + ", " + position.toString());
+//                      if (defaultLength != position) {
+//                        return leftPost(position);
+//                      }
+//                    }
+//
+//                    return Container();
+//                  },
+//                ),
+//              ),
+//              whiteSpaceW(15),
+//              Expanded(
+//                child: ListView.builder(
+//                  physics: NeverScrollableScrollPhysics(),
+//                  shrinkWrap: true,
+//                  itemCount: defaultRightLength,
+//                  itemBuilder: (context, position) {
+////                    print("selectBoxRight : ${position}, ${morePictureRightData[position].type}");
+//                    if (selectBox != 0) {
+////                      print("check3 : ${selectBox - 1}, type : ${morePictureRightData[position].type}");
+//                      if (selectBox - 1 ==
+//                          morePictureRightData[position].type) {
+//                        if (selectBox - 1 == 2) {
+//                          if (tagSelect && (selectTagName == morePictureRightData[position].tag)) {
+//                            if (defaultRightLength != position) {
+//                              return rightPost(position);
+//                            }
+//                          } else if (!tagSelect) {
+//                            if (defaultRightLength != position) {
+//                              return rightPost(position);
+//                            }
+//                          }
+//                        } else {
+//                          if (defaultRightLength != position) {
+//                            return rightPost(position);
+//                          }
+//                        }
+//                      }
+//                    } else {
+//                      if (defaultRightLength != position) {
+//                        return rightPost(position);
+//                      }
+//                    }
+//                    return Container();
+//                  },
+//                ),
+//              )
+//            ],
+//          ),
+            ),
       );
 
   @override
@@ -543,48 +656,64 @@ class _MorePicture extends State<MorePicture> {
                 ),
               ),
               selectBox == 3 ? whiteSpaceH(10) : Container(),
-              selectBox == 3 ? Container(
-                padding: EdgeInsets.only(left: 10, right: 10),
-                height: 30,
-                child: ListView.builder(itemBuilder: (context, idx) {
-                  return Padding(
-                    padding: EdgeInsets.only(left: 5, right: 5),
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          if (!tagSelect) {
-                            tagSelect = true;
-                            tagSelectNum = idx;
-                            selectTagName = tagName[idx];
-                          } else {
-                            tagSelect = false;
-                          }
-                        });
-                      },
-                      child: Container(
-                        padding: EdgeInsets.only(left: 7, right: 7),
-                        decoration: tagSelect ? tagSelectNum == idx ? BoxDecoration(
-                            color: Color.fromARGB(255, 247, 247, 247),
-                            borderRadius: BorderRadius.circular(15)
-                        ) : BoxDecoration(
-                            color: White
-                        ) : BoxDecoration(
-                            color: White
-                        ),
+              selectBox == 3
+                  ? Container(
+                      padding: EdgeInsets.only(left: 10, right: 10),
+                      height: 30,
+                      child: ListView.builder(
+                        itemBuilder: (context, idx) {
+                          return Padding(
+                            padding: EdgeInsets.only(left: 5, right: 5),
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  if (!tagSelect) {
+                                    tagSelect = true;
+                                    tagSelectNum = idx;
+                                    selectTagName = tagName[idx];
+                                  } else {
+                                    tagSelect = false;
+                                  }
+                                });
+                              },
+                              child: Container(
+                                padding: EdgeInsets.only(left: 7, right: 7),
+                                decoration: tagSelect
+                                    ? tagSelectNum == idx
+                                        ? BoxDecoration(
+                                            color: Color.fromARGB(
+                                                255, 247, 247, 247),
+                                            borderRadius:
+                                                BorderRadius.circular(15))
+                                        : BoxDecoration(color: White)
+                                    : BoxDecoration(color: White),
 //                        width: 80,
-                        height: 30,
-                        child: Center(
-                          child: Text("#${tagName[idx]}(${tagLength[idx]})", style: TextStyle(
-                              color: tagSelect ? tagSelectNum == idx ? Black : Color.fromARGB(255, 167, 167, 167) : Color.fromARGB(255, 167, 167, 167),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600
-                          ),),
-                        ),
+                                height: 30,
+                                child: Center(
+                                  child: Text(
+                                    "#${tagName[idx]}(${tagLength[idx]})",
+                                    style: TextStyle(
+                                        color: tagSelect
+                                            ? tagSelectNum == idx
+                                                ? Black
+                                                : Color.fromARGB(
+                                                    255, 167, 167, 167)
+                                            : Color.fromARGB(
+                                                255, 167, 167, 167),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                        shrinkWrap: true,
+                        itemCount: tagName.length,
+                        scrollDirection: Axis.horizontal,
                       ),
-                    ),
-                  );
-                }, shrinkWrap: true, itemCount: tagName.length, scrollDirection: Axis.horizontal,),
-              ) : Container(),
+                    )
+                  : Container(),
               instaCafePost(),
               whiteSpaceH(10)
             ],
