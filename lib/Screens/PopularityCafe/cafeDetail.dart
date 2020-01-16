@@ -1,7 +1,12 @@
+import 'dart:convert';
 import 'dart:math' show cos, sqrt, asin;
 
+import 'package:cafelog/Bloc/mainBloc.dart';
 import 'package:cafelog/Model/instaPostData.dart';
 import 'package:cafelog/Model/popularMenu.dart';
+import 'package:cafelog/Model/popularityCafeData.dart';
+import 'package:cafelog/Model/streetsData.dart';
+import 'package:cafelog/Screens/PopularityCafe/naverCafeInfo.dart';
 import 'package:cafelog/Util/numberFormat.dart';
 import 'package:cafelog/Util/whiteSpace.dart';
 import 'package:cafelog/Widgets/snackbar.dart';
@@ -17,6 +22,21 @@ import '../../colors.dart';
 import 'cafeLocation.dart';
 
 class CafeDetail extends StatefulWidget {
+
+  String cafeName;
+  String phone;
+  String imgUrl;
+  String naverUrl;
+  String distance;
+  String subName;
+  String address;
+  LatLng latLng;
+  String convenien;
+  String menu;
+  String openTime;
+
+  CafeDetail({Key key, this.cafeName, this.phone, this.imgUrl, this.naverUrl, this.distance, this.subName, this.address, this.latLng, this.convenien, this.menu, this.openTime}) : super(key: key);
+
   @override
   _CafeDetail createState() => _CafeDetail();
 }
@@ -30,7 +50,7 @@ class _CafeDetail extends State<CafeDetail> {
 
   String title = "하이데어";
   String distance = "1.7km";
-  bool open = true;
+  bool open = false;
 
   String cafeDes = "커피보다 스콘이 맛있는 카페";
   String cafeAddress = "서울특별시 중구 충무로9길 0223 1층 ACAFE";
@@ -40,13 +60,13 @@ class _CafeDetail extends State<CafeDetail> {
 
   List<String> serviceTag = List();
 
-  bool menuExist = true;
+  bool menuExist = false;
 
   List<PopularMenu> popularMenuList = List();
 
   bool cafeUserImage = true;
 
-  int allRecord = 25366;
+  int allRecord = 0;
 
 //  List<InstaPostData> instaPostLeftData = [];
 //  List<InstaPostData> instaPostRightData = [];
@@ -118,26 +138,13 @@ class _CafeDetail extends State<CafeDetail> {
             defaultLength += 10;
           }
         }
-//        if (defaultLeftLength != instaPostLeftData.length) {
-//          if ((defaultLeftLength + 10) > instaPostLeftData.length) {
-//            defaultLeftLength = instaPostLeftData.length;
-//          } else {
-//            defaultLeftLength += 10;
-//          }
-//        }
-//
-//        if (defaultRightLength != instaPostRightData.length) {
-//          if ((defaultRightLength + 10) > instaPostRightData.length) {
-//            defaultRightLength = instaPostRightData.length;
-//          } else {
-//            defaultRightLength += 10;
-//          }
-//        }
-
       });
       print("bottom");
     }
   }
+
+  PopularityCafeData detailStreet;
+  bool getData = false;
 
   @override
   void initState() {
@@ -146,7 +153,20 @@ class _CafeDetail extends State<CafeDetail> {
 
     gpsCheck();
 
-    serviceTag..add("주차가능")..add("반려견출입가능")..add("노키즈존")..add("공기청정기");
+    List<String> tagSplit;
+    if (widget.convenien.isNotEmpty && widget.convenien != "") {
+      tagSplit = widget.convenien.split(", ");
+
+      if (tagSplit.length > 0) {
+        for (int i = 0; i < tagSplit.length; i++) {
+          serviceTag.add(tagSplit[i]);
+        }
+      } else {
+        serviceTag.add(widget.convenien);
+      }
+    }
+
+//    serviceTag..add("주차가능")..add("반려견출입가능")..add("노키즈존")..add("공기청정기");
 
     popularMenuList
       ..add(PopularMenu(menuName: "아메리카노", eatPerson: 675))
@@ -154,6 +174,31 @@ class _CafeDetail extends State<CafeDetail> {
       ..add(PopularMenu(menuName: "비포선라이즈파스타", eatPerson: 786))
       ..add(PopularMenu(menuName: "베이컨파스타", eatPerson: 111))
       ..add(PopularMenu(menuName: "아메리칸브렉퍼스트", eatPerson: 213));
+
+
+    print("cafeName : ${widget.cafeName}");
+
+    mainBloc.setRecodeTag(widget.cafeName);
+    mainBloc.getCafeRecodeCount().then((value) {
+      setState(() {
+        allRecord = json.decode(value)['data'];
+      });
+    });
+
+    mainBloc.setDetailName(widget.cafeName);
+    mainBloc.getCafeDetailPerson().then((value) {
+//      print('value : ${value}');
+//      detailStreet = json.decode(value)['data'];
+
+//      print("data : ${json.decode(value)['data']}");
+
+      detailStreet = PopularityCafeData(
+          userNum: json.decode(value)['data']['user_num'],
+          recentNum: json.decode(value)['data']['recent_num']);
+      setState(() {
+        getData = true;
+      });
+    });
 
     for (int i = 0; i < maxLength; i++) {
       List<String> image = List();
@@ -297,8 +342,8 @@ class _CafeDetail extends State<CafeDetail> {
           // CachedNetworkImage 로 변경할 것
           child: ClipRRect(
             borderRadius: BorderRadius.circular(10),
-            child: Image.asset(
-              "assets/test/test1.png",
+            child: Image.network(
+              widget.imgUrl,
               width: MediaQuery.of(context).size.width,
               fit: BoxFit.fitWidth,
             ),
@@ -359,7 +404,7 @@ class _CafeDetail extends State<CafeDetail> {
                                               width: 120,
 //                                    padding: EdgeInsets.only(left: 80, right: 80),
                                               child: Text(
-                                                title,
+                                                widget.cafeName,
                                                 style: TextStyle(
                                                     fontSize: 22,
                                                     fontWeight: FontWeight.bold,
@@ -378,7 +423,7 @@ class _CafeDetail extends State<CafeDetail> {
                                                     EdgeInsets.only(left: 120),
                                                 child: gpsOn
                                                     ? Text(
-                                                        distance,
+                                                        widget.distance,
                                                         style: TextStyle(
                                                             color: Black,
                                                             fontSize: 12),
@@ -413,7 +458,7 @@ class _CafeDetail extends State<CafeDetail> {
                                       )),
                                   whiteSpaceH(30),
                                   Text(
-                                    cafeDes,
+                                    widget.subName,
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                         color:
@@ -428,7 +473,7 @@ class _CafeDetail extends State<CafeDetail> {
                                         child: Container(
                                           width: 200,
                                           child: Text(
-                                            cafeAddress,
+                                            widget.address,
                                             style: TextStyle(
                                                 fontSize: 12,
                                                 color: Color.fromARGB(
@@ -456,11 +501,9 @@ class _CafeDetail extends State<CafeDetail> {
                                                         .push(MaterialPageRoute(
                                                       builder: (context) =>
                                                           CafeLocation(
-                                                        latLng: LatLng(
-                                                            37.468443,
-                                                            126.887603),
+                                                        latLng: widget.latLng,
                                                         cafeAddress:
-                                                            cafeAddress,
+                                                            widget.address,
                                                       ),
                                                     ));
                                                     setState(() {
@@ -505,7 +548,7 @@ class _CafeDetail extends State<CafeDetail> {
                                             whiteSpaceH(5),
                                             Center(
                                               child: Text(
-                                                "${numberFormat.format(personNumAll)} 명",
+                                                getData ? "${numberFormat.format(detailStreet.userNum)} 명" : "0 명",
                                                 style: TextStyle(
                                                     color: Black,
                                                     fontSize: 12,
@@ -516,7 +559,7 @@ class _CafeDetail extends State<CafeDetail> {
                                             whiteSpaceH(7),
                                             Center(
                                               child: Text(
-                                                "최근 1주일 ${numberFormat.format(personWeek)} 명",
+                                                getData ? "최근 1주일 ${numberFormat.format(detailStreet.recentNum)} 명" : "최근 1주일 0 명",
                                                 style: TextStyle(
                                                     fontWeight: FontWeight.w600,
                                                     fontSize: 10,
@@ -568,7 +611,7 @@ class _CafeDetail extends State<CafeDetail> {
                                                     whiteSpaceH(20),
                                                     Center(
                                                       child: Text(
-                                                        "02-1234-5678",
+                                                        widget.phone,
                                                         style: TextStyle(
                                                             color: Black,
                                                             fontWeight:
@@ -599,7 +642,12 @@ class _CafeDetail extends State<CafeDetail> {
                                                         fontSize: 17),
                                                   ),
                                                   onPressed: () {
-                                                    launch("tel:0212345678");
+                                                    List<String> phoneSplit = widget.phone.split("-");
+                                                    String phone;
+                                                    for (int i = 0; i < phoneSplit.length; i++) {
+                                                      phone += phoneSplit[i];
+                                                    }
+                                                    launch("tel:${phone}");
                                                   },
                                                 ),
                                                 FlatButton(
@@ -636,7 +684,13 @@ class _CafeDetail extends State<CafeDetail> {
                                     child: Container(
                                       width: MediaQuery.of(context).size.width,
                                       height: 120,
-                                      child: GridView.count(
+                                      child: serviceTag.length == 0 ? Center(
+                                        child: Text("아직 편의시설 정보가 부족합니다.", style: TextStyle(
+                                        color: Color.fromARGB(
+                                        255, 122, 122, 122),
+                                          fontSize: 12),
+                                      textAlign: TextAlign.center,),
+                                      ) : GridView.count(
                                         crossAxisCount: 4,
                                         shrinkWrap: true,
                                         childAspectRatio: 2,
@@ -656,22 +710,22 @@ class _CafeDetail extends State<CafeDetail> {
                                     ),
                                   ),
                                   whiteSpaceH(20),
-                                  Center(
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        Navigator.of(context)
-                                            .pushNamed('/StoreDetail');
-                                      },
-                                      child: Text(
-                                        "정보 더보기",
-                                        style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            color: mainColor),
-                                      ),
-                                    ),
-                                  ),
-                                  whiteSpaceH(60),
+//                                  Center(
+//                                    child: GestureDetector(
+//                                      onTap: () {
+//                                        Navigator.of(context)
+//                                            .pushNamed('/StoreDetail');
+//                                      },
+//                                      child: Text(
+//                                        "정보 더보기",
+//                                        style: TextStyle(
+//                                            fontSize: 12,
+//                                            fontWeight: FontWeight.w600,
+//                                            color: mainColor),
+//                                      ),
+//                                    ),
+//                                  ),
+//                                  whiteSpaceH(60),
                                   Center(
                                     child: Text(
                                       "인기메뉴",
@@ -792,8 +846,15 @@ class _CafeDetail extends State<CafeDetail> {
                                   menuExist ? whiteSpaceH(60) : Container(),
                                   GestureDetector(
                                     onTap: () {
-                                      Navigator.of(context)
-                                          .pushNamed('/NaverCafeInfo');
+//                                      Navigator.of(context)
+//                                          .pushNamed('/NaverCafeInfo');
+                                      Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => NaverCafeInfo(
+                                              url: widget.naverUrl,
+                                            ),
+                                          ));
                                     },
                                     child: Container(
                                       width: 200,
@@ -922,7 +983,9 @@ class _CafeDetail extends State<CafeDetail> {
           loading == true
               ? Positioned.fill(
                   child: Center(
-                  child: CircularProgressIndicator(),
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(mainColor),
+                  ),
                 ))
               : Container()
         ],

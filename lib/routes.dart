@@ -11,6 +11,8 @@ import 'package:cafelog/Screens/PopularityCafe/storeDetail.dart';
 import 'Screens/Home/home.dart';
 import 'Screens/Login/instaLogin.dart';
 import 'Screens/Login/loginMain.dart';
+import 'Screens/MyAround/myAroundMap.dart';
+import 'Screens/MyCafeLog/myCafeLog.dart';
 import 'Screens/PopularityCafe/cafeLocation.dart';
 import 'Screens/PopularityCafe/cafeMenu.dart';
 import 'Screens/splash.dart';
@@ -27,4 +29,6 @@ final routes = {
   '/NaverCafeInfo': (context) => NaverCafeInfo(),
   '/CafeMenu': (context) => CafeMenu(),
   '/MorePicture': (context) => MorePicture(),
+  '/MyAroundMap': (context) => MyAroundMap(),
+  '/MyCafeLog': (context) => MyCafeLog()
 };

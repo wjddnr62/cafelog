@@ -53,6 +53,8 @@ class _MyAround extends State<MyAround> {
   List<MyAroundData> aroundRecoData = List();
   List<MyAroundData> aroundData = List();
 
+  bool loading = true;
+
   gpsCheck() async {
     bool isLocationEnabled = await Geolocator().isLocationServiceEnabled();
     if (isLocationEnabled)
@@ -76,7 +78,6 @@ class _MyAround extends State<MyAround> {
 
   distance(lat1, lon1, lat2, lon2) {
     double totalDistance = calculateDistance(lat1, lon1, lat2, lon2);
-//    print(totalDistance.toStringAsFixed(1));
 
     return totalDistance.toStringAsFixed(1).toString();
   }
@@ -211,6 +212,7 @@ class _MyAround extends State<MyAround> {
           type: 1,
           sale: 0,
           visitor: 125));
+
     km.clear();
 
     for (int i = 0; i < aroundRecoData.length; i++) {
@@ -232,6 +234,10 @@ class _MyAround extends State<MyAround> {
     }
 
     print("kmLength : ${km.length}");
+
+    setState(() {
+      loading = true;
+    });
   }
 
   @override
@@ -845,14 +851,14 @@ class _MyAround extends State<MyAround> {
                                                   ? km.length >
                                                           aroundData.length
                                                       ? km.length + aroundData.length > idx + aroundData.length
-                                                          ? (km.length + aroundData.length != 0 + aroundData.length &&
+                                                          ? ((km.length + aroundData.length) != (0 + aroundData.length) &&
                                                                   km[idx +
                                                                           aroundRecoData
                                                                               .length -
-                                                                          1]
+                                                                          2]
                                                                       .isNotEmpty)
                                                               ? Text(
-                                                                  "${km[idx + aroundRecoData.length - 1]}")
+                                                                  "${km[idx + aroundRecoData.length - 2]}")
                                                               : Container()
                                                           : Container()
                                                       : Container()

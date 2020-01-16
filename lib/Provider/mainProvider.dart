@@ -6,9 +6,34 @@ class MainProvider {
   Client _client = Client();
   final _baseUrl = "http://api.service.oig.kr/";
   final _autoTag = "http://api.service.oig.kr/cafe_api/api/info/tags/contains?";
+  final _restUrl = "http://192.168.100.225:8080/cafelog_api/api/cafe/";
+
+  Future<String> getMainList(limit, street, String type, tag) async {
+    final response = await _client.get("${_restUrl}cafe-list?limit=${limit == null ? 0 : limit}&street=${street == null ? "" : street}&type=${type == null ? "0" : type}&tag=${tag == null ? "" : tag}");
+
+    return utf8.decode(response.bodyBytes);
+  }
+
+  Future<String> getNaverData(name) async {
+    final response = await _client.get("${_restUrl}naver-data?name=${name}");
+
+    return utf8.decode(response.bodyBytes);
+  }
+
+  Future<String> getPopularPic(name) async {
+    final response = await _client.get("${_restUrl}popular-pic?name=${name}");
+
+    return utf8.decode(response.bodyBytes);
+  }
 
   Future<String> getAutoTag(keyword) async {
-    final response = await _client.get(_autoTag + "keyword=${keyword}");
+    final response = await _client.get("${_restUrl}select-tag-history?tag=${keyword}");
+
+    return utf8.decode(response.bodyBytes);
+  }
+
+  Future<String> setAutoTag(tag) async {
+    final response = await _client.get("${_restUrl}insert-tag-history?tag=${tag}");
 
     return utf8.decode(response.bodyBytes);
   }
@@ -19,17 +44,24 @@ class MainProvider {
     return utf8.decode(response.bodyBytes);
   }
 
-  Future<String> getPopularityCafe(street) async {
-    if (street == null || street == "" || street == "전체카페") {
-      // 전체 조회 api 완성시 변경
-      final response = await _client.get("${_baseUrl}cafe_crawler_api/api/streets/cafes?street=광화문");
+  Future<String> getPopularityCafe(location, type) async {
+      final response = await _client.get("${_restUrl}popularly-street?location=${location == null ? "" : location}&type=${type == null ? "0" : type}");
 
       return utf8.decode(response.bodyBytes);
-    } else {
-      final response = await _client.get("${_baseUrl}cafe_crawler_api/api/streets/cafes?street=${street}");
 
-      return utf8.decode(response.bodyBytes);
-    }
+  }
+
+  Future<String> getCafeDetailPerson(name) async {
+    print("${_restUrl}cafe-detail-person?name=${name}");
+    final response = await _client.get("${_restUrl}cafe-detail-person?name=${name}");
+
+    return utf8.decode(response.bodyBytes);
+  }
+
+  Future<String> getCafeRecodeCount(tag) async {
+    final response = await _client.get("${_restUrl}cafe-recode-count?tag=${tag}");
+
+    return utf8.decode(response.bodyBytes);
   }
 
   Future<String> getTagList() async {

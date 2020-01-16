@@ -183,7 +183,11 @@ class _LocationSearch extends State<LocationSearch> {
                 },
               );
           }
-          return Container();
+          return Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(mainColor),
+            ),
+          );
         },
       );
 
