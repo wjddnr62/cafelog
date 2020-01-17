@@ -6,7 +6,7 @@ class MainProvider {
   Client _client = Client();
   final _baseUrl = "http://api.service.oig.kr/";
   final _autoTag = "http://api.service.oig.kr/cafe_api/api/info/tags/contains?";
-  final _restUrl = "http://192.168.100.225:8080/cafelog_api/api/cafe/";
+  final _restUrl = "http://api.service.oig.kr/cafelog_api/api/cafe/";
 
   Future<String> getMainList(limit, street, String type, tag) async {
     final response = await _client.get("${_restUrl}cafe-list?limit=${limit == null ? 0 : limit}&street=${street == null ? "" : street}&type=${type == null ? "0" : type}&tag=${tag == null ? "" : tag}");

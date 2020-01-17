@@ -1,11 +1,14 @@
 import 'dart:convert';
 import 'dart:math' show cos, sqrt, asin;
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cafelog/Bloc/mainBloc.dart';
+import 'package:cafelog/Model/cafeListData.dart';
 import 'package:cafelog/Model/instaPostData.dart';
 import 'package:cafelog/Model/popularMenu.dart';
 import 'package:cafelog/Model/popularityCafeData.dart';
 import 'package:cafelog/Model/streetsData.dart';
+import 'package:cafelog/Screens/Home/instaDetail.dart';
 import 'package:cafelog/Screens/PopularityCafe/naverCafeInfo.dart';
 import 'package:cafelog/Util/numberFormat.dart';
 import 'package:cafelog/Util/whiteSpace.dart';
@@ -22,7 +25,6 @@ import '../../colors.dart';
 import 'cafeLocation.dart';
 
 class CafeDetail extends StatefulWidget {
-
   String cafeName;
   String phone;
   String imgUrl;
@@ -35,7 +37,20 @@ class CafeDetail extends StatefulWidget {
   String menu;
   String openTime;
 
-  CafeDetail({Key key, this.cafeName, this.phone, this.imgUrl, this.naverUrl, this.distance, this.subName, this.address, this.latLng, this.convenien, this.menu, this.openTime}) : super(key: key);
+  CafeDetail(
+      {Key key,
+      this.cafeName,
+      this.phone,
+      this.imgUrl,
+      this.naverUrl,
+      this.distance,
+      this.subName,
+      this.address,
+      this.latLng,
+      this.convenien,
+      this.menu,
+      this.openTime})
+      : super(key: key);
 
   @override
   _CafeDetail createState() => _CafeDetail();
@@ -70,15 +85,16 @@ class _CafeDetail extends State<CafeDetail> {
 
 //  List<InstaPostData> instaPostLeftData = [];
 //  List<InstaPostData> instaPostRightData = [];
-  List<InstaPostData> instaPostData = [];
 
   bool loading = false;
 
-  ScrollController _scrollController = ScrollController();
+  ScrollController _scrollController = ScrollController(keepScrollOffset: true);
+
 //  int defaultLeftLength = 10;
 //  int defaultRightLength = 10;
+  List<CafeListData> _cafeList = [];
   int defaultLength = 10;
-  int maxLength = 57;
+  int defaultOffSet = 0;
 
   Map<PermissionGroup, PermissionStatus> permissions;
 
@@ -127,18 +143,24 @@ class _CafeDetail extends State<CafeDetail> {
       });
   }
 
+  bool firstData = false;
+  double offset = 0.0;
+
   checkEndList() {
+    print("check");
     if (_scrollController.offset >= _scrollController.position.maxScrollExtent &&
         !_scrollController.position.outOfRange) {
       setState(() {
-        if (defaultLength != instaPostData.length) {
-          if ((defaultLength + 10) > instaPostData.length) {
-            defaultLength = instaPostData.length;
+        if (defaultLength != _cafeList.length) {
+          if ((defaultLength + 10) > _cafeList.length) {
+            defaultLength = _cafeList.length;
           } else {
             defaultLength += 10;
           }
         }
+        firstData = false;
       });
+      setState(() {});
       print("bottom");
     }
   }
@@ -175,7 +197,6 @@ class _CafeDetail extends State<CafeDetail> {
       ..add(PopularMenu(menuName: "베이컨파스타", eatPerson: 111))
       ..add(PopularMenu(menuName: "아메리칸브렉퍼스트", eatPerson: 213));
 
-
     print("cafeName : ${widget.cafeName}");
 
     mainBloc.setRecodeTag(widget.cafeName);
@@ -199,49 +220,6 @@ class _CafeDetail extends State<CafeDetail> {
         getData = true;
       });
     });
-
-    for (int i = 0; i < maxLength; i++) {
-      List<String> image = List();
-      if (i >= 0 && i < maxLength / 2) {
-        if (i == 2) {
-          image.clear();
-          image.add("assets/test/test${i + 1}.png");
-          image.add("assets/test/test${i + 2}.png");
-          instaPostData.add(InstaPostData(image, "@test${i}", ""));
-        } else if (i >= 10) {
-          image.clear();
-          if (i.toString().contains("9")) {
-            image.add("assets/test/test${(i).toString().substring(0, 1)}.png");
-          } else {
-            image.add("assets/test/test${(i + 1).toString().substring(0, 1)}.png");
-          }
-          instaPostData.add(InstaPostData(image, "@test${i}", ""));
-        } else {
-          image.clear();
-          if (i.toString().contains("9")) {
-            image.add("assets/test/test${(i).toString().substring(0, 1)}.png");
-          } else {
-            image.add("assets/test/test${(i + 1).toString().substring(0, 1)}.png");
-          }
-          instaPostData.add(InstaPostData(image, "@test${i}", ""));
-        }
-      } else if (i >= maxLength / 2 && i < maxLength) {
-        if (i == 32) {
-          image.clear();
-          image.add("assets/test/test${1}.png");
-          image.add("assets/test/test${2}.png");
-          instaPostData.add(InstaPostData(image, "@test${i}", ""));
-        } else {
-          image.clear();
-          if (i.toString().contains("9")) {
-            image.add("assets/test/test${(i).toString().substring(0, 1)}.png");
-          } else {
-            image.add("assets/test/test${(i + 1).toString().substring(0, 1)}.png");
-          }
-          instaPostData.add(InstaPostData(image, "@test${i}", ""));
-        }
-      }
-    }
   }
 
   favoriteFab() {
@@ -276,65 +254,182 @@ class _CafeDetail extends State<CafeDetail> {
     );
   }
 
-  instaCafePost() => Padding(
-        padding: EdgeInsets.only(left: 10, right: 10),
-        child: Container(
-          width: MediaQuery.of(context).size.width,
-          child: StaggeredGridView.countBuilder(
-            crossAxisCount: 2,
-            physics: NeverScrollableScrollPhysics(),
-            shrinkWrap: true,
-            itemCount: defaultLength,
-            itemBuilder: (context, idx) => GestureDetector(
-              onTap: () {
-                print("postData");
-              },
-              child: Stack(
-                children: <Widget>[
-                  Padding(
-                    padding: EdgeInsets.only(bottom: 10),
-                    child: Container(
-                      decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10)),
-                      child: Image.asset(
-                        instaPostData[idx].img[0],
-                        fit: BoxFit.fill,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    child: Text(
-                      instaPostData[idx].instaName,
-                      style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: White,
-                                    shadows: [
-                                      Shadow(color: Black, blurRadius: 5)
-                                    ]),
-                    ),
-                    bottom: 15,
-                    left: 5,
-                  ),
-                  instaPostData[idx].img.length == 2
-                      ? Positioned(
-                    child: Icon(
-                      Icons.photo_library,
-                      color: White,
-                      size: 14,
-                    ),
-                    right: 5,
-                    bottom: 15,
-                  )
-                      : Container()
-                ],
+  mainListGrid() {
+    if (!firstData) {
+      print("defaultOffSet : ${defaultOffSet}");
+      mainBloc.setLimit(defaultOffSet);
+      mainBloc.setTag(widget.cafeName);
+      mainBloc.setType("1");
+
+      mainBloc.getMainList().then((value) async {
+        if (json.decode(value)['result'] != 0 &&
+            (json.decode(value)['data'] != null &&
+                json.decode(value)['data'] != "")) {
+          if (!firstData) {
+            defaultOffSet += 1;
+            print('value : ${json.decode(value)['data']}');
+            print("check");
+            List<dynamic> valueList = await json.decode(value)['data'];
+            print(valueList.length);
+            if (valueList.length != 0) {
+              for (int i = 0; i < valueList.length; i++) {
+                _cafeList.add(CafeListData(
+                    url: valueList[i]['url'],
+                    nickname: valueList[i]['nickname'],
+                    pic: valueList[i]['pic'],
+                    date: valueList[i]['date'],
+                    like: valueList[i]['like'],
+                    search_tag: valueList[i]['search_tag']));
+              }
+            }
+            firstData = true;
+          }
+          setState(() {});
+        }
+      }).catchError((error) {
+        print("error : ${error}");
+      });
+    }
+    return (_cafeList.length == 0 && firstData == false)
+        ? Padding(
+            padding:
+                EdgeInsets.only(bottom: MediaQuery.of(context).size.height / 5),
+            child: Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(mainColor),
               ),
             ),
-            staggeredTileBuilder: (idx) => StaggeredTile.fit(1),
-            crossAxisSpacing: 15.0,
           )
-        ),
-      );
+        : Padding(
+            padding: EdgeInsets.only(top: 10, bottom: 10, left: 15, right: 15),
+            child: StaggeredGridView.countBuilder(
+//            controller: _scrollController,
+              physics: NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              itemCount: _cafeList.length,
+              itemBuilder: (context, idx) => GestureDetector(
+                onTap: () {
+                  print("Name : ${_cafeList[idx].search_tag}");
+
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => InstaDetail(
+                          name: _cafeList[idx].search_tag,
+                          instaUrl: _cafeList[idx].url,
+                          offset: _scrollController.offset,
+                        ),
+                      )).then((result) {
+                    _scrollController.animateTo(result,
+                        duration: null, curve: null);
+                  });
+                },
+                child: Stack(
+                  children: <Widget>[
+                    Padding(
+                      padding: EdgeInsets.only(
+                        bottom: 10,
+                      ),
+                      child: Container(
+                        child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child:
+                            CachedNetworkImage(
+                              imageUrl: _cafeList[idx].pic,
+//                              placeholder: (context, url) =>
+//                                  CircularProgressIndicator(
+//                                valueColor:
+//                                    AlwaysStoppedAnimation<Color>(mainColor),
+//                              ),
+                              errorWidget: (context, url, error) => Image.asset(
+                                "assets/defaultImage.png",
+                                fit: BoxFit.fill,
+                              ),
+                            )
+//                        FadeInImage(image: NetworkImage(_cafeList[idx].pic), fit: BoxFit.fill, placeholder: AssetImage("assets/defaultImage.png"), ),
+                            ),
+                      ),
+                    ),
+                    Positioned(
+                      child: Text(
+                        "@" + _cafeList[idx].nickname,
+                        style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: White,
+                            shadows: [Shadow(color: Black, blurRadius: 5)]),
+                      ),
+                      bottom: 20,
+                      left: 15,
+                    ),
+                  ],
+                ),
+              ),
+              staggeredTileBuilder: (idx) => StaggeredTile.fit(1),
+              crossAxisSpacing: 10.0,
+            ));
+  }
+
+//  instaCafePost() => Padding(
+//        padding: EdgeInsets.only(left: 10, right: 10),
+//        child: Container(
+//          width: MediaQuery.of(context).size.width,
+//          child: StaggeredGridView.countBuilder(
+//            crossAxisCount: 2,
+//            physics: NeverScrollableScrollPhysics(),
+//            shrinkWrap: true,
+//            itemCount: defaultLength,
+//            itemBuilder: (context, idx) => GestureDetector(
+//              onTap: () {
+//                print("postData");
+//              },
+//              child: Stack(
+//                children: <Widget>[
+//                  Padding(
+//                    padding: EdgeInsets.only(bottom: 10),
+//                    child: Container(
+//                      decoration: BoxDecoration(
+//                          borderRadius: BorderRadius.circular(10)),
+//                      child: Image.asset(
+//                        instaPostData[idx].img[0],
+//                        fit: BoxFit.fill,
+//                      ),
+//                    ),
+//                  ),
+//                  Positioned(
+//                    child: Text(
+//                      instaPostData[idx].instaName,
+//                      style: TextStyle(
+//                                    fontSize: 12,
+//                                    fontWeight: FontWeight.bold,
+//                                    color: White,
+//                                    shadows: [
+//                                      Shadow(color: Black, blurRadius: 5)
+//                                    ]),
+//                    ),
+//                    bottom: 15,
+//                    left: 5,
+//                  ),
+//                  instaPostData[idx].img.length == 2
+//                      ? Positioned(
+//                    child: Icon(
+//                      Icons.photo_library,
+//                      color: White,
+//                      size: 14,
+//                    ),
+//                    right: 5,
+//                    bottom: 15,
+//                  )
+//                      : Container()
+//                ],
+//              ),
+//            ),
+//            staggeredTileBuilder: (idx) => StaggeredTile.fit(1),
+//            crossAxisSpacing: 15.0,
+//          )
+//        ),
+//      );
 
   mainImage() => mainImageCheck
       ? Padding(
@@ -548,7 +643,9 @@ class _CafeDetail extends State<CafeDetail> {
                                             whiteSpaceH(5),
                                             Center(
                                               child: Text(
-                                                getData ? "${numberFormat.format(detailStreet.userNum)} 명" : "0 명",
+                                                getData
+                                                    ? "${numberFormat.format(detailStreet.userNum)} 명"
+                                                    : "0 명",
                                                 style: TextStyle(
                                                     color: Black,
                                                     fontSize: 12,
@@ -559,7 +656,9 @@ class _CafeDetail extends State<CafeDetail> {
                                             whiteSpaceH(7),
                                             Center(
                                               child: Text(
-                                                getData ? "최근 1주일 ${numberFormat.format(detailStreet.recentNum)} 명" : "최근 1주일 0 명",
+                                                getData
+                                                    ? "최근 1주일 ${numberFormat.format(detailStreet.recentNum)} 명"
+                                                    : "최근 1주일 0 명",
                                                 style: TextStyle(
                                                     fontWeight: FontWeight.w600,
                                                     fontSize: 10,
@@ -642,9 +741,12 @@ class _CafeDetail extends State<CafeDetail> {
                                                         fontSize: 17),
                                                   ),
                                                   onPressed: () {
-                                                    List<String> phoneSplit = widget.phone.split("-");
+                                                    List<String> phoneSplit =
+                                                        widget.phone.split("-");
                                                     String phone;
-                                                    for (int i = 0; i < phoneSplit.length; i++) {
+                                                    for (int i = 0;
+                                                        i < phoneSplit.length;
+                                                        i++) {
                                                       phone += phoneSplit[i];
                                                     }
                                                     launch("tel:${phone}");
@@ -684,29 +786,35 @@ class _CafeDetail extends State<CafeDetail> {
                                     child: Container(
                                       width: MediaQuery.of(context).size.width,
                                       height: 120,
-                                      child: serviceTag.length == 0 ? Center(
-                                        child: Text("아직 편의시설 정보가 부족합니다.", style: TextStyle(
-                                        color: Color.fromARGB(
-                                        255, 122, 122, 122),
-                                          fontSize: 12),
-                                      textAlign: TextAlign.center,),
-                                      ) : GridView.count(
-                                        crossAxisCount: 4,
-                                        shrinkWrap: true,
-                                        childAspectRatio: 2,
-                                        children: List.generate(
-                                            serviceTag.length, (idx) {
-                                          return Text(
-                                            "#${serviceTag[idx]}",
-                                            style: TextStyle(
-                                                color: Color.fromARGB(
-                                                    255, 122, 122, 122),
-                                                fontSize: 12),
-                                            textAlign: TextAlign.center,
-                                          );
-                                        }),
-                                        physics: NeverScrollableScrollPhysics(),
-                                      ),
+                                      child: serviceTag.length == 0
+                                          ? Center(
+                                              child: Text(
+                                                "아직 편의시설 정보가 부족합니다.",
+                                                style: TextStyle(
+                                                    color: Color.fromARGB(
+                                                        255, 122, 122, 122),
+                                                    fontSize: 12),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                            )
+                                          : GridView.count(
+                                              crossAxisCount: 4,
+                                              shrinkWrap: true,
+                                              childAspectRatio: 2,
+                                              children: List.generate(
+                                                  serviceTag.length, (idx) {
+                                                return Text(
+                                                  "#${serviceTag[idx]}",
+                                                  style: TextStyle(
+                                                      color: Color.fromARGB(
+                                                          255, 122, 122, 122),
+                                                      fontSize: 12),
+                                                  textAlign: TextAlign.center,
+                                                );
+                                              }),
+                                              physics:
+                                                  NeverScrollableScrollPhysics(),
+                                            ),
                                     ),
                                   ),
                                   whiteSpaceH(20),
@@ -902,7 +1010,9 @@ class _CafeDetail extends State<CafeDetail> {
                                                     EdgeInsets.only(right: 20),
                                                 child: GestureDetector(
                                                   onTap: () {
-                                                    Navigator.of(context).pushNamed("/MorePicture");
+                                                    Navigator.of(context)
+                                                        .pushNamed(
+                                                            "/MorePicture");
                                                   },
                                                   child: Text(
                                                     "전체보기",
@@ -916,7 +1026,7 @@ class _CafeDetail extends State<CafeDetail> {
                                               ),
                                             ),
                                             whiteSpaceH(10),
-                                            instaCafePost(),
+                                            mainListGrid(),
                                             whiteSpaceH(40),
 //                                            Center(
 //                                              child: GestureDetector(

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:badges/badges.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cafelog/Bloc/mainBloc.dart';
 import 'package:cafelog/Model/autoTagData.dart';
 import 'package:cafelog/Model/cafeListData.dart';
@@ -51,6 +52,7 @@ class _Home extends State<Home> {
   int defaultOffSet = 0;
 
   checkEndList() {
+    print("check");
     if (_mainScroll.offset >= _mainScroll.position.maxScrollExtent &&
         !_mainScroll.position.outOfRange) {
       setState(() {
@@ -196,10 +198,13 @@ class _Home extends State<Home> {
   }
 
   addTagList(value) {
+    print("typeCheck : ${upPanelMenuType}, ${searchTagList.length}");
     if (upPanelMenuType == 0 && searchTagList.length > 0) {
+      print("addTagList : ${value}");
       CafeLogSnackBarWithOk(
           msg: "홈에서 태그검색은 한 가지만 가능합니다.", context: context, okMsg: "확인");
     } else {
+      print("addValue : ${value}");
       searchTagList.add(value);
     }
 
@@ -251,11 +256,15 @@ class _Home extends State<Home> {
           userLocation = "";
           for (int i = 0; i < lines.length; i++) {
             print("lines : ${lines[i]}");
-            if (lines[i].contains("구")) {
+            /*if (lines[i].contains("구")) {
               userLocation += lines[i];
             } else if (lines[i].contains("로")) {
               userLocation += " " + lines[i];
+            }*/
+            if (i > 1) {
+              userLocation += lines[i]+ " ";
             }
+
           }
         });
       } on Exception catch (e) {
@@ -275,10 +284,13 @@ class _Home extends State<Home> {
           userLocation = "";
           for (int i = 0; i < lines.length; i++) {
             print("lines : ${lines[i]}");
-            if (lines[i].contains("구")) {
-              userLocation += lines[i];
-            } else if (lines[i].contains("로")) {
-              userLocation += " " + lines[i];
+//            if (lines[i].contains("구")) {
+//              userLocation += lines[i];
+//            } else if (lines[i].contains("로")) {
+//              userLocation += " " + lines[i];
+//            }
+            if (i > 1) {
+              userLocation += lines[i]+ " ";
             }
           }
         });
@@ -455,10 +467,22 @@ class _Home extends State<Home> {
                         child: Container(
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(10),
-                            child: Image.network(
-                              _cafeList[idx].pic,
-                              fit: BoxFit.fill,
-                            ),
+                            child: CachedNetworkImage(
+                              imageUrl: _cafeList[idx].pic,
+//                              placeholder: (context, url) =>
+//                                  CircularProgressIndicator(
+//                                    valueColor:
+//                                    AlwaysStoppedAnimation<Color>(mainColor),
+//                                  ),
+                              errorWidget: (context, url, error) => Image.asset(
+                                "assets/defaultImage.png",
+                                fit: BoxFit.fill,
+                              ),
+                            )
+//                            Image.network(
+//                              _cafeList[idx].pic,
+//                              fit: BoxFit.fill,
+//                            ),
                           ),
                         ),
                       ),
@@ -640,7 +664,7 @@ class _Home extends State<Home> {
                     Text(
                       userLocation,
                       style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
                           color: Black),
                     ),
@@ -1502,13 +1526,19 @@ class _Home extends State<Home> {
         physics: NeverScrollableScrollPhysics(),
       );
 
+  bool searchCheck = false;
+
   search() => GestureDetector(
         onTap: () {
           print("검색하기");
+          searchCheck = false;
           if (searchEnable) {
             // 검색한 결과를 메인으로 리턴
             setState(() {
-              addTagList(_searchController.text);
+              if (!tagOr) {
+                addTagList(_searchController.text);
+              }
+
               autoTagList.clear();
               autoTag = false;
               _searchController.text = "";
