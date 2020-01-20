@@ -1,15 +1,12 @@
 class AutoTag {
-  final int result;
-  final int id;
-  final String name;
+  final String tag;
 
-  AutoTag({this.result, this.id, this.name});
+  AutoTag({this.tag});
 
   factory AutoTag.fromJson(Map<dynamic, dynamic> data) {
     if (data['result'] == 1) {
       return AutoTag(
-        id: data['id'],
-        name: data['name']
+        tag: data['tag']
       );
     }
     return null;

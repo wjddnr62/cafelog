@@ -4,23 +4,26 @@ import 'package:webview_flutter/webview_flutter.dart';
 import '../../colors.dart';
 
 class NaverCafeInfo extends StatefulWidget {
+  String url;
+
+  NaverCafeInfo({Key key, this.url}) : super(key: key);
+
   @override
   _NaverCafeInfo createState() => _NaverCafeInfo();
 }
 
 class _NaverCafeInfo extends State<NaverCafeInfo> {
-
   String loadCompleteUrl;
   bool firstLoad = false;
   WebViewController _webViewController;
   String naverInfoUrl;
 
-
   @override
   void initState() {
     super.initState();
 
-    naverInfoUrl = "https://store.naver.com/restaurants/detail?id=971501438";
+//    naverInfoUrl = "https://store.naver.com/restaurants/detail?id=971501438";
+      naverInfoUrl = widget.url;
   }
 
   @override
@@ -87,5 +90,4 @@ class _NaverCafeInfo extends State<NaverCafeInfo> {
           )),
     );
   }
-
 }

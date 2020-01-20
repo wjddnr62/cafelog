@@ -1,19 +1,30 @@
 import 'dart:convert';
 
 import 'package:badges/badges.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cafelog/Bloc/mainBloc.dart';
 import 'package:cafelog/Model/autoTagData.dart';
+import 'package:cafelog/Model/cafeListData.dart';
 import 'package:cafelog/Model/instaPostData.dart';
 import 'package:cafelog/Screens/CafeLocationSearch/locationSearch.dart';
+import 'package:cafelog/Screens/Home/instaDetail.dart';
+import 'package:cafelog/Screens/MyAround/myAround.dart';
+import 'package:cafelog/Screens/MyAround/myAroundMap.dart';
 import 'package:cafelog/Screens/PopularityCafe/popularityCafe.dart';
 import 'package:cafelog/Util/whiteSpace.dart';
+import 'package:cafelog/Widgets/snackbar.dart';
 import 'package:cafelog/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geocoder/geocoder.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:keyboard_visibility/keyboard_visibility.dart';
+import 'package:location/location.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 customErrorWidget(context, error) {
   return Container();
@@ -35,6 +46,23 @@ class _Home extends State<Home> {
   TextStyle nonSelectFilterStyle =
       TextStyle(color: Color.fromARGB(255, 122, 122, 122), fontSize: 12);
 
+  List<CafeListData> _cafeList = [];
+  int defaultLength = 10;
+  ScrollController _mainScroll = ScrollController(keepScrollOffset: true);
+  int defaultOffSet = 0;
+
+  checkEndList() {
+    if (_mainScroll.offset >= _mainScroll.position.maxScrollExtent &&
+        !_mainScroll.position.outOfRange) {
+      setState(() {
+        firstData = false;
+      });
+//      setState(() {});
+//      });
+      print("bottom");
+    }
+  }
+
   List<String> tagListItem = [
     "마카롱",
     "흑당라떼",
@@ -52,6 +80,7 @@ class _Home extends State<Home> {
 
   List<InstaPostData> instaPostLeftData = [];
   List<InstaPostData> instaPostRightData = [];
+  List<InstaPostData> instaPostData = [];
 
   BoxDecoration tagDecoration = BoxDecoration(
       borderRadius: BorderRadius.circular(5),
@@ -114,7 +143,8 @@ class _Home extends State<Home> {
       prefsInit = 1;
     }
 
-    if (prefs.getStringList("searchList") != null && prefs.getStringList("searchList").isNotEmpty)
+    if (prefs.getStringList("searchList") != null &&
+        prefs.getStringList("searchList").isNotEmpty)
       setState(() {
         searchList = prefs.getStringList("searchList");
       });
@@ -141,7 +171,7 @@ class _Home extends State<Home> {
 //    if (_scrollController.hasClients)
     print("test");
     print(searchTagList.length.toString());
-    if (searchTagList.length > 0) {
+    if (searchTagList.length > 0 && _scrollController.hasClients) {
       _scrollController.animateTo(_scrollController.position.maxScrollExtent,
           duration: Duration(milliseconds: 300), curve: Curves.easeOut);
     }
@@ -160,12 +190,323 @@ class _Home extends State<Home> {
   }
 
   addTagList(value) {
-    searchTagList.add(value);
+    print("typeCheck : ${upPanelMenuType}, ${searchTagList.length}");
+    if (upPanelMenuType == 0 && searchTagList.length > 0) {
+      print("addTagList : ${value}");
+      CafeLogSnackBarWithOk(
+          msg: "홈에서 태그검색은 한 가지만 가능합니다.", context: context, okMsg: "확인");
+    } else {
+      print("addValue : ${value}");
+      searchTagList.add(value);
+    }
+
     print("listLength : " + searchTagList.length.toString());
     if (searchTagList.length > 0) {
       setState(() {
         searchEnable = true;
       });
+    }
+  }
+
+  Map<PermissionGroup, PermissionStatus> permissions;
+
+  Future<bool> permissionCheck() async {
+    permissions = await PermissionHandler()
+        .requestPermissions([PermissionGroup.location]);
+    PermissionStatus permission = await PermissionHandler()
+        .checkPermissionStatus(PermissionGroup.location);
+
+    print("check: " + permission.toString());
+    bool pass = false;
+
+    if (permission == PermissionStatus.granted) {
+      pass = true;
+    }
+
+    return pass;
+  }
+
+  var currentLocation;
+  var location = new Location();
+  LatLng latLng;
+  var address;
+  String userLocation = "";
+
+  getLocation(type, getLatLng) async {
+    if (type == 0) {
+      try {
+        currentLocation = await location.getLocation();
+        final coordinates = new Coordinates(
+            currentLocation.latitude, currentLocation.longitude);
+        latLng = LatLng(currentLocation.latitude, currentLocation.longitude);
+        var addresses =
+            await Geocoder.local.findAddressesFromCoordinates(coordinates);
+        address = addresses.first;
+        print("${address.featureName}, ${address.addressLine}");
+        List<String> lines = address.addressLine.toString().split(" ");
+        setState(() {
+          userLocation = "";
+          for (int i = 0; i < lines.length; i++) {
+            print("lines : ${lines[i]}");
+            /*if (lines[i].contains("구")) {
+              userLocation += lines[i];
+            } else if (lines[i].contains("로")) {
+              userLocation += " " + lines[i];
+            }*/
+            if (i > 1) {
+              userLocation += lines[i]+ " ";
+            }
+
+          }
+        });
+      } on Exception catch (e) {
+        getLocation(0, "");
+      }
+    } else {
+      try {
+        final coordinates =
+            new Coordinates(getLatLng.latitude, getLatLng.longitude);
+        latLng = LatLng(getLatLng.latitude, getLatLng.longitude);
+        var addresses =
+            await Geocoder.local.findAddressesFromCoordinates(coordinates);
+        address = addresses.first;
+        print("${address.featureName}, ${address.addressLine}");
+        List<String> lines = address.addressLine.toString().split(" ");
+        setState(() {
+          userLocation = "";
+          for (int i = 0; i < lines.length; i++) {
+            print("lines : ${lines[i]}");
+//            if (lines[i].contains("구")) {
+//              userLocation += lines[i];
+//            } else if (lines[i].contains("로")) {
+//              userLocation += " " + lines[i];
+//            }
+            if (i > 1) {
+              userLocation += lines[i]+ " ";
+            }
+          }
+        });
+      } on Exception catch (e) {
+        getLocation(1, getLatLng);
+      }
+    }
+  }
+
+  bool firstData = false;
+
+  mainListGrid() {
+    if (!firstData) {
+      print("defaultOffSet : ${defaultOffSet}");
+      _mainBloc.setLimit(defaultOffSet);
+
+      _mainBloc.getMainList().then((value) async {
+        if (json.decode(value)['result'] != 0 &&
+            (json.decode(value)['data'] != null &&
+                json.decode(value)['data'] != "")) {
+          if (!firstData) {
+            defaultOffSet += 1;
+            print('value : ${json.decode(value)['data']}');
+            List<dynamic> valueList = await json.decode(value)['data'];
+            print(valueList.length);
+            if (valueList.length != 0) {
+              for (int i = 0; i < valueList.length; i++) {
+                _cafeList.add(CafeListData(
+                    url: valueList[i]['url'],
+                    nickname: valueList[i]['nickname'],
+                    pic: valueList[i]['pic'],
+                    date: valueList[i]['date'],
+                    like: valueList[i]['like'],
+                    search_tag: valueList[i]['search_tag']));
+              }
+            }
+            firstData = true;
+          }
+          setState(() {});
+        }
+      }).catchError((error) {
+        print("error : ${error}");
+      });
+    }
+    if (keywordSearching) {
+      print("lenlen : " + _cafeList.length.toString());
+      if (_cafeList.length == 0) {
+        return keywordSearch(keyword);
+      } else {
+        return (_cafeList.length == 0 && firstData == false)
+            ? Padding(
+                padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).size.height / 5),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(mainColor),
+                  ),
+                ),
+              )
+            : Padding(
+                padding:
+                    EdgeInsets.only(top: 10, bottom: 150, left: 15, right: 15),
+                child: StaggeredGridView.countBuilder(
+                  controller: _mainScroll,
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  itemCount: _cafeList.length,
+                  itemBuilder: (context, idx) => GestureDetector(
+                    onTap: () {
+                      print("Name : ${_cafeList[idx].search_tag}");
+
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => InstaDetail(
+                              name: _cafeList[idx].search_tag,
+                              instaUrl: _cafeList[idx].url,
+                              offset: _mainScroll.offset,
+                            ),
+                          )).then((result) {
+                        _mainScroll.animateTo(result,
+                            duration: null, curve: null);
+                      });
+                    },
+                    child: Stack(
+                      children: <Widget>[
+                        Padding(
+                          padding: EdgeInsets.only(
+                            bottom: 10,
+                          ),
+                          child: Container(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.network(
+                                _cafeList[idx].pic,
+                                fit: BoxFit.fill,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          child: Text(
+                            "@" + _cafeList[idx].nickname,
+                            style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: White,
+                                shadows: [Shadow(color: Black, blurRadius: 5)]),
+                          ),
+                          bottom: 20,
+                          left: 15,
+                        ),
+//                      instaPostData[idx].img.length == 2
+//                          ? Positioned(
+//                              child: Icon(
+//                                Icons.photo_library,
+//                                color: White,
+//                                size: 14,
+//                              ),
+//                              right: 5,
+//                              bottom: 15,
+//                            )
+//                          : Container()
+                      ],
+                    ),
+                  ),
+                  staggeredTileBuilder: (idx) => StaggeredTile.fit(1),
+                  crossAxisSpacing: 10.0,
+                ));
+      }
+    } else {
+      return (_cafeList.length == 0 && firstData == false)
+          ? Padding(
+              padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).size.height / 5),
+              child: Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(mainColor),
+                ),
+              ),
+            )
+          : Padding(
+              padding:
+                  EdgeInsets.only(top: 10, bottom: 150, left: 15, right: 15),
+              child: StaggeredGridView.countBuilder(
+                controller: _mainScroll,
+                crossAxisCount: 2,
+                shrinkWrap: true,
+                itemCount: _cafeList.length,
+                itemBuilder: (context, idx) => GestureDetector(
+                  onTap: () {
+                    print("Name : ${_cafeList[idx].search_tag}");
+
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => InstaDetail(
+                            name: _cafeList[idx].search_tag,
+                            instaUrl: _cafeList[idx].url,
+                            offset: _mainScroll.offset,
+                            type: 0,
+                          ),
+                        )).then((result) {
+                      _mainScroll.animateTo(result,
+                          duration: null, curve: null);
+                    });
+                  },
+                  child: Stack(
+                    children: <Widget>[
+                      Padding(
+                        padding: EdgeInsets.only(
+                          bottom: 10,
+                        ),
+                        child: Container(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: CachedNetworkImage(
+                              imageUrl: _cafeList[idx].pic,
+//                              placeholder: (context, url) =>
+//                                  CircularProgressIndicator(
+//                                    valueColor:
+//                                    AlwaysStoppedAnimation<Color>(mainColor),
+//                                  ),
+                              errorWidget: (context, url, error) => Image.asset(
+                                "assets/defaultImage.png",
+                                fit: BoxFit.fill,
+                              ),
+                            )
+//                            Image.network(
+//                              _cafeList[idx].pic,
+//                              fit: BoxFit.fill,
+//                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        child: Text(
+                          "@" + _cafeList[idx].nickname,
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: White,
+                              shadows: [Shadow(color: Black, blurRadius: 5)]),
+                        ),
+                        bottom: 20,
+                        left: 15,
+                      ),
+//                      instaPostData[idx].img.length == 2
+//                          ? Positioned(
+//                              child: Icon(
+//                                Icons.photo_library,
+//                                color: White,
+//                                size: 14,
+//                              ),
+//                              right: 5,
+//                              bottom: 15,
+//                            )
+//                          : Container()
+                    ],
+                  ),
+                ),
+                staggeredTileBuilder: (idx) => StaggeredTile.fit(1),
+                crossAxisSpacing: 10.0,
+              ));
     }
   }
 
@@ -177,8 +518,9 @@ class _Home extends State<Home> {
 
   @override
   void initState() {
+    _mainScroll.addListener(checkEndList);
     super.initState();
-
+    getLocation(0, "");
 //    cal();
 
     searchList = List();
@@ -197,75 +539,130 @@ class _Home extends State<Home> {
 
     prefInit();
 
-    for (int i = 0; i < 10; i++) {
-      List<String> image = List();
-      if (i >= 0 && i < 5) {
-        if (i == 2) {
-          image.clear();
-          image.add("assets/test/test${i + 1}.png");
-          image.add("assets/test/test${i + 2}.png");
-          instaPostLeftData.add(InstaPostData(image, "@test${i}", ""));
-        } else {
-          image.clear();
-          image.add("assets/test/test${i + 1}.png");
-          instaPostLeftData.add(InstaPostData(image, "@test${i}", ""));
-        }
-      } else {
-        if (i == 7) {
-          image.clear();
-          image.add("assets/test/test${i + 1}.png");
-          image.add("assets/test/test${i + 2}.png");
-          instaPostRightData.add(InstaPostData(image, "@test${i}", ""));
-        } else {
-          image.clear();
-          image.add("assets/test/test${i + 1}.png");
-          instaPostRightData.add(InstaPostData(image, "@test${i}", ""));
-        }
-      }
-    }
+//    for (int i = 0; i < 10; i++) {
+//      List<String> image = List();
+//      if (i >= 0 && i < 5) {
+//        if (i == 2) {
+//          image.clear();
+//          image.add("assets/test/test${i + 1}.png");
+//          image.add("assets/test/test${i + 2}.png");
+////          instaPostLeftData.add(InstaPostData(image, "@test${i}", ""));
+//          instaPostData.add(InstaPostData(image, "@test${i}", ""));
+//        } else {
+//          image.clear();
+//          image.add("assets/test/test${i + 1}.png");
+////          instaPostLeftData.add(InstaPostData(image, "@test${i}", ""));
+//          instaPostData.add(InstaPostData(image, "@test${i}", ""));
+//        }
+//      } else {
+//        if (i == 7) {
+//          image.clear();
+//          image.add("assets/test/test${i + 1}.png");
+//          image.add("assets/test/test${i + 2}.png");
+////          instaPostRightData.add(InstaPostData(image, "@test${i}", ""));
+//          instaPostData.add(InstaPostData(image, "@test${i}", ""));
+//        } else {
+//          image.clear();
+//          image.add("assets/test/test${i + 1}.png");
+////          instaPostRightData.add(InstaPostData(image, "@test${i}", ""));
+//          instaPostData.add(InstaPostData(image, "@test${i}", ""));
+//        }
+//      }
+//    }
   }
 
   homeAppBar() => AppBar(
         elevation: 0.0,
         centerTitle: true,
         backgroundColor: White,
-        title: GestureDetector(
-          onTap: () async {
-            print("카페 지역 선택");
-            setState(() {
-              cafeSelect = false;
-            });
-            await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => LocationSearch(
-                    cafeLocation: cafeLocation,
-                  ),
-                )).then((result) {
-              setState(() {
-                cafeLocation = result.toString();
-                cafeSelect = true;
-                _mainBloc.setStreet(cafeLocation);
-                print("aa : " + cafeLocation);
-              });
-            });
-          },
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Text(
-                cafeLocation,
-                style: TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.bold, color: Black),
-              ),
-              Icon(
-                Icons.arrow_drop_down,
-                color: mainColor,
-                size: 18,
+        title: upPanelMenuType != 2
+            ? GestureDetector(
+                onTap: () async {
+                  print("카페 지역 선택");
+                  setState(() {
+                    cafeSelect = false;
+                  });
+                  await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => LocationSearch(
+                          cafeLocation: cafeLocation,
+                        ),
+                      )).then((result) {
+                    setState(() {
+                      cafeLocation = result.toString();
+                      cafeSelect = true;
+//                      _mainBloc.setStreet(cafeLocation);
+                      if (cafeLocation == "전체카페") {
+                        _mainBloc.setMainStreet("");
+                        _cafeList.clear();
+                        defaultOffSet = 0;
+                        _mainBloc.setLimit(defaultOffSet);
+                        firstData = false;
+                        mainListGrid();
+                      } else {
+                        _mainBloc.setMainStreet(cafeLocation);
+                        _cafeList.clear();
+                        defaultOffSet = 0;
+                        _mainBloc.setLimit(defaultOffSet);
+                        firstData = false;
+                        mainListGrid();
+                      }
+                      print("street : " + cafeLocation);
+                    });
+                  });
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Text(
+                      cafeLocation,
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Black),
+                    ),
+                    Icon(
+                      Icons.arrow_drop_down,
+                      color: mainColor,
+                      size: 18,
+                    )
+                  ],
+                ),
               )
-            ],
-          ),
-        ),
+            : GestureDetector(
+                onTap: () {
+                  Navigator.of(context)
+                      .push(MaterialPageRoute(
+                          builder: (context) => MyAroundMap(
+                                latLng: latLng,
+                              )))
+                      .then((value) {
+                    if (value != null) {
+                      latLng = latLng;
+                      getLocation(1, value);
+                    }
+                  });
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Icon(
+                      Icons.location_on,
+                      color: Color.fromARGB(255, 167, 167, 167),
+                      size: 14,
+                    ),
+                    whiteSpaceW(5),
+                    Text(
+                      userLocation,
+                      style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Black),
+                    ),
+                  ],
+                ),
+              ),
         // bloc 에 카페명 저장하여 관리
         leading: IconButton(
           onPressed: () {
@@ -280,7 +677,26 @@ class _Home extends State<Home> {
             size: 30,
           ),
         ),
-        actions: <Widget>[whiteSpaceW(MediaQuery.of(context).size.width / 5)],
+        actions: <Widget>[
+          upPanelMenuType != 2
+              ? whiteSpaceW(MediaQuery.of(context).size.width / 5)
+              : GestureDetector(
+                  onTap: () {
+                    print("현위치로");
+                    getLocation(0, "");
+                  },
+                  child: Center(
+                    child: Text(
+                      "현위치로",
+                      style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: mainColor),
+                    ),
+                  ),
+                ),
+          upPanelMenuType == 2 ? whiteSpaceW(20) : Container()
+        ],
       );
 
   searchOrTagList() => ListView.builder(
@@ -336,82 +752,86 @@ class _Home extends State<Home> {
                           ),
                         ),
                       ),
-                      Container(
-                        width: 150,
-                        child: TextFormField(
-                          controller: _searchController,
-                          focusNode: _searchNode,
-                          textInputAction: TextInputAction.next,
-                          style: TextStyle(
-                              fontSize: 14,
-                              color: Black,
-                              fontWeight: FontWeight.bold),
-                          onFieldSubmitted: (value) {
-                            if (value == null || value == " " || value == "") {
-                              _searchController.text = "";
-                            } else {
-                              setState(() {
-                                addTagList(value);
-                                autoTagList.clear();
-                                autoTag = false;
-                                _searchController.text = "";
-                                FocusScope.of(context)
-                                    .requestFocus(_searchNode);
-                              });
-                              lastTagMove();
-                            }
-                          },
-                          onChanged: (value) {
-//                          print("value : " + value);
-                            if (value == null ||
-                                value == "" ||
-                                value == " ") {
-                              setState(() {
-                                autoTag = false;
-                              });
-                            } else {
-                              setState(() {
-                                autoTag = true;
-                                setSearchEnable(value);
-                                _mainBloc.setKeyword(value);
-//                              getAutoTag();
-                              });
-
-                            }
-
-                            if (value == null || value == " ") {
-                              _searchController.text = "";
-                            } else {
-                              if (value.contains(" ")) {
-                                if (addKeyWord == false) {
-                                  setState(() {
-                                    addTagList(value);
+                      upPanelMenuType != 0
+                          ? Container(
+                              width: 150,
+                              child: TextFormField(
+                                controller: _searchController,
+                                focusNode: _searchNode,
+                                textInputAction: TextInputAction.next,
+                                style: TextStyle(
+                                    fontSize: 14,
+                                    color: Black,
+                                    fontWeight: FontWeight.bold),
+                                onFieldSubmitted: (value) {
+                                  if (value == null ||
+                                      value == " " ||
+                                      value == "") {
                                     _searchController.text = "";
-                                    addKeyWord = true;
-                                    autoTag = false;
-                                    autoTagList.clear();
-                                    FocusScope.of(context)
-                                        .requestFocus(_searchNode);
-                                  });
-                                  lastTagMove();
-                                }
-                              }
-                              if (value == "") {
-                                addKeyWord = false;
-                              }
-                            }
-                          },
-                          decoration: InputDecoration(
-                              hintStyle: TextStyle(
-                                  fontSize: 14,
-                                  color: Color.fromARGB(255, 167, 167, 167)),
-                              hintText: "키워드 추가",
-                              border: InputBorder.none,
-                              focusedBorder: InputBorder.none,
-                              contentPadding:
-                                  EdgeInsets.only(top: 5, bottom: 5, left: 5)),
-                        ),
-                      )
+                                  } else {
+                                    setState(() {
+                                      addTagList(value);
+                                      autoTagList.clear();
+                                      autoTag = false;
+                                      _searchController.text = "";
+                                      FocusScope.of(context)
+                                          .requestFocus(_searchNode);
+                                    });
+                                    lastTagMove();
+                                  }
+                                },
+                                onChanged: (value) {
+//                          print("value : " + value);
+                                  if (value == null ||
+                                      value == "" ||
+                                      value == " ") {
+                                    setState(() {
+                                      autoTag = false;
+                                    });
+                                  } else {
+                                    setState(() {
+                                      autoTag = true;
+                                      setSearchEnable(value);
+                                      _mainBloc.setKeyword(value);
+//                              getAutoTag();
+                                    });
+                                  }
+
+                                  if (value == null || value == " ") {
+                                    _searchController.text = "";
+                                  } else {
+                                    if (value.contains(" ")) {
+                                      if (addKeyWord == false) {
+                                        setState(() {
+                                          addTagList(value);
+                                          _searchController.text = "";
+                                          addKeyWord = true;
+                                          autoTag = false;
+                                          autoTagList.clear();
+                                          FocusScope.of(context)
+                                              .requestFocus(_searchNode);
+                                        });
+                                        lastTagMove();
+                                      }
+                                    }
+                                    if (value == "") {
+                                      addKeyWord = false;
+                                    }
+                                  }
+                                },
+                                decoration: InputDecoration(
+                                    hintStyle: TextStyle(
+                                        fontSize: 14,
+                                        color:
+                                            Color.fromARGB(255, 167, 167, 167)),
+                                    hintText: "키워드 추가",
+                                    border: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
+                                    contentPadding: EdgeInsets.only(
+                                        top: 5, bottom: 5, left: 5)),
+                              ),
+                            )
+                          : Container()
                     ],
                   ),
                 )
@@ -488,6 +908,19 @@ class _Home extends State<Home> {
                           tagOr == false
                               ? Expanded(
                                   child: TextFormField(
+                                    onTap: () {
+                                      if (upPanelMenuType == 0 &&
+                                          searchTagList.length > 0) {
+                                        CafeLogSnackBarWithOk(
+                                            msg: "홈에서 태그검색은 한 가지만 가능합니다.",
+                                            context: context,
+                                            okMsg: "확인");
+                                      }
+                                    },
+                                    readOnly: (searchTagList.length > 0 &&
+                                            upPanelMenuType == 0)
+                                        ? true
+                                        : false,
                                     focusNode: _searchNode,
                                     controller: _searchController,
                                     textInputAction: TextInputAction.next,
@@ -528,11 +961,12 @@ class _Home extends State<Home> {
                                         });
                                       }
 
-                                      if (value == null || value == " " || value == "") {
+                                      if (value == null ||
+                                          value == " " ||
+                                          value == "") {
                                         _searchController.text = "";
                                       } else {
                                         if (value.contains(" ")) {
-                                          print("check");
                                           if (addKeyWord == false) {
                                             setState(() {
                                               searchTagList
@@ -562,7 +996,7 @@ class _Home extends State<Home> {
                                         border: InputBorder.none,
                                         focusedBorder: InputBorder.none,
                                         contentPadding: EdgeInsets.only(
-                                            top: 10, bottom: 10, left: 5)),
+                                            top: 5, bottom: 10, left: 5)),
                                   ),
                                 )
                               : Expanded(
@@ -593,7 +1027,10 @@ class _Home extends State<Home> {
                           color: White,
                           child: Text(
                             "취소",
-                            style: TextStyle(color: mainColor, fontSize: 14),
+                            style: TextStyle(
+                                color: mainColor,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600),
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -614,7 +1051,7 @@ class _Home extends State<Home> {
         itemCount: tagListItem.length,
         itemBuilder: (context, position) {
           return Padding(
-            padding: EdgeInsets.only(right: 5),
+            padding: EdgeInsets.only(left: 5, right: 5),
             child: GestureDetector(
               onTap: () {
                 if (type == 0) {
@@ -628,6 +1065,12 @@ class _Home extends State<Home> {
                         autoTag = true;
                         autoing = false;
                       }
+                      searchTagList.clear();
+                      _mainBloc.setTag(null);
+                      _cafeList.clear();
+                      defaultOffSet = 0;
+                      firstData = false;
+                      mainListGrid();
                       // 선택해제
                     } else {
                       clickNum = position;
@@ -637,18 +1080,42 @@ class _Home extends State<Home> {
                         autoTag = false;
                         autoing = true;
                       }
+                      searchTagList.clear();
+                      searchTagList.add(tagListItem[position]);
+                      String tag = "";
+                      for (int i = 0; i < searchTagList.length; i++) {
+                        if (searchTagList.length == 1) {
+                          tag += searchTagList[i];
+                        } else if (i == searchTagList.length) {
+                          tag += searchTagList[i];
+                        } else {
+                          tag += searchTagList[i] + ",";
+                        }
+                      }
+                      _mainBloc.setTag(tag);
+                      _cafeList.clear();
+                      defaultOffSet = 0;
+                      firstData = false;
+                      mainListGrid();
                       // 선택
                     }
                   });
                 } else if (type == 1) {
-                  setState(() {
-                    addTagList(tagListItem[position]);
-                    tagOr = true;
-                    autoTag = false;
-                    _searchController.text = "";
-                    autoTagList.clear();
-                  });
-                  lastTagMove();
+                  if (upPanelMenuType == 0 && searchTagList.length > 0) {
+                    CafeLogSnackBarWithOk(
+                        msg: "홈에서 태그검색은 한 가지만 가능합니다.",
+                        context: context,
+                        okMsg: "확인");
+                  } else {
+                    setState(() {
+                      addTagList(tagListItem[position]);
+                      tagOr = true;
+                      autoTag = false;
+                      _searchController.text = "";
+                      autoTagList.clear();
+                    });
+                    lastTagMove();
+                  }
                 }
                 print("태그 클릭 : " + tagListItem[position]);
               },
@@ -675,63 +1142,30 @@ class _Home extends State<Home> {
   upPanelMenu(menuType, menuName) => menuType == 3
       ? Expanded(
           flex: 2,
-          child: upPanelMenuType == menuType
-              ? GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      upPanelMenuType = menuType;
-                    });
-                  },
-                  child: Container(
+          child: GestureDetector(
+            onTap: () {
+              Navigator.of(context).pushNamed("/MyCafeLog");
+            },
+            child: Container(
+              color: Colors.white,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Container(
                     color: Colors.white,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        Padding(
-                          padding: EdgeInsets.only(top: 30 / 2),
-                          child: Text(
-                            menuName,
-                            style: mainUpPanelHoverText,
-                          ),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.only(top: 5),
-                          child: Icon(
-                            Icons.brightness_1,
-                            size: 5,
-                            color: mainColor,
-                          ),
-                        ),
-                      ],
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 30 / 2),
+                      child: Text(
+                        menuName,
+                        style: mainUpPanelText,
+                      ),
                     ),
                   ),
-                )
-              : GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      upPanelMenuType = menuType;
-                    });
-                  },
-                  child: Container(
-                    color: Colors.white,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        Container(
-                          color: Colors.white,
-                          child: Padding(
-                            padding: EdgeInsets.only(top: 30 / 2),
-                            child: Text(
-                              menuName,
-                              style: mainUpPanelText,
-                            ),
-                          ),
-                        ),
-                        whiteSpaceH(10)
-                      ],
-                    ),
-                  ),
-                ),
+                  whiteSpaceH(10)
+                ],
+              ),
+            ),
+          ),
         )
       : Expanded(
           child: upPanelMenuType == menuType
@@ -768,9 +1202,28 @@ class _Home extends State<Home> {
                 )
               : GestureDetector(
                   onTap: () {
-                    setState(() {
-                      upPanelMenuType = menuType;
-                    });
+                    if (menuType == 2) {
+                      permissionCheck().then((pass) {
+                        if (pass == true) {
+                          if (userLocation == "") {
+                            getLocation(0, "");
+                          }
+
+                          setState(() {
+                            upPanelMenuType = menuType;
+                          });
+                        } else {
+                          CafeLogSnackBarWithOk(
+                              context: context,
+                              msg: "위치 권한을 동의해주세요.",
+                              okMsg: "확인");
+                        }
+                      });
+                    } else {
+                      setState(() {
+                        upPanelMenuType = menuType;
+                      });
+                    }
                   },
                   child: Container(
                     color: Colors.white,
@@ -843,10 +1296,12 @@ class _Home extends State<Home> {
         ),
         body: directSearching == false
             ? upPanelMenuType == 1
-                ? cafeSelect ? PopularityCafe(
-                      cafeLocation: cafeLocation,
-                    ) : Container()
-                : body()
+                ? cafeSelect
+                    ? PopularityCafe(
+                        cafeLocation: cafeLocation,
+                      )
+                    : Container()
+                : upPanelMenuType == 2 ? MyAround() : body()
             : searchBody(),
       );
 
@@ -855,12 +1310,24 @@ class _Home extends State<Home> {
           if (content == "인기") {
             if (filterButton == true) {
               setState(() {
+                _mainBloc.setType("0");
+                _cafeList.clear();
+                defaultOffSet = 0;
+                _mainBloc.setLimit(defaultOffSet);
+                firstData = false;
+                mainListGrid();
                 filterButton = false;
               });
             }
           } else if (content == "최신") {
             if (filterButton == false) {
               setState(() {
+                _mainBloc.setType("1");
+                _cafeList.clear();
+                defaultOffSet = 0;
+                _mainBloc.setLimit(defaultOffSet);
+                firstData = false;
+                mainListGrid();
                 filterButton = true;
               });
             }
@@ -949,117 +1416,57 @@ class _Home extends State<Home> {
   }
 
   instaCafePost() => Padding(
-        padding: EdgeInsets.only(top: 20, bottom: 150, left: 15, right: 15),
+        padding: EdgeInsets.only(top: 10, bottom: 150, left: 15, right: 15),
         child: Container(
-          width: MediaQuery.of(context).size.width,
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                child: ListView.builder(
-                  physics: NeverScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  itemCount: instaPostLeftData.length,
-                  itemBuilder: (context, position) {
-                    if (instaPostLeftData.length != position) {
-                      return GestureDetector(
-                        onTap: () {
-                          print("left");
-                        },
-                        child: Stack(
-                          children: <Widget>[
-                            Padding(
-                              padding: EdgeInsets.only(bottom: 10),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10)),
-                                child: Image.asset(
-                                  instaPostLeftData[position].img[0],
-                                  fit: BoxFit.fill,
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              child: Text(
-                                instaPostLeftData[position].instaName,
-                                style: instaPostDataNameText,
-                              ),
-                              bottom: 15,
-                              left: 5,
-                            ),
-                            instaPostLeftData[position].img.length == 2
-                                ? Positioned(
-                                    child: Icon(
-                                      Icons.photo_library,
-                                      color: White,
-                                      size: 14,
-                                    ),
-                                    right: 5,
-                                    bottom: 15,
-                                  )
-                                : Container()
-                          ],
+            width: MediaQuery.of(context).size.width,
+//          height: MediaQuery.of(context).size.height,
+            child: StaggeredGridView.countBuilder(
+              crossAxisCount: 2,
+              physics: NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              itemCount: instaPostData.length,
+              itemBuilder: (context, idx) => GestureDetector(
+                onTap: () {
+                  print("left");
+                },
+                child: Stack(
+                  children: <Widget>[
+                    Padding(
+                      padding: EdgeInsets.only(bottom: 10),
+                      child: Container(
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10)),
+                        child: Image.asset(
+                          instaPostData[idx].img[0],
+                          fit: BoxFit.fill,
                         ),
-                      );
-                    }
-                    return null;
-                  },
+                      ),
+                    ),
+                    Positioned(
+                      child: Text(
+                        instaPostData[idx].instaName,
+                        style: instaPostDataNameText,
+                      ),
+                      bottom: 15,
+                      left: 5,
+                    ),
+                    instaPostData[idx].img.length == 2
+                        ? Positioned(
+                            child: Icon(
+                              Icons.photo_library,
+                              color: White,
+                              size: 14,
+                            ),
+                            right: 5,
+                            bottom: 15,
+                          )
+                        : Container()
+                  ],
                 ),
               ),
-              whiteSpaceW(15),
-              Expanded(
-                child: ListView.builder(
-                  physics: NeverScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  itemCount: instaPostRightData.length,
-                  itemBuilder: (context, position) {
-                    if (instaPostLeftData.length != position) {
-                      return GestureDetector(
-                        onTap: () {
-                          print("right");
-                        },
-                        child: Stack(
-                          children: <Widget>[
-                            Padding(
-                              padding: EdgeInsets.only(bottom: 10),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10)),
-                                child: Image.asset(
-                                  instaPostRightData[position].img[0],
-                                  fit: BoxFit.fill,
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              child: Text(
-                                instaPostRightData[position].instaName,
-                                style: instaPostDataNameText,
-                              ),
-                              bottom: 15,
-                              left: 5,
-                            ),
-                            instaPostRightData[position].img.length == 2
-                                ? Positioned(
-                                    child: Icon(
-                                      Icons.photo_library,
-                                      color: White,
-                                      size: 14,
-                                    ),
-                                    right: 5,
-                                    bottom: 15,
-                                  )
-                                : Container()
-                          ],
-                        ),
-                      );
-                    }
-                    return null;
-                  },
-                ),
-              )
-            ],
-          ),
-        ),
+              staggeredTileBuilder: (idx) => StaggeredTile.fit(1),
+              crossAxisSpacing: 15.0,
+            )),
       );
 
   body() => SingleChildScrollView(
@@ -1086,24 +1493,69 @@ class _Home extends State<Home> {
             ),
             whiteSpaceH(10),
             keywordSearching == true
-                ? whiteSpaceH(MediaQuery.of(context).size.height / 4.5)
+                ? _cafeList.length == 0
+                    ? whiteSpaceH(MediaQuery.of(context).size.height / 4.5)
+                    : SizedBox()
                 : SizedBox(),
             keywordSearching == false
-                ? instaCafePost()
-                : keywordSearch(keyword),
+//                ? instaCafePost()
+                ? Container(
+                    width: MediaQuery.of(context).size.width,
+                    height: MediaQuery.of(context).size.height - 80,
+                    child: mainListGrid(),
+                  )
+                : Container(
+                    width: MediaQuery.of(context).size.width,
+                    height: _cafeList.length != 0
+                        ? MediaQuery.of(context).size.height - 80
+                        : MediaQuery.of(context).size.height / 2.5,
+                    child: mainListGrid(),
+                  ),
           ],
         ),
+        physics: NeverScrollableScrollPhysics(),
       );
+
+  bool searchCheck = false;
 
   search() => GestureDetector(
         onTap: () {
           print("검색하기");
+          searchCheck = false;
           if (searchEnable) {
             // 검색한 결과를 메인으로 리턴
             setState(() {
+              if (!tagOr) {
+                addTagList(_searchController.text);
+              }
+
+              autoTagList.clear();
+              autoTag = false;
+              _searchController.text = "";
+              _mainBloc.setInsertTag(searchTagList[0]);
+              _mainBloc.setAutoTag();
+              tagListItem.insert(0, searchTagList[0]);
+              clickNum = 0;
+              keyword = tagListItem[0];
+              keywordSearching = true;
               for (int i = 0; i < searchTagList.length; i++) {
                 prefSetValue(searchTagList[i]);
               }
+              String tag = "";
+              for (int i = 0; i < searchTagList.length; i++) {
+                if (searchTagList.length == 1) {
+                  tag += searchTagList[i];
+                } else if (i == searchTagList.length) {
+                  tag += searchTagList[i];
+                } else {
+                  tag += searchTagList[i] + ",";
+                }
+              }
+              _mainBloc.setTag(tag);
+              _cafeList.clear();
+              defaultOffSet = 0;
+              firstData = false;
+              mainListGrid();
               _searchController.text = "";
               autoTagList.clear();
               searchTagList.clear();
@@ -1241,11 +1693,38 @@ class _Home extends State<Home> {
                                               child: Row(
                                                 children: <Widget>[
                                                   Expanded(
-                                                    child: Text(
-                                                      searchList[idx],
-                                                      style: TextStyle(
-                                                          color: Black,
-                                                          fontSize: 14),
+                                                    child: GestureDetector(
+                                                      onTap: () {
+                                                        if (upPanelMenuType ==
+                                                                0 &&
+                                                            searchTagList
+                                                                    .length >
+                                                                0) {
+                                                          CafeLogSnackBarWithOk(
+                                                              msg:
+                                                                  "홈에서 태그검색은 한 가지만 가능합니다.",
+                                                              context: context,
+                                                              okMsg: "확인");
+                                                        } else {
+                                                          setState(() {
+                                                            addTagList(
+                                                                searchList[
+                                                                    idx]);
+                                                            tagOr = true;
+                                                            autoTag = false;
+                                                            _searchController
+                                                                .text = "";
+                                                            autoTagList.clear();
+                                                          });
+                                                          lastTagMove();
+                                                        }
+                                                      },
+                                                      child: Text(
+                                                        searchList[idx],
+                                                        style: TextStyle(
+                                                            color: Black,
+                                                            fontSize: 14),
+                                                      ),
                                                     ),
                                                   ),
                                                   GestureDetector(
@@ -1280,14 +1759,14 @@ class _Home extends State<Home> {
                               if (snapshot.hasData) {
                                 if (snapshot.data != null &&
                                     snapshot.data.isNotEmpty) {
-                                  List<dynamic> valueList = json
-                                      .decode(snapshot.data)['data']['tags'];
+                                  List<dynamic> valueList =
+                                      json.decode(snapshot.data)['data'];
                                   autoTagList.clear();
 
                                   for (int i = 0; i < valueList.length; i++) {
-                                    autoTagList.add(AutoTag(
-                                        id: valueList[i]['id'],
-                                        name: valueList[i]['name']));
+                                    autoTagList
+                                        .add(AutoTag(tag: valueList[i]['tag']));
+                                    print("tag : ${valueList[i]['tag']}");
                                   }
 
                                   if (autoTagList != null &&
@@ -1299,8 +1778,12 @@ class _Home extends State<Home> {
                                             idx >= 0) {
 //                                  print("length : " + autoTagList.length.toString());
 
+                                        print("firstStart : ${autoTagList[idx]
+                                            .tag
+                                            .indexOf(_searchController
+                                            .text)}");
                                           bool firstStart = autoTagList[idx]
-                                                      .name
+                                                      .tag
                                                       .indexOf(_searchController
                                                           .text) ==
                                                   0
@@ -1315,65 +1798,88 @@ class _Home extends State<Home> {
                                               autoTagList.isNotEmpty &&
                                               _searchController.text.length >
                                                   0 &&
-                                              autoTagList[idx].name.length !=
+                                              autoTagList[idx].tag.length !=
                                                   0) {
                                             if (firstStart) {
                                               firstWord = autoTagList[idx]
-                                                  .name
+                                                  .tag
                                                   .substring(
                                                       autoTagList[idx]
-                                                          .name
+                                                          .tag
                                                           .indexOf(
                                                               _searchController
                                                                   .text),
-                                                      autoTagList[idx]
-                                                              .name
-                                                              .indexOf(
-                                                                  _searchController
-                                                                      .text) +
-                                                          _searchController
-                                                              .text.length);
-                                              middleWord = autoTagList[idx]
-                                                  .name
-                                                  .substring(autoTagList[idx]
-                                                          .name
-                                                          .indexOf(
+                                                      autoTagList[idx].tag.indexOf(
                                                               _searchController
                                                                   .text) +
-                                                      1);
+                                                          _searchController
+                                                              .text.length);
+                                              print("firstWord : ${firstWord}");
+                                              if (firstWord != autoTagList[idx].tag) {
+                                                middleWord = autoTagList[idx]
+                                                    .tag
+                                                    .substring(autoTagList[idx]
+                                                    .tag
+                                                    .indexOf(
+                                                    _searchController
+                                                        .text) +
+                                                    firstWord.length == 1 ? 1 : firstWord.length >= _searchController.text.length ? _searchController.text.length : 2);
+                                              }
+
+                                              print("middleWord : ${middleWord}");
                                             } else {
                                               firstWord = autoTagList[idx]
-                                                  .name
+                                                  .tag
                                                   .substring(
                                                       0,
                                                       autoTagList[idx]
-                                                          .name
+                                                          .tag
                                                           .indexOf(
                                                               _searchController
                                                                   .text));
+                                              print("firstWord2 : ${firstWord}");
                                               middleWord = autoTagList[idx]
-                                                  .name
+                                                  .tag
                                                   .substring(
                                                       autoTagList[idx]
-                                                          .name
+                                                          .tag
                                                           .indexOf(
                                                               _searchController
                                                                   .text),
-                                                      autoTagList[idx]
-                                                              .name
-                                                              .indexOf(
-                                                                  _searchController
-                                                                      .text) +
-                                                          _searchController
-                                                              .text.length);
-                                              finishWord = autoTagList[idx]
-                                                  .name
-                                                  .substring(autoTagList[idx]
-                                                          .name
-                                                          .indexOf(
+                                                      autoTagList[idx].tag.indexOf(
                                                               _searchController
                                                                   .text) +
-                                                      1);
+                                                          _searchController
+                                                              .text.length);
+                                              print("middleWord2 : ${middleWord}, ${autoTagList[idx]
+                                                  .tag}, ${autoTagList[idx]
+                                                  .tag
+                                                  .indexOf(
+                                                  _searchController
+                                                      .text)}, ${autoTagList[idx].tag.indexOf(
+                                                  _searchController
+                                                      .text)}, ${_searchController.text.length}");
+                                              if (autoTagList[idx].tag.length <= 2 && middleWord.length >= autoTagList[idx].tag.substring(1, autoTagList[idx].tag.length - 1).length) {
+                                                finishWord = autoTagList[idx]
+                                                    .tag
+                                                    .substring(autoTagList[idx]
+                                                    .tag
+                                                    .length - 1);
+                                              } else {
+                                                finishWord = autoTagList[idx]
+                                                    .tag
+                                                    .substring(autoTagList[idx]
+                                                    .tag
+                                                    .indexOf(
+                                                    _searchController
+                                                        .text) + _searchController.text.length);
+                                              }
+
+
+                                              if (_searchController.text.contains(finishWord)) {
+                                                finishWord = "";
+                                              }
+                                              print("finishWord2 : ${finishWord}");
                                               twoWord = false;
                                             }
                                           }
@@ -1385,10 +1891,10 @@ class _Home extends State<Home> {
                                               child: GestureDetector(
                                                 onTap: () {
                                                   print(
-                                                      "clickTag : ${autoTagList[idx].name}");
+                                                      "clickTag : ${autoTagList[idx].tag}");
                                                   setState(() {
                                                     addTagList(
-                                                        autoTagList[idx].name);
+                                                        autoTagList[idx].tag);
                                                     tagOr = true;
                                                     autoTag = false;
                                                     _searchController.text = "";
