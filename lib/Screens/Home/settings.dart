@@ -63,25 +63,25 @@ class _Setting extends State<Setting> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            whiteSpaceH(20),
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text("위치서비스", style: TextStyle(
-                    color: Black, fontSize: 18, fontWeight: FontWeight.bold
-                  ),),
-                ),
-                Switch(
-                  value: _switch,
-                  onChanged: (value) {
-                    setState(() {
-                      _switch = value;
-                    });
-                  },
-                  activeColor: mainColor,
-                )
-              ],
-            ),
+//            whiteSpaceH(20),
+//            Row(
+//              children: <Widget>[
+//                Expanded(
+//                  child: Text("위치서비스", style: TextStyle(
+//                    color: Black, fontSize: 18, fontWeight: FontWeight.bold
+//                  ),),
+//                ),
+//                Switch(
+//                  value: _switch,
+//                  onChanged: (value) {
+//                    setState(() {
+//                      _switch = value;
+//                    });
+//                  },
+//                  activeColor: mainColor,
+//                )
+//              ],
+//            ),
             whiteSpaceH(20),
             Expanded(
               child: Row(
