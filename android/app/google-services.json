@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "30255679214",
+    "firebase_url": "https://cafelog-6aff0.firebaseio.com",
+    "project_id": "cafelog-6aff0",
+    "storage_bucket": "cafelog-6aff0.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:30255679214:android:a04f957bd480bf62ec55ff",
+        "android_client_info": {
+          "package_name": "com.laon.cafelog"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "30255679214-7duo6lqn532mj750h0dielqmpq6pkb2p.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAKPRlBlzOJAwk-WFod6jIi28leJmsoE4Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "30255679214-7duo6lqn532mj750h0dielqmpq6pkb2p.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

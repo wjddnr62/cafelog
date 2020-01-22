@@ -3,6 +3,7 @@ import 'package:cafelog/Widgets/snackbar.dart';
 import 'package:cafelog/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginMain extends StatefulWidget {
   @override
@@ -59,6 +60,24 @@ class _LoginMain extends State<LoginMain> {
     }
 
     return pass;
+  }
+
+  SharedPreferences prefs;
+
+  loginCheck() async {
+    prefs = await SharedPreferences.getInstance();
+    print("accessToken : ${prefs.getString("accessToken")}");
+    if (prefs.getString("accessToken") != null && prefs.getString("accessToken") != "") {
+      Navigator.of(context).pushNamedAndRemoveUntil("/Home", (Route<dynamic> route) => false);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    loginCheck();
+
   }
 
   @override
@@ -182,7 +201,7 @@ class _LoginMain extends State<LoginMain> {
                       onTap: (){
                         permissionCheck().then((pass) {
                           if (pass) {
-                            Navigator.of(context).pushNamed("/Home");
+                            Navigator.of(context).pushNamedAndRemoveUntil("/Home", (Route<dynamic> route) => false);
                           } else {
                             CafeLogSnackBarWithOk(
                                 context: context,

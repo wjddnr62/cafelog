@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:badges/badges.dart';
@@ -7,7 +8,10 @@ import 'package:cafelog/Model/autoTagData.dart';
 import 'package:cafelog/Model/cafeListData.dart';
 import 'package:cafelog/Model/instaPostData.dart';
 import 'package:cafelog/Screens/CafeLocationSearch/locationSearch.dart';
+import 'package:cafelog/Screens/Home/favorite.dart';
 import 'package:cafelog/Screens/Home/instaDetail.dart';
+import 'package:cafelog/Screens/Home/settings.dart';
+import 'package:cafelog/Screens/Login/loginMain.dart';
 import 'package:cafelog/Screens/MyAround/myAround.dart';
 import 'package:cafelog/Screens/MyAround/myAroundMap.dart';
 import 'package:cafelog/Screens/PopularityCafe/popularityCafe.dart';
@@ -51,6 +55,14 @@ class _Home extends State<Home> {
   ScrollController _mainScroll = ScrollController(keepScrollOffset: true);
   int defaultOffSet = 0;
 
+  SharedPreferences sharedPreferences;
+  String accessToken;
+
+  sharedInit() async {
+    sharedPreferences = await SharedPreferences.getInstance();
+    accessToken = sharedPreferences.getString("accessToken");
+  }
+
   checkEndList() {
     if (_mainScroll.offset >= _mainScroll.position.maxScrollExtent &&
         !_mainScroll.position.outOfRange) {
@@ -78,9 +90,20 @@ class _Home extends State<Home> {
     "테스트7"
   ];
 
-  List<InstaPostData> instaPostLeftData = [];
-  List<InstaPostData> instaPostRightData = [];
-  List<InstaPostData> instaPostData = [];
+  List<String> tagListItemSearch = [
+    "마카롱",
+    "흑당라떼",
+    "케이크",
+    "베이커리",
+    "레스토랑",
+    "테스트",
+    "테스트2",
+    "테스트3",
+    "테스트4",
+    "테스트5",
+    "테스트6",
+    "테스트7"
+  ];
 
   BoxDecoration tagDecoration = BoxDecoration(
       borderRadius: BorderRadius.circular(5),
@@ -96,6 +119,7 @@ class _Home extends State<Home> {
   final upPanelColor = const Color.fromARGB(255, 219, 219, 219);
   final mainUpPanelText =
       TextStyle(fontSize: 14.0, color: Black, fontWeight: FontWeight.bold);
+  final threePanelHover = TextStyle(fontSize: 14.0, color: White, fontWeight: FontWeight.bold);
   final mainUpPanelHoverText =
       TextStyle(fontSize: 14.0, color: mainColor, fontWeight: FontWeight.bold);
   final instaPostDataNameText = TextStyle(
@@ -136,6 +160,10 @@ class _Home extends State<Home> {
 
   bool cafeSelect = true;
   String cafeLocation = "전체카페";
+
+  bool mapSelect = false;
+
+  ScrollController _autoTagScroll = ScrollController();
 
   prefInit() async {
     if (prefsInit == 0) {
@@ -239,8 +267,11 @@ class _Home extends State<Home> {
         final coordinates = new Coordinates(
             currentLocation.latitude, currentLocation.longitude);
         latLng = LatLng(currentLocation.latitude, currentLocation.longitude);
-        var addresses =
+        List<Address> addresses =
             await Geocoder.local.findAddressesFromCoordinates(coordinates);
+        for (int i = 0; i < addresses.length; i++) {
+          print("address : ${addresses[i].addressLine}");
+        }
         address = addresses.first;
         print("${address.featureName}, ${address.addressLine}");
         List<String> lines = address.addressLine.toString().split(" ");
@@ -254,9 +285,15 @@ class _Home extends State<Home> {
               userLocation += " " + lines[i];
             }*/
             if (i > 1) {
-              userLocation += lines[i]+ " ";
+              if (lines[i].contains("구")) {
+                mainBloc.setAddr(lines[i]);
+              } else if (lines[i].contains("동")) {
+                print("setAddr2 : ${lines[i]}");
+                mainBloc.setAddr2(lines[i]);
+              }
+              if (lines[i].contains("구") || lines[i].contains("동"))
+                userLocation += lines[i] + " ";
             }
-
           }
         });
       } on Exception catch (e) {
@@ -282,7 +319,14 @@ class _Home extends State<Home> {
 //              userLocation += " " + lines[i];
 //            }
             if (i > 1) {
-              userLocation += lines[i]+ " ";
+              if (lines[i].contains("구")) {
+                mainBloc.setAddr(lines[i]);
+              } else if (lines[i].contains("동")) {
+                print("setAddr2 : ${lines[i]}");
+                mainBloc.setAddr2(lines[i]);
+              }
+              if (lines[i].contains("구") || lines[i].contains("동"))
+                userLocation += lines[i] + " ";
             }
           }
         });
@@ -332,13 +376,31 @@ class _Home extends State<Home> {
       if (_cafeList.length == 0) {
         return keywordSearch(keyword);
       } else {
-        return (_cafeList.length == 0 && firstData == false)
+        return firstData == false
             ? Padding(
-                padding: EdgeInsets.only(
-                    bottom: MediaQuery.of(context).size.height / 5),
-                child: Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(mainColor),
+                padding: EdgeInsets.only(bottom: 150, left: 35, top: 20),
+                child: Container(
+                  width: MediaQuery.of(context).size.width,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      ClipOval(
+                        child: Container(
+                          width: 15,
+                          height: 15,
+                          color: mainColor,
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.only(top: 10),
+                        child: Text(
+                          "카페 기록을\n검색 중입니다.",
+                          style: TextStyle(
+                              fontSize: 28, fontWeight: FontWeight.bold),
+                        ),
+                      )
+                    ],
                   ),
                 ),
               )
@@ -458,24 +520,25 @@ class _Home extends State<Home> {
                         ),
                         child: Container(
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: CachedNetworkImage(
-                              imageUrl: _cafeList[idx].pic,
+                              borderRadius: BorderRadius.circular(10),
+                              child: CachedNetworkImage(
+                                imageUrl: _cafeList[idx].pic,
 //                              placeholder: (context, url) =>
 //                                  CircularProgressIndicator(
 //                                    valueColor:
 //                                    AlwaysStoppedAnimation<Color>(mainColor),
 //                                  ),
-                              errorWidget: (context, url, error) => Image.asset(
-                                "assets/defaultImage.png",
-                                fit: BoxFit.fill,
-                              ),
-                            )
+                                errorWidget: (context, url, error) =>
+                                    Image.asset(
+                                  "assets/defaultImage.png",
+                                  fit: BoxFit.fill,
+                                ),
+                              )
 //                            Image.network(
 //                              _cafeList[idx].pic,
 //                              fit: BoxFit.fill,
 //                            ),
-                          ),
+                              ),
                         ),
                       ),
                       Positioned(
@@ -520,6 +583,9 @@ class _Home extends State<Home> {
   void initState() {
     _mainScroll.addListener(checkEndList);
     super.initState();
+
+    sharedInit();
+
     getLocation(0, "");
 //    cal();
 
@@ -632,17 +698,31 @@ class _Home extends State<Home> {
               )
             : GestureDetector(
                 onTap: () {
-                  Navigator.of(context)
-                      .push(MaterialPageRoute(
-                          builder: (context) => MyAroundMap(
-                                latLng: latLng,
-                              )))
-                      .then((value) {
-                    if (value != null) {
-                      latLng = latLng;
-                      getLocation(1, value);
-                    }
-                  });
+                  if (latLng != null) {
+                    setState(() {
+                      mapSelect = true;
+                    });
+
+                    Navigator.of(context)
+                        .push(MaterialPageRoute(
+                            builder: (context) => MyAroundMap(
+                                  latLng: latLng,
+                                )))
+                        .then((value) {
+                      setState(() {
+                        mapSelect = false;
+                      });
+                      if (value != null) {
+                        latLng = latLng;
+                        getLocation(1, value);
+                      }
+                    });
+                  } else {
+                    CafeLogSnackBarWithOk(
+                        msg: "위치 정보를 받아오는 중입니다. 현위치로 버튼 클릭 또는 잠시 후에 다시 시도해주세요.",
+                        okMsg: "확인",
+                        context: context);
+                  }
                 },
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -670,6 +750,13 @@ class _Home extends State<Home> {
             setState(() {
               directSearching = true;
             });
+            Timer(
+                Duration(milliseconds: 1000),
+                () => _autoTagScroll.animateTo(
+                      _autoTagScroll.position.maxScrollExtent,
+                      curve: Curves.easeOut,
+                      duration: const Duration(milliseconds: 100),
+                    ));
           },
           icon: Icon(
             Icons.search,
@@ -1048,10 +1135,10 @@ class _Home extends State<Home> {
       );
 
   tagList(type) => ListView.builder(
-        itemCount: tagListItem.length,
+        itemCount: type == 0 ? tagListItem.length : tagListItemSearch.length,
         itemBuilder: (context, position) {
           return Padding(
-            padding: EdgeInsets.only(left: 5, right: 5),
+            padding: EdgeInsets.only(right: 5),
             child: GestureDetector(
               onTap: () {
                 if (type == 0) {
@@ -1108,7 +1195,7 @@ class _Home extends State<Home> {
                         okMsg: "확인");
                   } else {
                     setState(() {
-                      addTagList(tagListItem[position]);
+                      addTagList(tagListItemSearch[position]);
                       tagOr = true;
                       autoTag = false;
                       _searchController.text = "";
@@ -1117,18 +1204,23 @@ class _Home extends State<Home> {
                     lastTagMove();
                   }
                 }
-                print("태그 클릭 : " + tagListItem[position]);
+                print("태그 클릭 : " + tagListItemSearch[position]);
               },
               child: Container(
                 width: 60,
                 height: 30,
-                decoration:
-                    clickNum == position ? tagClickDecoration : tagDecoration,
+                decoration: type == 0
+                    ? clickNum == position ? tagClickDecoration : tagDecoration
+                    : tagDecoration,
                 child: Center(
                   child: Text(
-                    "#${tagListItem[position]}",
-                    style: clickNum == position
-                        ? TextStyle(fontSize: 12, color: White)
+                    type == 0
+                        ? "#${tagListItem[position]}"
+                        : "#${tagListItemSearch[position]}",
+                    style: type == 0
+                        ? clickNum == position
+                            ? TextStyle(fontSize: 12, color: White)
+                            : TextStyle(fontSize: 12, color: Black)
                         : TextStyle(fontSize: 12, color: Black),
                   ),
                 ),
@@ -1144,25 +1236,38 @@ class _Home extends State<Home> {
           flex: 2,
           child: GestureDetector(
             onTap: () {
-              Navigator.of(context).pushNamed("/MyCafeLog");
+              if (sharedPreferences.getString("accessToken") != "" && sharedPreferences.getString("accessToken") != null && sharedPreferences.getString("accessToken").isNotEmpty) {
+                setState(() {
+                  upPanelMenuType = menuType;
+                });
+              } else {
+                Navigator.of(context).pushNamedAndRemoveUntil('/LoginMain', (Route<dynamic> route) => false);
+              }
+
+//              Navigator.of(context).pushNamed("/MyCafeLog");
             },
-            child: Container(
-              color: Colors.white,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Container(
-                    color: Colors.white,
-                    child: Padding(
-                      padding: EdgeInsets.only(top: 30 / 2),
-                      child: Text(
-                        menuName,
-                        style: mainUpPanelText,
+            child: Padding(
+              padding: EdgeInsets.only(left: 20, right: 20,top: 5),
+              child: Container(
+                decoration: BoxDecoration(
+                    color: upPanelMenuType != menuType ? Color.fromARGB(255, 247, 247, 247) : mainColor,
+                    borderRadius: BorderRadius.circular(19)
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Container(
+                      child: Padding(
+                        padding: EdgeInsets.only(top: 25 / 2),
+                        child: Text(
+                          menuName,
+                          style: upPanelMenuType != menuType ? mainUpPanelText : threePanelHover,
+                        ),
                       ),
                     ),
-                  ),
-                  whiteSpaceH(10)
-                ],
+                    whiteSpaceH(10)
+                  ],
+                ),
               ),
             ),
           ),
@@ -1210,6 +1315,20 @@ class _Home extends State<Home> {
                           }
 
                           setState(() {
+                            _searchController.text = "";
+                            autoTagList.clear();
+                            searchTagList.clear();
+                            tagOr = false;
+                            addKeyWord = false;
+                            directSearching = false;
+                            searchEnable = false;
+                            clickNum = null;
+                            keyword = "";
+                            keywordSearching = false;
+                            _mainBloc.setTag(null);
+                            _cafeList.clear();
+                            defaultOffSet = 0;
+                            firstData = false;
                             upPanelMenuType = menuType;
                           });
                         } else {
@@ -1221,6 +1340,20 @@ class _Home extends State<Home> {
                       });
                     } else {
                       setState(() {
+                        _searchController.text = "";
+                        autoTagList.clear();
+                        searchTagList.clear();
+                        tagOr = false;
+                        addKeyWord = false;
+                        directSearching = false;
+                        searchEnable = false;
+                        clickNum = null;
+                        keyword = "";
+                        keywordSearching = false;
+                        _mainBloc.setTag(null);
+                        _cafeList.clear();
+                        defaultOffSet = 0;
+                        firstData = false;
                         upPanelMenuType = menuType;
                       });
                     }
@@ -1287,21 +1420,33 @@ class _Home extends State<Home> {
                     upPanelMenu(0, "홈"),
                     upPanelMenu(1, "인기카페"),
                     upPanelMenu(2, "내 주변"),
-                    upPanelMenu(3, "로그인")
+                    upPanelMenu(3, "즐겨찾기")
                   ],
                 ),
               )
             ],
           ),
         ),
-        body: directSearching == false
+        body: upPanelMenuType == 3 ? Favorite() : directSearching == false
             ? upPanelMenuType == 1
                 ? cafeSelect
                     ? PopularityCafe(
                         cafeLocation: cafeLocation,
+                        tags: tag,
                       )
                     : Container()
-                : upPanelMenuType == 2 ? MyAround() : body()
+                : upPanelMenuType == 2
+                    ? mapSelect
+                        ? Center(
+                            child: CircularProgressIndicator(
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(mainColor),
+                            ),
+                          )
+                        : MyAround(
+                            tag: tag2,
+                          )
+                    : body()
             : searchBody(),
       );
 
@@ -1404,7 +1549,7 @@ class _Home extends State<Home> {
               Padding(
                 padding: EdgeInsets.only(top: 10),
                 child: Text(
-                  "검색하신 키워드에\n기록이 없습니다.",
+                  "검색하신 태그에\n기록이 없습니다.",
                   style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                 ),
               )
@@ -1414,60 +1559,6 @@ class _Home extends State<Home> {
       );
     }
   }
-
-  instaCafePost() => Padding(
-        padding: EdgeInsets.only(top: 10, bottom: 150, left: 15, right: 15),
-        child: Container(
-            width: MediaQuery.of(context).size.width,
-//          height: MediaQuery.of(context).size.height,
-            child: StaggeredGridView.countBuilder(
-              crossAxisCount: 2,
-              physics: NeverScrollableScrollPhysics(),
-              shrinkWrap: true,
-              itemCount: instaPostData.length,
-              itemBuilder: (context, idx) => GestureDetector(
-                onTap: () {
-                  print("left");
-                },
-                child: Stack(
-                  children: <Widget>[
-                    Padding(
-                      padding: EdgeInsets.only(bottom: 10),
-                      child: Container(
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10)),
-                        child: Image.asset(
-                          instaPostData[idx].img[0],
-                          fit: BoxFit.fill,
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      child: Text(
-                        instaPostData[idx].instaName,
-                        style: instaPostDataNameText,
-                      ),
-                      bottom: 15,
-                      left: 5,
-                    ),
-                    instaPostData[idx].img.length == 2
-                        ? Positioned(
-                            child: Icon(
-                              Icons.photo_library,
-                              color: White,
-                              size: 14,
-                            ),
-                            right: 5,
-                            bottom: 15,
-                          )
-                        : Container()
-                  ],
-                ),
-              ),
-              staggeredTileBuilder: (idx) => StaggeredTile.fit(1),
-              crossAxisSpacing: 15.0,
-            )),
-      );
 
   body() => SingleChildScrollView(
         child: Column(
@@ -1517,6 +1608,8 @@ class _Home extends State<Home> {
       );
 
   bool searchCheck = false;
+  String tag = "";
+  String tag2 = "";
 
   search() => GestureDetector(
         onTap: () {
@@ -1524,46 +1617,102 @@ class _Home extends State<Home> {
           searchCheck = false;
           if (searchEnable) {
             // 검색한 결과를 메인으로 리턴
-            setState(() {
-              if (!tagOr) {
-                addTagList(_searchController.text);
-              }
-
-              autoTagList.clear();
-              autoTag = false;
-              _searchController.text = "";
-              _mainBloc.setInsertTag(searchTagList[0]);
-              _mainBloc.setAutoTag();
-              tagListItem.insert(0, searchTagList[0]);
-              clickNum = 0;
-              keyword = tagListItem[0];
-              keywordSearching = true;
-              for (int i = 0; i < searchTagList.length; i++) {
-                prefSetValue(searchTagList[i]);
-              }
-              String tag = "";
-              for (int i = 0; i < searchTagList.length; i++) {
-                if (searchTagList.length == 1) {
-                  tag += searchTagList[i];
-                } else if (i == searchTagList.length) {
-                  tag += searchTagList[i];
-                } else {
-                  tag += searchTagList[i] + ",";
+            if (upPanelMenuType == 0) {
+              setState(() {
+                if (!tagOr) {
+                  addTagList(_searchController.text);
                 }
-              }
-              _mainBloc.setTag(tag);
-              _cafeList.clear();
-              defaultOffSet = 0;
-              firstData = false;
-              mainListGrid();
-              _searchController.text = "";
-              autoTagList.clear();
-              searchTagList.clear();
-              tagOr = false;
-              addKeyWord = false;
-              directSearching = false;
-              searchEnable = false;
-            });
+                autoTagList.clear();
+                autoTag = false;
+                _searchController.text = "";
+                _mainBloc.setInsertTag(searchTagList[0]);
+                _mainBloc.setAutoTag();
+                tagListItem.insert(0, searchTagList[0]);
+                clickNum = 0;
+                keyword = tagListItem[0];
+                keywordSearching = true;
+                for (int i = 0; i < searchTagList.length; i++) {
+                  prefSetValue(searchTagList[i]);
+                }
+                searchList = searchList.reversed.toList();
+                String tag = "";
+                for (int i = 0; i < searchTagList.length; i++) {
+                  if (searchTagList.length == 1) {
+                    tag += searchTagList[i];
+                  } else if (i == searchTagList.length) {
+                    tag += searchTagList[i];
+                  } else {
+                    tag += searchTagList[i] + ",";
+                  }
+                }
+                _mainBloc.setTag(tag);
+                _cafeList.clear();
+                defaultOffSet = 0;
+                firstData = false;
+                mainListGrid();
+                _searchController.text = "";
+                autoTagList.clear();
+                searchTagList.clear();
+                tagOr = false;
+                addKeyWord = false;
+                directSearching = false;
+                searchEnable = false;
+              });
+            } else if (upPanelMenuType == 1) {
+              setState(() {
+                if (!tagOr) {
+                  addTagList(_searchController.text);
+                }
+                tag = "";
+                for (int i = 0; i < searchTagList.length; i++) {
+                  if (searchTagList.length == 1) {
+                    tag += searchTagList[i];
+                  } else if (i == searchTagList.length) {
+                    tag += searchTagList[i];
+                  } else {
+                    tag += searchTagList[i] + ",";
+                  }
+                }
+                for (int i = 0; i < searchTagList.length; i++) {
+                  prefSetValue(searchTagList[i]);
+                }
+                searchList = searchList.reversed.toList();
+                _searchController.text = "";
+                autoTagList.clear();
+                searchTagList.clear();
+                tagOr = false;
+                addKeyWord = false;
+                directSearching = false;
+                searchEnable = false;
+              });
+            } else if (upPanelMenuType == 2) {
+              setState(() {
+                if (!tagOr) {
+                  addTagList(_searchController.text);
+                }
+                tag2 = "";
+                for (int i = 0; i < searchTagList.length; i++) {
+                  if (searchTagList.length == 1) {
+                    tag2 += searchTagList[i];
+                  } else if (i == searchTagList.length) {
+                    tag2 += searchTagList[i];
+                  } else {
+                    tag2 += searchTagList[i] + ",";
+                  }
+                }
+                for (int i = 0; i < searchTagList.length; i++) {
+                  prefSetValue(searchTagList[i]);
+                }
+                searchList = searchList.reversed.toList();
+                _searchController.text = "";
+                autoTagList.clear();
+                searchTagList.clear();
+                tagOr = false;
+                addKeyWord = false;
+                directSearching = false;
+                searchEnable = false;
+              });
+            }
           }
         },
         child: Container(
@@ -1746,6 +1895,7 @@ class _Home extends State<Home> {
                                         },
                                         shrinkWrap: true,
                                         itemCount: searchList.length,
+                                        controller: _autoTagScroll,
                                       ),
                                     ),
                             ],
@@ -1778,10 +1928,8 @@ class _Home extends State<Home> {
                                             idx >= 0) {
 //                                  print("length : " + autoTagList.length.toString());
 
-                                        print("firstStart : ${autoTagList[idx]
-                                            .tag
-                                            .indexOf(_searchController
-                                            .text)}");
+                                          print(
+                                              "firstStart : ${autoTagList[idx].tag.indexOf(_searchController.text)}");
                                           bool firstStart = autoTagList[idx]
                                                       .tag
                                                       .indexOf(_searchController
@@ -1815,18 +1963,29 @@ class _Home extends State<Home> {
                                                           _searchController
                                                               .text.length);
                                               print("firstWord : ${firstWord}");
-                                              if (firstWord != autoTagList[idx].tag) {
+                                              if (firstWord !=
+                                                  autoTagList[idx].tag) {
                                                 middleWord = autoTagList[idx]
                                                     .tag
                                                     .substring(autoTagList[idx]
-                                                    .tag
-                                                    .indexOf(
-                                                    _searchController
-                                                        .text) +
-                                                    firstWord.length == 1 ? 1 : firstWord.length >= _searchController.text.length ? _searchController.text.length : 2);
+                                                                    .tag
+                                                                    .indexOf(
+                                                                        _searchController
+                                                                            .text) +
+                                                                firstWord
+                                                                    .length ==
+                                                            1
+                                                        ? 1
+                                                        : firstWord.length >=
+                                                                _searchController
+                                                                    .text.length
+                                                            ? _searchController
+                                                                .text.length
+                                                            : 2);
                                               }
 
-                                              print("middleWord : ${middleWord}");
+                                              print(
+                                                  "middleWord : ${middleWord}");
                                             } else {
                                               firstWord = autoTagList[idx]
                                                   .tag
@@ -1837,7 +1996,8 @@ class _Home extends State<Home> {
                                                           .indexOf(
                                                               _searchController
                                                                   .text));
-                                              print("firstWord2 : ${firstWord}");
+                                              print(
+                                                  "firstWord2 : ${firstWord}");
                                               middleWord = autoTagList[idx]
                                                   .tag
                                                   .substring(
@@ -1851,35 +2011,44 @@ class _Home extends State<Home> {
                                                                   .text) +
                                                           _searchController
                                                               .text.length);
-                                              print("middleWord2 : ${middleWord}, ${autoTagList[idx]
-                                                  .tag}, ${autoTagList[idx]
-                                                  .tag
-                                                  .indexOf(
-                                                  _searchController
-                                                      .text)}, ${autoTagList[idx].tag.indexOf(
-                                                  _searchController
-                                                      .text)}, ${_searchController.text.length}");
-                                              if (autoTagList[idx].tag.length <= 2 && middleWord.length >= autoTagList[idx].tag.substring(1, autoTagList[idx].tag.length - 1).length) {
+                                              print(
+                                                  "middleWord2 : ${middleWord}, ${autoTagList[idx].tag}, ${autoTagList[idx].tag.indexOf(_searchController.text)}, ${autoTagList[idx].tag.indexOf(_searchController.text)}, ${_searchController.text.length}");
+                                              if (autoTagList[idx].tag.length <=
+                                                      2 &&
+                                                  middleWord.length >=
+                                                      autoTagList[idx]
+                                                          .tag
+                                                          .substring(
+                                                              1,
+                                                              autoTagList[idx]
+                                                                      .tag
+                                                                      .length -
+                                                                  1)
+                                                          .length) {
                                                 finishWord = autoTagList[idx]
                                                     .tag
                                                     .substring(autoTagList[idx]
-                                                    .tag
-                                                    .length - 1);
+                                                            .tag
+                                                            .length -
+                                                        1);
                                               } else {
                                                 finishWord = autoTagList[idx]
                                                     .tag
                                                     .substring(autoTagList[idx]
-                                                    .tag
-                                                    .indexOf(
-                                                    _searchController
-                                                        .text) + _searchController.text.length);
+                                                            .tag
+                                                            .indexOf(
+                                                                _searchController
+                                                                    .text) +
+                                                        _searchController
+                                                            .text.length);
                                               }
 
-
-                                              if (_searchController.text.contains(finishWord)) {
+                                              if (_searchController.text
+                                                  .contains(finishWord)) {
                                                 finishWord = "";
                                               }
-                                              print("finishWord2 : ${finishWord}");
+                                              print(
+                                                  "finishWord2 : ${finishWord}");
                                               twoWord = false;
                                             }
                                           }
@@ -2028,13 +2197,29 @@ class _Home extends State<Home> {
             autoTag = false;
           });
         } else {
-          Navigator.of(context).pop();
+          return Future.value(true);
         }
-
         return null;
       },
       child: Scaffold(
-        appBar: directSearching == false ? homeAppBar() : searchingAppBar(),
+        appBar: directSearching == false ? upPanelMenuType == 3 ? AppBar(
+          backgroundColor: White,
+          elevation: 0.0,
+          centerTitle: true,
+          title: Text("즐겨찾기", style: TextStyle(
+            color: Black, fontSize: 16, fontWeight: FontWeight.bold
+          ),),
+          actions: <Widget>[
+            IconButton(
+              onPressed: () {
+                Navigator.of(context).push(MaterialPageRoute(builder: (context) => Setting(
+                  id: accessToken,
+                )));
+              },
+              icon: Icon(Icons.settings, color: Color.fromARGB(255, 167, 167, 167),),
+            )
+          ],
+        ) : homeAppBar() : searchingAppBar(),
         backgroundColor: White,
         resizeToAvoidBottomInset: true,
         body: slidingUpPanelBody(),

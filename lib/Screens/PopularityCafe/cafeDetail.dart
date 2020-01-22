@@ -19,6 +19,7 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -27,6 +28,7 @@ import 'cafeLocation.dart';
 
 class CafeDetail extends StatefulWidget {
   String cafeName;
+  String identify;
   String phone;
   String imgUrl;
   String naverUrl;
@@ -41,6 +43,7 @@ class CafeDetail extends StatefulWidget {
   CafeDetail(
       {Key key,
       this.cafeName,
+      this.identify,
       this.phone,
       this.imgUrl,
       this.naverUrl,
@@ -115,6 +118,16 @@ class _CafeDetail extends State<CafeDetail> {
     return pass;
   }
 
+  SharedPreferences sharedPreferences;
+  String accessToken;
+
+  sharedInit() async {
+    sharedPreferences = await SharedPreferences.getInstance();
+    accessToken = sharedPreferences.getString("accessToken");
+    checkFavorite();
+  }
+
+
   cal() {
     // 거리 계산 메소드 이용
     double calculateDistance(lat1, lon1, lat2, lon2) {
@@ -148,7 +161,8 @@ class _CafeDetail extends State<CafeDetail> {
   double offset = 0.0;
 
   checkEndList() {
-    if (_scrollController.offset >= _scrollController.position.maxScrollExtent &&
+    if (_scrollController.offset >=
+            _scrollController.position.maxScrollExtent &&
         !_scrollController.position.outOfRange) {
       setState(() {
         if (defaultLength != _cafeList.length) {
@@ -167,11 +181,30 @@ class _CafeDetail extends State<CafeDetail> {
 
   PopularityCafeData detailStreet;
   bool getData = false;
+  bool favoriteCheck = false;
+
+  checkFavorite() async {
+    mainBloc.setFavoriteId(accessToken);
+    mainBloc.setFavoriteName(widget.cafeName);
+
+    print("dataCheck : ${accessToken}, ${widget.cafeName}");
+
+    mainBloc.getFavorite().then((value) {
+      print("getFavoriteValue : ${value}");
+      if (json.decode(value)['data'].length != 0) {
+        setState(() {
+          favoriteCheck = true;
+        });
+      }
+    });
+  }
 
   @override
   void initState() {
     _scrollController.addListener(checkEndList);
     super.initState();
+
+    sharedInit();
 
     gpsCheck();
 
@@ -225,9 +258,31 @@ class _CafeDetail extends State<CafeDetail> {
   favoriteFab() {
     return Container(
       child: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () {
+          if (favoriteCheck == false) {
+            mainBloc.setFavoriteId(accessToken);
+            mainBloc.setFavoriteName(widget.cafeName);
+            mainBloc.setFavoriteIdentify(widget.identify);
+
+            mainBloc.insertFavorite().then((value) {
+              CafeLogSnackBarWithOk(context: context, okMsg: "확인", msg: "\"${widget.cafeName}\"가 즐겨찾기에 추가되었습니다.");
+            });
+            setState(() {
+              favoriteCheck = true;
+            });
+          } else {
+            mainBloc.setFavoriteIdentify(widget.identify);
+
+            mainBloc.deleteFavorite().then((value) {
+              CafeLogSnackBarWithOk(context: context, okMsg: "확인", msg: "\"${widget.cafeName}\"가 즐겨찾기에 제거되었습니다.");
+            });
+            setState(() {
+              favoriteCheck = false;
+            });
+          }
+        },
         child: Icon(
-          Icons.star_border,
+          favoriteCheck ? Icons.star: Icons.star_border,
           color: mainColor,
         ),
         backgroundColor: Colors.white,
@@ -334,8 +389,7 @@ class _CafeDetail extends State<CafeDetail> {
                       child: Container(
                         child: ClipRRect(
                             borderRadius: BorderRadius.circular(10),
-                            child:
-                            CachedNetworkImage(
+                            child: CachedNetworkImage(
                               imageUrl: _cafeList[idx].pic,
 //                              placeholder: (context, url) =>
 //                                  CircularProgressIndicator(
@@ -1013,8 +1067,10 @@ class _CafeDetail extends State<CafeDetail> {
                                                     Navigator.push(
                                                         context,
                                                         MaterialPageRoute(
-                                                          builder: (context) => MorePicture(
-                                                            cafeName: widget.cafeName,
+                                                          builder: (context) =>
+                                                              MorePicture(
+                                                            cafeName:
+                                                                widget.cafeName,
                                                           ),
                                                         ));
                                                   },

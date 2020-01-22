@@ -70,6 +70,7 @@ class _InstaDetail extends State<InstaDetail> {
                   print("touch");
                   Navigator.of(context).push(MaterialPageRoute(builder: (context) => CafeDetail(
                     cafeName: naverData.name,
+                    identify: naverData.identify,
                     phone: naverData.phone,
                     address: naverData.addr,
                     convenien: naverData.convenien,
@@ -155,7 +156,7 @@ class _InstaDetail extends State<InstaDetail> {
               ),
       ),
       body: Padding(
-        padding: EdgeInsets.only(bottom: widget.type == 0 ? 85 : 0),
+        padding: EdgeInsets.only(bottom: widget.type == 0 ? 85 : 25),
         child: WebView(
           initialUrl: widget.instaUrl,
           javascriptMode: JavascriptMode.unrestricted,

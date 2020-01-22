@@ -17,8 +17,9 @@ import 'cafeDetail.dart';
 
 class PopularityCafe extends StatefulWidget {
   String cafeLocation;
+  String tags;
 
-  PopularityCafe({Key key, this.cafeLocation}) : super(key: key);
+  PopularityCafe({Key key, this.cafeLocation, this.tags}) : super(key: key);
 
   @override
   _PopularityCafe createState() => _PopularityCafe();
@@ -70,12 +71,57 @@ class _PopularityCafe extends State<PopularityCafe> {
   var currentLocation;
   double distanceLocation;
 
+  tagSet() {
+    print("length : " + widget.tags.length.toString());
+    if (widget.tags.contains(",")) {
+      print("split");
+      List<String> tagSplit = widget.tags.split(",");
+      setState(() {
+        for (int i = 0; i < tagSplit.length; i++) {
+          tagListItem.insert(i, tagSplit[i]);
+          tagSelectList.add(tagListItem[i]);
+          tagClick.clear();
+        }
+        for (int i = 0; i < tagListItem.length; i++) {
+          tagClick.add(false);
+        }
+        for (int i = 0; i < tagSplit.length; i++) {
+          tagClick[i] = true;
+        }
+        getData = false;
+      });
+    } else {
+      print("notSplit");
+      setState(() {
+        tagListItem.insert(0, widget.tags);
+        tagSelectList.add(tagListItem[0]);
+        tagClick.clear();
+        for (int i = 0; i < tagListItem.length; i++) {
+          tagClick.add(false);
+        }
+        tagClick[0] = true;
+        getData = false;
+      });
+    }
+  }
+
   @override
   void initState() {
     super.initState();
 
+    if (widget.tags.isNotEmpty) {
+      print("widget.tags : ${widget.tags}");
+      if (widget.tags.substring(widget.tags.length - 1).contains(",")) {
+        widget.tags = widget.tags.substring(0, widget.tags.length - 1);
+        tagSet();
+      } else {
+        tagSet();
+      }
+    }
+
     setState(() {
       cafeLocation = widget.cafeLocation;
+      _mainBloc.setStreetTag(widget.tags);
       if (cafeLocation == "전체카페") {
         _mainBloc.setStreet(null);
       } else {
@@ -102,19 +148,57 @@ class _PopularityCafe extends State<PopularityCafe> {
                 setState(() {
                   if (!tagClick[position]) {
                     tagClick[position] = true;
-                    tagSelectList.add(tagListItem[position]);
+                    setState(() {
+                      print("positionClick : ${position}");
+                      tagSelectList.add(tagListItem[position]);
+                      getData = false;
+                    });
+                    String tag = "";
+                    if (tagSelectList.length > 0) {
+                      for (int i = 0; i < tagSelectList.length; i++) {
+                        if (tagSelectList.length == 1) {
+                          tag += tagSelectList[i];
+                        } else if (i == tagSelectList.length) {
+                          tag += tagSelectList[i];
+                        } else {
+                          tag += tagSelectList[i] + ",";
+                        }
+                      }
+                    }
+                    _mainBloc.setStreetTag(tag);
+                    cafeList();
+                    // 선택
                   } else {
                     tagClick[position] = false;
-                    tagSelectList.removeAt(position);
-                  }
+                    setState(() {
+                      print("position : ${position}");
 
-//                  if (clickNum == position) {
-//                    clickNum = null;
-//                    // 선택해제
-//                  } else {
-//                    clickNum = position;
-//                    // 선택
-//                  }
+                      for (int i = 0; i < tagSelectList.length; i++) {
+                        if (tagListItem[position] == tagSelectList[i]) {
+                          tagSelectList.removeAt(i);
+                          break;
+                        }
+                      }
+//                      print("selectTag ${tagSelectList[position]}");
+
+                      getData = false;
+                    });
+                    String tag = "";
+                    if (tagSelectList.length > 0) {
+                      for (int i = 0; i < tagSelectList.length; i++) {
+                        if (tagSelectList.length == 1) {
+                          tag += tagSelectList[i];
+                        } else if (i == tagSelectList.length) {
+                          tag += tagSelectList[i];
+                        } else {
+                          tag += tagSelectList[i] + ",";
+                        }
+                      }
+                    }
+                    _mainBloc.setStreetTag(tag);
+                    cafeList();
+                    // 선택해제
+                  }
                 });
                 print("태그 클릭 : " + tagListItem[position]);
               },
@@ -311,346 +395,424 @@ class _PopularityCafe extends State<PopularityCafe> {
                     MediaQuery.of(context).padding.top -
                     170,
                 child: !getData
-                    ? Container(
-                        width: 50,
-                        height: 50,
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(mainColor),
+                    ?
+//                Container(
+//                        width: 50,
+//                        height: 50,
+//                        child: Center(
+//                          child: CircularProgressIndicator(
+//                            valueColor:
+//                                AlwaysStoppedAnimation<Color>(mainColor),
+//                          ),
+//                        ),
+//                      )
+                    Padding(
+                        padding:
+                            EdgeInsets.only(bottom: 150, left: 35, top: 20),
+                        child: Container(
+                          width: MediaQuery.of(context).size.width,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              ClipOval(
+                                child: Container(
+                                  width: 15,
+                                  height: 15,
+                                  color: mainColor,
+                                ),
+                              ),
+                              Padding(
+                                padding: EdgeInsets.only(top: 10),
+                                child: Text(
+                                  "카페 기록을\n검색 중입니다.",
+                                  style: TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              )
+                            ],
                           ),
                         ),
                       )
-                    : Padding(
-                        padding: EdgeInsets.only(top: 15, bottom: 60),
-                        child: ListView.builder(
-                          itemBuilder: (context, idx) {
-                            return GestureDetector(
-                                onTap: () {
-                                  print("tap : ${_cafeList[idx].name}");
-                                  _mainBloc.setName(_cafeList[idx].name);
-                                  _mainBloc.getNaverData().then((value) async {
-                                    print("value : ${value}");
-                                    if (json.decode(value)['result'] != 0 &&
-                                        (json.decode(value)['data'] != null &&
-                                            json.decode(value)['data'] != "")) {
-                                      setState(() {
-                                        touchedCafe = true;
-                                      });
-                                      NaverData naverData = NaverData(
-                                        url: json.decode(value)['data']['url'],
-                                        description: json.decode(value)['data']
-                                            ['description'],
-                                        convenien: json.decode(value)['data']
-                                            ['convenien'],
-                                        homepage: json.decode(value)['data']
-                                            ['homepage'],
-                                        menu: json.decode(value)['data']
-                                            ['menu'],
-                                        opentime: json.decode(value)['data']
-                                            ['opentime'],
-                                        addr: json.decode(value)['data']
-                                            ['addr'],
-                                        phone: json.decode(value)['data']
-                                            ['phone'],
-                                        category: json.decode(value)['data']
-                                            ['category'],
-                                        name: json.decode(value)['data']
-                                            ['name'],
-                                        identify: json.decode(value)['data']
-                                            ['identify'],
-                                        subname: json.decode(value)['data']
-                                            ['subname'],
-                                      );
+                    : _cafeList.length != 0
+                        ? Padding(
+                            padding: EdgeInsets.only(top: 15, bottom: 60),
+                            child: ListView.builder(
+                              itemBuilder: (context, idx) {
+                                return GestureDetector(
+                                    onTap: () {
+                                      print("tap : ${_cafeList[idx].name}");
+                                      _mainBloc.setName(_cafeList[idx].name);
+                                      _mainBloc
+                                          .getNaverData()
+                                          .then((value) async {
+                                        print("value : ${value}");
+                                        if (json.decode(value)['result'] != 0 &&
+                                            (json.decode(value)['data'] !=
+                                                    null &&
+                                                json.decode(value)['data'] !=
+                                                    "")) {
+                                          setState(() {
+                                            touchedCafe = true;
+                                          });
+                                          NaverData naverData = NaverData(
+                                            url: json.decode(value)['data']
+                                                ['url'],
+                                            description:
+                                                json.decode(value)['data']
+                                                    ['description'],
+                                            convenien:
+                                                json.decode(value)['data']
+                                                    ['convenien'],
+                                            homepage: json.decode(value)['data']
+                                                ['homepage'],
+                                            menu: json.decode(value)['data']
+                                                ['menu'],
+                                            opentime: json.decode(value)['data']
+                                                ['opentime'],
+                                            addr: json.decode(value)['data']
+                                                ['addr'],
+                                            phone: json.decode(value)['data']
+                                                ['phone'],
+                                            category: json.decode(value)['data']
+                                                ['category'],
+                                            name: json.decode(value)['data']
+                                                ['name'],
+                                            identify: json.decode(value)['data']
+                                                ['identify'],
+                                            subname: json.decode(value)['data']
+                                                ['subname'],
+                                          );
 
-                                      final query = naverData.addr;
-                                      var address = await Geocoder.local
-                                          .findAddressesFromQuery(query);
-                                      var first = address.first;
-                                      print(
-                                          "coordinates : ${first.coordinates.latitude}, ${first.coordinates.longitude}");
+                                          final query = naverData.addr;
+                                          var address = await Geocoder.local
+                                              .findAddressesFromQuery(query);
+                                          var first = address.first;
+                                          print(
+                                              "coordinates : ${first.coordinates.latitude}, ${first.coordinates.longitude}");
 
-                                      latLng = LatLng(
-                                          first.coordinates.latitude,
-                                          first.coordinates.longitude);
+                                          latLng = LatLng(
+                                              first.coordinates.latitude,
+                                              first.coordinates.longitude);
 
-                                      try {
-                                        currentLocation =
-                                            await location.getLocation();
-                                        print(
-                                            "currentLocation : ${currentLocation.latitude}, ${currentLocation.longitude}");
+                                          try {
+                                            currentLocation =
+                                                await location.getLocation();
+                                            print(
+                                                "currentLocation : ${currentLocation.latitude}, ${currentLocation.longitude}");
 
-                                        distanceLocation = await Geolocator()
-                                            .distanceBetween(
-                                                currentLocation.latitude,
-                                                currentLocation.longitude,
-                                                first.coordinates.latitude,
-                                                first.coordinates.longitude);
+                                            distanceLocation =
+                                                await Geolocator()
+                                                    .distanceBetween(
+                                                        currentLocation
+                                                            .latitude,
+                                                        currentLocation
+                                                            .longitude,
+                                                        first.coordinates
+                                                            .latitude,
+                                                        first.coordinates
+                                                            .longitude);
 
-                                        print(
-                                            "distance : ${(double.parse(distanceLocation.toStringAsFixed(1)) / 1000).toStringAsFixed(1)}km");
+                                            print(
+                                                "distance : ${(double.parse(distanceLocation.toStringAsFixed(1)) / 1000).toStringAsFixed(1)}km");
 
-                                        _mainBloc
-                                            .getPopularPic()
-                                            .then((value) async {
-                                          if (json.decode(value)['result'] !=
-                                                  0 &&
-                                              json.decode(value)['data'] !=
-                                                  null) {
-                                            dynamic valueList = await json
-                                                .decode(value)['data'];
-                                            imgUrl = valueList['pic'];
+                                            _mainBloc
+                                                .getPopularPic()
+                                                .then((value) async {
+                                              if (json.decode(
+                                                          value)['result'] !=
+                                                      0 &&
+                                                  json.decode(value)['data'] !=
+                                                      null) {
+                                                dynamic valueList = await json
+                                                    .decode(value)['data'];
+                                                imgUrl = valueList['pic'];
 
-                                            setState(() {
-                                              touchedCafe = false;
+                                                setState(() {
+                                                  touchedCafe = false;
+                                                });
+
+                                                Navigator.of(context)
+                                                    .push(MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      CafeDetail(
+                                                        identify: naverData.identify,
+                                                    cafeName: naverData.name,
+                                                    phone: naverData.phone,
+                                                    address: naverData.addr,
+                                                    convenien:
+                                                        naverData.convenien,
+                                                    distance: (double.parse(
+                                                                    distanceLocation
+                                                                        .toStringAsFixed(
+                                                                            1)) /
+                                                                1000)
+                                                            .toStringAsFixed(
+                                                                1) +
+                                                        "km",
+                                                    imgUrl: imgUrl,
+                                                    menu: naverData.menu,
+                                                    naverUrl: naverData.url,
+                                                    subName: naverData.subname,
+                                                    latLng: latLng,
+                                                    openTime:
+                                                        naverData.opentime,
+                                                  ),
+                                                ));
+                                              }
                                             });
-
-                                            Navigator.of(context)
-                                                .push(MaterialPageRoute(
-                                              builder: (context) => CafeDetail(
-                                                cafeName: naverData.name,
-                                                phone: naverData.phone,
-                                                address: naverData.addr,
-                                                convenien: naverData.convenien,
-                                                distance: (double.parse(
-                                                                distanceLocation
-                                                                    .toStringAsFixed(
-                                                                        1)) /
-                                                            1000)
-                                                        .toStringAsFixed(1) +
-                                                    "km",
-                                                imgUrl: imgUrl,
-                                                menu: naverData.menu,
-                                                naverUrl: naverData.url,
-                                                subName: naverData.subname,
-                                                latLng: latLng,
-                                                openTime: naverData.opentime,
-                                              ),
-                                            ));
+                                          } on Exception catch (e) {
+                                            print(e.toString());
+                                            currentLocation = null;
                                           }
-                                        });
-                                      } on Exception catch (e) {
-                                        print(e.toString());
-                                        currentLocation = null;
-                                      }
-                                    } else {
-                                      CafeLogSnackBarWithOk(
-                                          msg: "카페 정보가 부족하여 상세 정보를 볼 수 없습니다.",
-                                          context: context,
-                                          okMsg: "확인");
-                                    }
-                                  });
-                                },
-                                child: Padding(
-                                  padding: EdgeInsets.only(
-                                      left: 15, right: 15, top: 5, bottom: 5),
-                                  child: Row(
-                                    children: <Widget>[
-                                      Text(
-                                        "${idx + 1}",
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 11,
-                                            color: Color.fromARGB(
-                                                255, 167, 167, 167)),
-                                      ),
-                                      Expanded(
-                                        child: Padding(
-                                          padding: EdgeInsets.only(
-                                            left: 15,
+                                        } else {
+                                          CafeLogSnackBarWithOk(
+                                              msg:
+                                                  "카페 정보가 부족하여 상세 정보를 볼 수 없습니다.",
+                                              context: context,
+                                              okMsg: "확인");
+                                        }
+                                      });
+                                    },
+                                    child: Padding(
+                                      padding: EdgeInsets.only(
+                                          left: 15,
+                                          right: 15,
+                                          top: 5,
+                                          bottom: 5),
+                                      child: Row(
+                                        children: <Widget>[
+                                          Text(
+                                            "${idx + 1}",
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 11,
+                                                color: Color.fromARGB(
+                                                    255, 167, 167, 167)),
                                           ),
-                                          child: Stack(
-                                            children: <Widget>[
-//                                  Positioned(
-//                                    left: 15,
-//                                    right: 1,
-//                                    top: 1,
-//                                    bottom: 1,
-//                                    child:
-                                              Padding(
-                                                padding:
-                                                    EdgeInsets.only(left: 20),
-                                                child: Container(
-                                                  width: MediaQuery.of(context)
-                                                      .size
-                                                      .width,
-                                                  height: 44,
-                                                  decoration: BoxDecoration(
-                                                      color: White,
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              8.0),
-                                                      boxShadow: [
-                                                        BoxShadow(
-                                                            color:
-                                                                Color.fromARGB(
-                                                                    255,
-                                                                    219,
-                                                                    219,
-                                                                    219),
-                                                            blurRadius: 7)
-                                                      ]),
-                                                  child: Row(
-                                                    children: <Widget>[
-                                                      Padding(
-                                                        padding:
-                                                            EdgeInsets.only(
-                                                                left: 30),
-                                                        child: Container(
-                                                          width: 110,
-                                                          child: Text(
-                                                            _cafeList[idx].name,
-                                                            style: TextStyle(
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                                fontSize: 12,
-                                                                color: Black),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      Expanded(
-                                                        child: Container(
-                                                          width: 50,
-                                                          child: Text(
-                                                            "다녀온 사람",
-                                                            style: TextStyle(
+                                          Expanded(
+                                            child: Padding(
+                                              padding: EdgeInsets.only(
+                                                left: 15,
+                                              ),
+                                              child: Stack(
+                                                children: <Widget>[
+                                                  Padding(
+                                                    padding: EdgeInsets.only(
+                                                        left: 20),
+                                                    child: Container(
+                                                      width:
+                                                          MediaQuery.of(context)
+                                                              .size
+                                                              .width,
+                                                      height: 44,
+                                                      decoration: BoxDecoration(
+                                                          color: White,
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(
+                                                                      8.0),
+                                                          boxShadow: [
+                                                            BoxShadow(
                                                                 color: Color
                                                                     .fromARGB(
                                                                         255,
-                                                                        167,
-                                                                        167,
-                                                                        167),
-                                                                fontSize: 10,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w600),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      Expanded(
-                                                        child: Center(
-                                                          child: Text(
-                                                            _cafeList[idx]
-                                                                .userNum
-                                                                .toString(),
-                                                            style: TextStyle(
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w600,
-                                                                fontSize: 10,
-                                                                color: Black),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      Expanded(
-                                                        child: Padding(
-                                                          padding:
-                                                              EdgeInsets.only(
-                                                                  right: 10),
-                                                          child: Container(
-                                                            width: 35,
-                                                            child: Column(
-                                                              mainAxisSize:
-                                                                  MainAxisSize
-                                                                      .min,
-                                                              crossAxisAlignment:
-                                                                  CrossAxisAlignment
-                                                                      .start,
-                                                              mainAxisAlignment:
-                                                                  MainAxisAlignment
-                                                                      .center,
-                                                              children: <
-                                                                  Widget>[
-                                                                Center(
-                                                                  child: Text(
-                                                                    "최근1주일",
-                                                                    style: TextStyle(
-                                                                        fontSize:
-                                                                            8,
-                                                                        fontWeight:
-                                                                            FontWeight
-                                                                                .w600,
-                                                                        color:
-                                                                            mainColor),
-                                                                  ),
-                                                                ),
-                                                                whiteSpaceH(1),
-                                                                Center(
-                                                                  child: Text(
-                                                                    _cafeList[
-                                                                            idx]
-                                                                        .recentNum
-                                                                        .toString(),
-                                                                    style: TextStyle(
-                                                                        color:
-                                                                            mainColor,
-                                                                        fontWeight:
-                                                                            FontWeight
-                                                                                .w600,
-                                                                        fontSize:
-                                                                            8),
-                                                                  ),
-                                                                ),
-                                                              ],
+                                                                        219,
+                                                                        219,
+                                                                        219),
+                                                                blurRadius: 7)
+                                                          ]),
+                                                      child: Row(
+                                                        children: <Widget>[
+                                                          Padding(
+                                                            padding:
+                                                                EdgeInsets.only(
+                                                                    left: 30),
+                                                            child: Container(
+                                                              width: 110,
+                                                              child: Text(
+                                                                _cafeList[idx]
+                                                                    .name,
+                                                                style: TextStyle(
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                    fontSize:
+                                                                        12,
+                                                                    color:
+                                                                        Black),
+                                                              ),
                                                             ),
                                                           ),
-                                                        ),
-                                                      )
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-//                                  ),
-                                              Positioned(
-                                                top: 2,
-                                                child: CachedNetworkImage(
-                                                  imageUrl:
-                                                      _cafeList[idx].picture,
-                                                  imageBuilder: (context,
-                                                          imageProvider) =>
-                                                      ClipRRect(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            8.0),
-                                                    child: Image(
-                                                      image: imageProvider,
-                                                      fit: BoxFit.fill,
-                                                      width: 40,
-                                                      height: 40,
+                                                          Expanded(
+                                                            child: Container(
+                                                              width: 50,
+                                                              child: Text(
+                                                                "다녀온 사람",
+                                                                style: TextStyle(
+                                                                    color: Color
+                                                                        .fromARGB(
+                                                                            255,
+                                                                            167,
+                                                                            167,
+                                                                            167),
+                                                                    fontSize:
+                                                                        10,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w600),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          Expanded(
+                                                            child: Center(
+                                                              child: Text(
+                                                                _cafeList[idx]
+                                                                    .userNum
+                                                                    .toString(),
+                                                                style: TextStyle(
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w600,
+                                                                    fontSize:
+                                                                        10,
+                                                                    color:
+                                                                        Black),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          Expanded(
+                                                            child: Padding(
+                                                              padding: EdgeInsets
+                                                                  .only(
+                                                                      right:
+                                                                          10),
+                                                              child: Container(
+                                                                width: 35,
+                                                                child: Column(
+                                                                  mainAxisSize:
+                                                                      MainAxisSize
+                                                                          .min,
+                                                                  crossAxisAlignment:
+                                                                      CrossAxisAlignment
+                                                                          .start,
+                                                                  mainAxisAlignment:
+                                                                      MainAxisAlignment
+                                                                          .center,
+                                                                  children: <
+                                                                      Widget>[
+                                                                    Center(
+                                                                      child:
+                                                                          Text(
+                                                                        "최근1주일",
+                                                                        style: TextStyle(
+                                                                            fontSize:
+                                                                                8,
+                                                                            fontWeight:
+                                                                                FontWeight.w600,
+                                                                            color: mainColor),
+                                                                      ),
+                                                                    ),
+                                                                    whiteSpaceH(
+                                                                        1),
+                                                                    Center(
+                                                                      child:
+                                                                          Text(
+                                                                        _cafeList[idx]
+                                                                            .recentNum
+                                                                            .toString(),
+                                                                        style: TextStyle(
+                                                                            color:
+                                                                                mainColor,
+                                                                            fontWeight:
+                                                                                FontWeight.w600,
+                                                                            fontSize: 8),
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          )
+                                                        ],
+                                                      ),
                                                     ),
                                                   ),
-//                                        placeholder: (context, url) => ClipRRect(
-//                                          borderRadius: BorderRadius.circular(8.0),
-//                                          child: Image.asset("assets/defaultImage.png", width: 40, height: 40, fit: BoxFit.fill,),
-//                                        ),
-                                                  errorWidget:
-                                                      (context, url, error) =>
+                                                  Positioned(
+                                                    top: 2,
+                                                    child: CachedNetworkImage(
+                                                      imageUrl: _cafeList[idx]
+                                                          .picture,
+                                                      imageBuilder: (context,
+                                                              imageProvider) =>
                                                           ClipRRect(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            8.0),
-                                                    child: Image.asset(
-                                                      "assets/defaultImage.png",
-                                                      width: 40,
-                                                      height: 40,
-                                                      fit: BoxFit.fill,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(8.0),
+                                                        child: Image(
+                                                          image: imageProvider,
+                                                          fit: BoxFit.fill,
+                                                          width: 40,
+                                                          height: 40,
+                                                        ),
+                                                      ),
+                                                      errorWidget: (context,
+                                                              url, error) =>
+                                                          ClipRRect(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(8.0),
+                                                        child: Image.asset(
+                                                          "assets/defaultImage.png",
+                                                          width: 40,
+                                                          height: 40,
+                                                          fit: BoxFit.fill,
+                                                        ),
+                                                      ),
                                                     ),
                                                   ),
-                                                ),
+                                                ],
                                               ),
-                                            ],
-                                          ),
-                                        ),
-                                      )
-                                    ],
+                                            ),
+                                          )
+                                        ],
+                                      ),
+                                    ));
+                              },
+                              shrinkWrap: true,
+                              itemCount: _cafeList.length,
+                            ),
+                          )
+                        : Padding(
+                            padding:
+                                EdgeInsets.only(bottom: 150, left: 35, top: 20),
+                            child: Container(
+                              width: MediaQuery.of(context).size.width,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  ClipOval(
+                                    child: Container(
+                                      width: 15,
+                                      height: 15,
+                                      color: mainColor,
+                                    ),
                                   ),
-                                ));
-                          },
-                          shrinkWrap: true,
-                          itemCount: _cafeList.length,
-                        ),
-                      ),
+                                  Padding(
+                                    padding: EdgeInsets.only(top: 10),
+                                    child: Text(
+                                      "검색하신 태그에\n기록이 없습니다.",
+                                      style: TextStyle(
+                                          fontSize: 28,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  )
+                                ],
+                              ),
+                            ),
+                          ),
               ),
             ],
           ),

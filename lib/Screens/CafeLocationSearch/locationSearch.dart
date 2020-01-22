@@ -29,7 +29,7 @@ class _LocationSearch extends State<LocationSearch> {
 
     cafeLocation = widget.cafeLocation;
 
-    cafeLoadTitle = "서울 카페거리";
+    cafeLoadTitle = "서울";
   }
 
   cafeListGrid() => StreamBuilder(
@@ -220,14 +220,14 @@ class _LocationSearch extends State<LocationSearch> {
                         children: <Widget>[
                           Positioned(
                             right: 0,
-                            top: 20,
+                            top: 40,
                             child: GestureDetector(
                               onTap: () {
-                                print("전체카페로 지정");
+                                print("전체 카페 보기");
                                 Navigator.of(context).pop("전체카페");
                               },
                               child: Text(
-                                "전체카페로 지정",
+                                "전체 카페 보기",
                                 style: TextStyle(
                                     color: mainColor,
                                     fontSize: 14,
@@ -243,7 +243,7 @@ class _LocationSearch extends State<LocationSearch> {
                                   fontWeight: FontWeight.bold,
                                   fontSize: 24,
                                   color: Black),
-                              textAlign: TextAlign.center,
+                              textAlign: TextAlign.left,
                             ),
                           )
                         ],

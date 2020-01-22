@@ -1,14 +1,23 @@
+import 'dart:convert';
 import 'dart:math';
 
+import 'package:cafelog/Bloc/mainBloc.dart';
 import 'package:cafelog/Model/myAroundData.dart';
+import 'package:cafelog/Screens/PopularityCafe/cafeDetail.dart';
 import 'package:cafelog/Util/whiteSpace.dart';
 import 'package:flutter/material.dart';
 import 'package:cafelog/colors.dart';
 import 'package:geocoder/geocoder.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 
 class MyAround extends StatefulWidget {
+
+  String tag;
+
+  MyAround({Key key, this.tag}) : super(key : key);
+
   @override
   _MyAround createState() => _MyAround();
 }
@@ -84,6 +93,7 @@ class _MyAround extends State<MyAround> {
 
   var currentLocation;
   var location = new Location();
+  LatLng _latLng;
 
   List<String> km = List();
 
@@ -97,9 +107,7 @@ class _MyAround extends State<MyAround> {
 
     final coordinates = first.coordinates;
 
-    currentLocation = await location.getLocation();
-
-    print("current : ${currentLocation.latitude}, ${currentLocation.longitude}");
+    _latLng = LatLng(coordinates.latitude, coordinates.longitude);
 
     String km =
         "${distance(currentLocation.latitude, currentLocation.longitude, coordinates.latitude, coordinates.longitude)}km";
@@ -117,18 +125,65 @@ class _MyAround extends State<MyAround> {
                 setState(() {
                   if (!tagClick[position]) {
                     tagClick[position] = true;
-                    tagSelectList.add(tagListItem[position]);
+                    setState(() {
+                      print("positionClick : ${position}");
+                      tagSelectList.add(tagListItem[position]);
+                      firstData = false;
+                    });
+                    String tag = "";
+                    if (tagSelectList.length > 0) {
+                      for (int i = 0; i < tagSelectList.length; i++) {
+                        if (tagSelectList.length == 1) {
+                          tag += tagSelectList[i];
+                        } else if (i == tagSelectList.length) {
+                          tag += tagSelectList[i];
+                        } else {
+                          tag += tagSelectList[i] + ",";
+                        }
+                      }
+                    }
+                    mainBloc.setMyAroundTag(tag);
+                    mainBloc.tagDefaultItem = tagListItem;
+                    mainBloc.tagSave = widget.tag;
+                    mainBloc.tagSelectList = tagSelectList;
+                    mainBloc.tagClick = tagClick;
+                    cafeMyAround();
+                    // 선택
                   } else {
                     tagClick[position] = false;
-                    tagSelectList.removeAt(position);
+                    setState(() {
+                      print("position : ${position}");
+
+                      for (int i = 0; i < tagSelectList.length; i++) {
+                        if (tagListItem[position] == tagSelectList[i]) {
+                          tagSelectList.removeAt(i);
+                          break;
+                        }
+                      }
+//                      print("selectTag ${tagSelectList[position]}");
+
+                      firstData = false;
+                    });
+                    String tag = "";
+                    if (tagSelectList.length > 0) {
+                      for (int i = 0; i < tagSelectList.length; i++) {
+                        if (tagSelectList.length == 1) {
+                          tag += tagSelectList[i];
+                        } else if (i == tagSelectList.length) {
+                          tag += tagSelectList[i];
+                        } else {
+                          tag += tagSelectList[i] + ",";
+                        }
+                      }
+                    }
+                    mainBloc.setMyAroundTag(tag);
+                    mainBloc.tagDefaultItem = tagListItem;
+                    mainBloc.tagSave = widget.tag;
+                    mainBloc.tagSelectList = tagSelectList;
+                    mainBloc.tagClick = tagClick;
+                    cafeMyAround();
+                    // 선택해제
                   }
-//                  if (clickNum == position) {
-//                    clickNum = null;
-//                    // 선택해제
-//                  } else {
-//                    clickNum = position;
-//                    // 선택
-//                  }
                 });
                 print("태그 클릭 : " + tagListItem[position]);
               },
@@ -152,88 +207,503 @@ class _MyAround extends State<MyAround> {
         scrollDirection: Axis.horizontal,
       );
 
+  bool firstData = false;
+
+  cafeMyAround() {
+    print("cafeMyAround");
+    if (!firstData) {
+      print("checkFirst");
+      mainBloc.getMyAround().then((value) async {
+        aroundData.clear();
+        km.clear();
+        print("jsonDecode : ${json.decode(value)['data']}");
+        if (json.decode(value)['result'] != 0 &&
+            (json.decode(value)['data'] != null &&
+                json.decode(value)['data'] != null)) {
+          List<dynamic> valueList = await json.decode(value)['data'];
+
+          if (valueList.length != 0) {
+            print("values : ${json.decode(value)['data']}");
+            for (int i = 0; i < valueList.length; i++) {
+              aroundData.add(MyAroundData(
+                user_num: valueList[i]['user_num'],
+                pic: valueList[i]['pic'],
+                convenien: valueList[i]['convenien'],
+                homepage: valueList[i]['homepage'],
+                menu: valueList[i]['menu'],
+                opentime: valueList[i]['opentime'],
+                addr: valueList[i]['addr'],
+                phone: valueList[i]['phone'],
+                subname: valueList[i]['subname'],
+                name: valueList[i]['name'],
+                url: valueList[i]['url'],
+              ));
+
+              getDistance(valueList[i]['addr']).then((value) {
+                print("distance : ${value}");
+                setState(() {
+                  km.add(value);
+                });
+              });
+            }
+//            setState(() {
+//
+//            });
+            print("Gps Check : ${gpsOn}");
+            firstData = true;
+
+//            setState(() {});
+          } else {
+            print("checkeeeee");
+            setState(() {
+              firstData = true;
+            });
+          }
+        } else {
+          setState(() {
+            firstData = true;
+          });
+        }
+      }).catchError((error) {
+        print("aroundError : ${error}");
+      });
+    }
+    return firstData == false
+        ? Padding(
+            padding: EdgeInsets.only(
+                left: 35, bottom: 150),
+            child: Container(
+//          color: Black,
+              width: MediaQuery.of(context).size.width,
+//          height: MediaQuery.of(context).size.height,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  ClipOval(
+                    child: Container(
+                      width: 15,
+                      height: 15,
+                      color: mainColor,
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.only(top: 10),
+                    child: Text(
+                      "카페 기록을\n검색 중입니다.",
+                      style:
+                          TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                    ),
+                  )
+                ],
+              ),
+            ),
+          )
+        : aroundData.length != 0 ? Padding(
+            padding: EdgeInsets.only(left: 15, top: 15, bottom: 150),
+            child: ListView.builder(
+              itemBuilder: (context, idx) {
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.of(context)
+                        .push(MaterialPageRoute(
+                      builder: (context) =>
+                          CafeDetail(
+                            cafeName: aroundData[idx].name,
+                            phone: aroundData[idx].phone,
+                            identify: aroundData[idx].identify,
+                            address: aroundData[idx].addr,
+                            convenien:
+                            aroundData[idx].convenien,
+                            distance: km[idx],
+                            imgUrl: aroundData[idx].pic,
+                            menu: aroundData[idx].menu,
+                            naverUrl: aroundData[idx].url,
+                            subName: aroundData[idx].subname,
+                            latLng: _latLng,
+                            openTime:
+                            aroundData[idx].opentime,
+                          ),
+                    ));
+                  },
+                    child: Padding(
+                  padding: EdgeInsets.only(bottom: 10, top: 5, right: 15),
+                  child: Stack(
+                    children: <Widget>[
+                      (aroundData[idx].pic != null && aroundData[idx].pic != "")
+                          ? Positioned(
+                              child: Padding(
+                                padding: EdgeInsets.only(left: 75),
+                                child: Container(
+                                    width: MediaQuery.of(context).size.width,
+                                    height: 150,
+                                    padding:
+                                        EdgeInsets.only(left: 60, right: 10),
+                                    decoration: BoxDecoration(
+                                      color: White,
+                                      borderRadius: BorderRadius.circular(5),
+                                      boxShadow: [
+                                        BoxShadow(
+                                            color: Color.fromARGB(
+                                                255, 167, 167, 167),
+                                            blurRadius: 8)
+                                      ],
+                                    ),
+                                    child: Padding(
+                                      padding:
+                                          EdgeInsets.only(left: 15, right: 5),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: <Widget>[
+                                          whiteSpaceH(10),
+                                          Expanded(
+                                            child: Row(
+                                              children: <Widget>[
+                                                Expanded(
+                                                  child: Text(
+                                                    aroundData[idx].name,
+                                                    style: TextStyle(
+                                                      color: Black,
+                                                      fontSize: 22,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                                Align(
+                                                  alignment:
+                                                      Alignment.bottomRight,
+                                                  child: gpsOn
+                                                      ? km.length != 0
+                                                          ? Text(
+                                                              "${km[idx]}",
+                                                              style: TextStyle(
+                                                                  fontSize: 12,
+                                                                  color: Black),
+                                                            )
+                                                          : Container()
+                                                      : Container(),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+//                                          whiteSpaceH(20),
+//                                          Row(
+//                                            children: <Widget>[
+//                                              Expanded(
+//                                                child: Container(
+//                                                  width: MediaQuery.of(context)
+//                                                      .size
+//                                                      .width,
+//                                                ),
+//                                              ),
+//                                              Text(
+//                                                aroundData[idx].openCheck == 1
+//                                                    ? "영업중"
+//                                                    : "영업종료",
+//                                                style: TextStyle(
+//                                                    fontWeight: FontWeight.w600,
+//                                                    fontSize: 10,
+//                                                    color: aroundData[idx]
+//                                                                .openCheck ==
+//                                                            1
+//                                                        ? mainColor
+//                                                        : Color.fromARGB(
+//                                                            255, 53, 159, 255)),
+//                                              )
+//                                            ],
+//                                          ),
+//                                          whiteSpaceH(30),
+                                          RichText(
+                                            text: TextSpan(
+                                                text: "다녀온 사람 ",
+                                                style: TextStyle(
+                                                    color: Color.fromARGB(
+                                                        255, 167, 167, 167),
+                                                    fontSize: 12,
+                                                    fontWeight:
+                                                        FontWeight.w600),
+                                                children: <TextSpan>[
+                                                  TextSpan(
+                                                      text:
+                                                          "${aroundData[idx].user_num}",
+                                                      style: TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          fontSize: 12,
+                                                          color: Black))
+                                                ]),
+                                          ),
+                                          whiteSpaceH(5),
+                                          Expanded(
+                                            child: Text(
+                                              aroundData[idx].addr,
+                                              style: TextStyle(
+                                                color: Black,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          )
+                                        ],
+                                      ),
+                                    )),
+                              ),
+                            )
+                          : Positioned(
+                              child: Container(
+                                  width: MediaQuery.of(context).size.width,
+                                  height: 150,
+                                  decoration: BoxDecoration(
+                                    color: White,
+                                    borderRadius: BorderRadius.circular(5),
+                                    boxShadow: [
+                                      BoxShadow(
+                                          color: Color.fromARGB(
+                                              255, 167, 167, 167),
+                                          blurRadius: 8)
+                                    ],
+                                  ),
+                                  child: Padding(
+                                    padding:
+                                        EdgeInsets.only(left: 15, right: 15),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: <Widget>[
+                                        whiteSpaceH(10),
+                                        Row(
+                                          children: <Widget>[
+                                            Expanded(
+                                              child: Text(
+                                                aroundData[idx].name,
+                                                style: TextStyle(
+                                                  color: Black,
+                                                  fontSize: 22,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                            Align(
+                                              alignment: Alignment.bottomRight,
+                                              child: gpsOn
+                                                  ? km.length != 0
+                                                      ? Text(
+                                                          "${km[idx]}",
+                                                          style: TextStyle(
+                                                              fontSize: 12,
+                                                              color: Black),
+                                                        )
+                                                      : Container()
+                                                  : Container(),
+                                            )
+                                          ],
+                                        ),
+                                        whiteSpaceH(20),
+//                                        Row(
+//                                          children: <Widget>[
+//                                            Expanded(
+//                                              child: Container(
+//                                                width: MediaQuery.of(context)
+//                                                    .size
+//                                                    .width,
+//                                              ),
+//                                            ),
+//                                            Text(
+//                                              aroundData[idx].openCheck == 1
+//                                                  ? "영업중"
+//                                                  : "영업종료",
+//                                              style: TextStyle(
+//                                                  fontWeight: FontWeight.w600,
+//                                                  fontSize: 10,
+//                                                  color: aroundData[idx]
+//                                                              .openCheck ==
+//                                                          1
+//                                                      ? mainColor
+//                                                      : Color.fromARGB(
+//                                                          255, 53, 159, 255)),
+//                                            )
+//                                          ],
+//                                        ),
+                                        whiteSpaceH(30),
+                                        RichText(
+                                          text: TextSpan(
+                                              text: "다녀온 사람 ",
+                                              style: TextStyle(
+                                                  color: Color.fromARGB(
+                                                      255, 167, 167, 167),
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w600),
+                                              children: <TextSpan>[
+                                                TextSpan(
+                                                    text:
+                                                        "${aroundData[idx].user_num}",
+                                                    style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        fontSize: 12,
+                                                        color: Black))
+                                              ]),
+                                        ),
+                                        whiteSpaceH(5),
+                                        Expanded(
+                                          child: Text(
+                                            aroundData[idx].addr,
+                                            style: TextStyle(
+                                              color: Black,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        )
+                                      ],
+                                    ),
+                                  )),
+                            ),
+                      (aroundData[idx].pic != null && aroundData[idx].pic != "")
+                          ? Padding(
+                              padding: EdgeInsets.only(top: 5),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(9),
+                                child: Image.network(
+                                  aroundData[idx].pic,
+                                  width: 140,
+                                  height: 140,
+                                  fit: BoxFit.fill,
+                                ),
+                              ),
+                            )
+                          : Container()
+                    ],
+                  ),
+                ));
+              },
+              shrinkWrap: true,
+//              physics: NeverScrollableScrollPhysics(),
+              itemCount: aroundData.length,
+            ),
+          ) : Padding(
+      padding: EdgeInsets.only(
+          left: 35, bottom: 150),
+      child: Container(
+//          color: Black,
+        width: MediaQuery.of(context).size.width,
+//          height: MediaQuery.of(context).size.height,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            ClipOval(
+              child: Container(
+                width: 15,
+                height: 15,
+                color: mainColor,
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.only(top: 10),
+              child: Text(
+                "내 주변에 카페 기록\n없습니다.",
+                style:
+                TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  tagSet() {
+    print("length : " + widget.tag.length.toString());
+    if (widget.tag.contains(",")) {
+      print("split");
+      List<String> tagSplit = widget.tag.split(",");
+      setState(() {
+        for (int i = 0; i < tagSplit.length; i++) {
+          tagListItem.insert(i, tagSplit[i]);
+          tagSelectList.add(tagListItem[i]);
+          tagClick.clear();
+        }
+        mainBloc.tagDefaultItem = tagListItem;
+        mainBloc.tagSelectList = tagSelectList;
+        for (int i = 0; i < tagListItem.length; i++) {
+          tagClick.add(false);
+        }
+        for (int i = 0; i < tagSplit.length; i++) {
+          tagClick[i] = true;
+        }
+        mainBloc.tagClick = tagClick;
+        mainBloc.tagSave = widget.tag;
+        firstData = false;
+      });
+    } else {
+      print("notSplit");
+      setState(() {
+        tagListItem.insert(0, widget.tag);
+        tagSelectList.add(tagListItem[0]);
+        tagClick.clear();
+        for (int i = 0; i < tagListItem.length; i++) {
+          tagClick.add(false);
+        }
+        tagClick[0] = true;
+        mainBloc.tagDefaultItem = tagListItem;
+        mainBloc.tagSelectList = tagSelectList;
+        mainBloc.tagClick = tagClick;
+        mainBloc.tagSave = widget.tag;
+        firstData = false;
+      });
+    }
+  }
+
   @override
   void initState() {
     super.initState();
 
+    if (mainBloc.tagSave != null && mainBloc.tagSave != "") {
+      widget.tag = mainBloc.tagSave;
+    }
+
+    if (widget.tag.isNotEmpty) {
+      print("widget.tags : ${widget.tag}");
+      if (widget.tag.substring(widget.tag.length - 1).contains(",")) {
+        widget.tag = widget.tag.substring(0, widget.tag.length - 1);
+        tagSet();
+      } else {
+        tagSet();
+      }
+    }
+
+    mainBloc.setMyAroundTag(widget.tag);
+
     gpsCheck();
+
+    getLocation();
 
     for (int i = 0; i < tagListItem.length; i++) {
       tagClick.add(false);
     }
 
-    aroundRecoData
-      ..add(MyAroundData(
-          cafeImg: "assets/test/test1.png",
-          cafeName: "투더문바",
-          cafeAddress: "서울특별시 중구 청계천로 14 1F",
-          openCheck: 0,
-          type: 0,
-          sale: 100,
-          visitor: 125))
-      ..add(MyAroundData(
-          cafeImg: "assets/test/test2.png",
-          cafeName: "쎄투",
-          cafeAddress: "서울특별시 중구 청계천로 34",
-          openCheck: 1,
-          type: 0,
-          sale: 300,
-          visitor: 125))
-      ..add(MyAroundData(
-          cafeImg: "assets/test/test3.png",
-          cafeName: "37.5도",
-          cafeAddress: "서울특별시 중구 청계천로 512 신한투자금융 1층",
-          openCheck: 1,
-          type: 0,
-          sale: 200,
-          visitor: 125));
-    aroundData
-      ..add(MyAroundData(
-          cafeImg: "assets/test/test4.png",
-          cafeName: "하이데어",
-          cafeAddress: "서울특별시 중구 청계천로 14 1F",
-          openCheck: 1,
-          type: 1,
-          sale: 0,
-          visitor: 125))
-      ..add(MyAroundData(
-          cafeImg: "assets/test/test5.png",
-          cafeName: "에이카페",
-          cafeAddress: "서울특별시 중구 청계천로 14 1F",
-          openCheck: 0,
-          type: 1,
-          sale: 0,
-          visitor: 125))
-      ..add(MyAroundData(
-          cafeImg: "",
-          cafeName: "카페로그",
-          cafeAddress: "서울특별시 중구 청계천로 14 1F",
-          openCheck: 1,
-          type: 1,
-          sale: 0,
-          visitor: 125));
-
-    km.clear();
-
-    for (int i = 0; i < aroundRecoData.length; i++) {
-      getDistance(aroundRecoData[i].cafeAddress).then((value) {
-//        print("value : ${value}");
-        setState(() {
-          km.add(value);
-        });
-      });
+    if (mainBloc.tagDefaultItem != null && mainBloc.tagDefaultItem.length != 0) {
+      tagListItem = mainBloc.tagDefaultItem;
     }
 
-    for (int i = 0; i < aroundData.length; i++) {
-      getDistance(aroundData[i].cafeAddress).then((value) {
-//        print("value : ${value}");
-        setState(() {
-          km.add(value);
-        });
-      });
+    if (mainBloc.tagClick != null && mainBloc.tagDefaultItem.length != 0) {
+      tagClick = mainBloc.tagClick;
     }
 
-    print("kmLength : ${km.length}");
+    if (mainBloc.tagSelectList != null && mainBloc.tagDefaultItem.length != 0) {
+      tagSelectList = mainBloc.tagSelectList;
+    }
+
+    mainBloc.tagSelectList = tagSelectList;
+    mainBloc.tagDefaultItem = tagListItem;
+    mainBloc.tagClick = tagClick;
+    mainBloc.tagSave = widget.tag;
+
+    setState(() {
+      print('firstDataFalse');
+      firstData = false;
+    });
 
     setState(() {
       loading = true;
@@ -244,6 +714,7 @@ class _MyAround extends State<MyAround> {
   Widget build(BuildContext context) {
     // TODO: implement build
     return SingleChildScrollView(
+      physics: NeverScrollableScrollPhysics(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -377,578 +848,22 @@ class _MyAround extends State<MyAround> {
               ),
             ),
           ),
-          Padding(
-            padding: EdgeInsets.only(left: 15, top: 10),
-            child: Text(
-              "추천카페",
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Color.fromARGB(255, 63, 61, 61),
-                  fontSize: 24),
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.only(left: 15, right: 15, top: 10),
-            child: ListView.builder(
-              itemBuilder: (context, idx) {
-//                print("idx : ${aroundRecoData[idx].cafeName}");
-
-                print("kmLength2 : ${km.length}, ${idx}");
-                if (km.length > idx) {
-                  if (km.length != 0 && km[idx].isNotEmpty) {
-                    print("kmIDX :  ${km[idx]}");
-                  }
-                }
-
-                return Padding(
-                  padding: EdgeInsets.only(bottom: 10),
-                  child: Stack(
-                    children: <Widget>[
-                      (aroundRecoData[idx].cafeImg != null &&
-                              aroundRecoData[idx].cafeImg != "")
-                          ? Positioned(
-                              child: Padding(
-                                padding: EdgeInsets.only(left: 75),
-                                child: Container(
-                                    width: MediaQuery.of(context).size.width,
-                                    height: 150,
-                                    padding:
-                                        EdgeInsets.only(left: 60, right: 10),
-                                    decoration: BoxDecoration(
-                                      color: White,
-                                      borderRadius: BorderRadius.circular(5),
-                                      boxShadow: [
-                                        BoxShadow(
-                                            color: Color.fromARGB(
-                                                255, 167, 167, 167),
-                                            blurRadius: 8)
-                                      ],
-                                    ),
-                                    child: Padding(
-                                      padding:
-                                          EdgeInsets.only(left: 15, right: 5),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: <Widget>[
-                                          whiteSpaceH(10),
-                                          Row(
-                                            children: <Widget>[
-                                              Expanded(
-                                                child: Text(
-                                                  aroundRecoData[idx].cafeName,
-                                                  style: TextStyle(
-                                                    color: Black,
-                                                    fontSize: 22,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                              Align(
-                                                alignment:
-                                                    Alignment.bottomRight,
-                                                child: gpsOn
-                                                    ? km.length > idx
-                                                        ? (km.length != 0 &&
-                                                                km[idx]
-                                                                    .isNotEmpty)
-                                                            ? Text("${km[idx]}")
-                                                            : Container()
-                                                        : Container()
-                                                    : Container(),
-                                              )
-                                            ],
-                                          ),
-                                          whiteSpaceH(20),
-                                          Row(
-                                            children: <Widget>[
-                                              Expanded(
-                                                child: Text(
-                                                  "${aroundRecoData[idx].sale}원 할인",
-                                                  style: TextStyle(
-                                                      color: mainColor,
-                                                      fontSize: 14,
-                                                      fontWeight:
-                                                          FontWeight.w600),
-                                                ),
-                                              ),
-                                              Text(
-                                                aroundRecoData[idx].openCheck ==
-                                                        1
-                                                    ? "영업중"
-                                                    : "영업종료",
-                                                style: TextStyle(
-                                                    fontWeight: FontWeight.w600,
-                                                    fontSize: 10,
-                                                    color: aroundRecoData[idx]
-                                                                .openCheck ==
-                                                            1
-                                                        ? mainColor
-                                                        : Color.fromARGB(
-                                                            255, 53, 159, 255)),
-                                              )
-                                            ],
-                                          ),
-                                          whiteSpaceH(20),
-                                          RichText(
-                                            text: TextSpan(
-                                                text: "다녀온 사람 ",
-                                                style: TextStyle(
-                                                    color: Color.fromARGB(
-                                                        255, 167, 167, 167),
-                                                    fontSize: 12,
-                                                    fontWeight:
-                                                        FontWeight.w600),
-                                                children: <TextSpan>[
-                                                  TextSpan(
-                                                      text:
-                                                          "${aroundRecoData[idx].visitor}",
-                                                      style: TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                          fontSize: 12,
-                                                          color: Black))
-                                                ]),
-                                          ),
-                                          whiteSpaceH(aroundRecoData[idx].cafeAddress.length > 20 ? 5 : 20),
-                                          Expanded(
-                                            child: Text(
-                                              aroundRecoData[idx].cafeAddress,
-                                              style: TextStyle(
-                                                color: Black,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                          )
-                                        ],
-                                      ),
-                                    )),
-                              ),
-                            )
-                          : Positioned(
-                              child: Container(
-                                  width: MediaQuery.of(context).size.width,
-                                  height: 150,
-                                  decoration: BoxDecoration(
-                                    color: White,
-                                    borderRadius: BorderRadius.circular(5),
-                                    boxShadow: [
-                                      BoxShadow(
-                                          color: Color.fromARGB(
-                                              255, 167, 167, 167),
-                                          blurRadius: 8)
-                                    ],
-                                  ),
-                                  child: Padding(
-                                    padding:
-                                        EdgeInsets.only(left: 15, right: 15),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: <Widget>[
-                                        whiteSpaceH(10),
-                                        Row(
-                                          children: <Widget>[
-                                            Expanded(
-                                              child: Text(
-                                                aroundRecoData[idx].cafeName,
-                                                style: TextStyle(
-                                                  color: Black,
-                                                  fontSize: 22,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                            Align(
-                                              alignment: Alignment.bottomRight,
-                                              child: gpsOn
-                                                  ? km.length > idx
-                                                      ? (km.length != 0 &&
-                                                              km[idx]
-                                                                  .isNotEmpty)
-                                                          ? Text("${km[idx]}")
-                                                          : Container()
-                                                      : Container()
-                                                  : Container(),
-                                            ),
-                                          ],
-                                        ),
-                                        whiteSpaceH(20),
-                                        Row(
-                                          children: <Widget>[
-                                            Expanded(
-                                              child: Text(
-                                                "${aroundRecoData[idx].sale}원 할인",
-                                                style: TextStyle(
-                                                    color: mainColor,
-                                                    fontSize: 14,
-                                                    fontWeight:
-                                                        FontWeight.w600),
-                                              ),
-                                            ),
-                                            Text(
-                                              aroundRecoData[idx].openCheck == 1
-                                                  ? "영업중"
-                                                  : "영업종료",
-                                              style: TextStyle(
-                                                  fontWeight: FontWeight.w600,
-                                                  fontSize: 10,
-                                                  color: aroundRecoData[idx]
-                                                              .openCheck ==
-                                                          1
-                                                      ? mainColor
-                                                      : Color.fromARGB(
-                                                          255, 53, 159, 255)),
-                                            )
-                                          ],
-                                        ),
-                                        whiteSpaceH(20),
-                                        RichText(
-                                          text: TextSpan(
-                                              text: "다녀온 사람 ",
-                                              style: TextStyle(
-                                                  color: Color.fromARGB(
-                                                      255, 167, 167, 167),
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.w600),
-                                              children: <TextSpan>[
-                                                TextSpan(
-                                                    text:
-                                                        "${aroundRecoData[idx].visitor}",
-                                                    style: TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        fontSize: 12,
-                                                        color: Black))
-                                              ]),
-                                        ),
-                                        whiteSpaceH(aroundRecoData[idx].cafeAddress.length > 20 ? 5 : 20),
-                                        Expanded(
-                                          child: Text(
-                                            aroundRecoData[idx].cafeAddress,
-                                            style: TextStyle(
-                                              color: Black,
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                        )
-                                      ],
-                                    ),
-                                  )),
-                            ),
-                      (aroundRecoData[idx].cafeImg != null &&
-                              aroundRecoData[idx].cafeImg != "")
-                          ? Padding(
-                              padding: EdgeInsets.only(top: 5),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(9),
-                                child: Image.asset(
-                                  aroundRecoData[idx].cafeImg,
-                                  width: 140,
-                                  height: 140,
-                                  fit: BoxFit.fill,
-                                ),
-                              ),
-                            )
-                          : Container()
-                    ],
+          (aroundData.length == 0 && firstData == false)
+              ? Container()
+              : Padding(
+                  padding: EdgeInsets.only(left: 15, top: 20, bottom: 10),
+                  child: Text(
+                    "일반카페",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Color.fromARGB(255, 63, 61, 61),
+                        fontSize: 24),
                   ),
-                );
-              },
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              itemCount: aroundRecoData.length,
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.only(left: 15, right: 15, top: 10),
-            child: Container(
-              width: MediaQuery.of(context).size.width,
-              height: 2,
-              color: Color.fromARGB(255, 151, 151, 151),
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.only(left: 15, top: 20),
-            child: Text(
-              "일반카페",
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Color.fromARGB(255, 63, 61, 61),
-                  fontSize: 24),
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.only(left: 15, right: 15, top: 10, bottom: 150),
-            child: ListView.builder(
-              itemBuilder: (context, idx) {
-//                print("idx : ${aroundData[idx].cafeName}");
-                return Padding(
-                  padding: EdgeInsets.only(bottom: 10),
-                  child: Stack(
-                    children: <Widget>[
-                      (aroundData[idx].cafeImg != null &&
-                              aroundData[idx].cafeImg != "")
-                          ? Positioned(
-                              child: Padding(
-                                padding: EdgeInsets.only(left: 75),
-                                child: Container(
-                                    width: MediaQuery.of(context).size.width,
-                                    height: 150,
-                                    padding:
-                                        EdgeInsets.only(left: 60, right: 10),
-                                    decoration: BoxDecoration(
-                                      color: White,
-                                      borderRadius: BorderRadius.circular(5),
-                                      boxShadow: [
-                                        BoxShadow(
-                                            color: Color.fromARGB(
-                                                255, 167, 167, 167),
-                                            blurRadius: 8)
-                                      ],
-                                    ),
-                                    child: Padding(
-                                      padding:
-                                          EdgeInsets.only(left: 15, right: 5),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: <Widget>[
-                                          whiteSpaceH(10),
-                                          Row(
-                                            children: <Widget>[
-                                              Expanded(
-                                                child: Text(
-                                                  aroundData[idx].cafeName,
-                                                  style: TextStyle(
-                                                    color: Black,
-                                                    fontSize: 22,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                              Align(
-                                                alignment:
-                                                    Alignment.bottomRight,
-                                                child: gpsOn
-                                                    ? km.length >
-                                                            aroundData.length
-                                                        ? km.length > idx
-                                                            ? (km.length != 0 &&
-                                                                    km[idx +
-                                                                            aroundRecoData
-                                                                                .length -
-                                                                            1]
-                                                                        .isNotEmpty)
-                                                                ? Text(
-                                                                    "${km[idx + aroundRecoData.length - 1]}")
-                                                                : Container()
-                                                            : Container()
-                                                        : Container()
-                                                    : Container(),
-                                              ),
-                                            ],
-                                          ),
-                                          whiteSpaceH(20),
-                                          Row(
-                                            children: <Widget>[
-                                              Expanded(
-                                                child: Container(
-                                                  width: MediaQuery.of(context)
-                                                      .size
-                                                      .width,
-                                                ),
-                                              ),
-                                              Text(
-                                                aroundData[idx].openCheck == 1
-                                                    ? "영업중"
-                                                    : "영업종료",
-                                                style: TextStyle(
-                                                    fontWeight: FontWeight.w600,
-                                                    fontSize: 10,
-                                                    color: aroundData[idx]
-                                                                .openCheck ==
-                                                            1
-                                                        ? mainColor
-                                                        : Color.fromARGB(
-                                                            255, 53, 159, 255)),
-                                              )
-                                            ],
-                                          ),
-                                          whiteSpaceH(30),
-                                          RichText(
-                                            text: TextSpan(
-                                                text: "다녀온 사람 ",
-                                                style: TextStyle(
-                                                    color: Color.fromARGB(
-                                                        255, 167, 167, 167),
-                                                    fontSize: 12,
-                                                    fontWeight:
-                                                        FontWeight.w600),
-                                                children: <TextSpan>[
-                                                  TextSpan(
-                                                      text:
-                                                          "${aroundRecoData[idx].visitor}",
-                                                      style: TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                          fontSize: 12,
-                                                          color: Black))
-                                                ]),
-                                          ),
-                                          whiteSpaceH(5),
-                                          Expanded(
-                                            child: Text(
-                                              aroundData[idx].cafeAddress,
-                                              style: TextStyle(
-                                                color: Black,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                          )
-                                        ],
-                                      ),
-                                    )),
-                              ),
-                            )
-                          : Positioned(
-                              child: Container(
-                                  width: MediaQuery.of(context).size.width,
-                                  height: 150,
-                                  decoration: BoxDecoration(
-                                    color: White,
-                                    borderRadius: BorderRadius.circular(5),
-                                    boxShadow: [
-                                      BoxShadow(
-                                          color: Color.fromARGB(
-                                              255, 167, 167, 167),
-                                          blurRadius: 8)
-                                    ],
-                                  ),
-                                  child: Padding(
-                                    padding:
-                                        EdgeInsets.only(left: 15, right: 15),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: <Widget>[
-                                        whiteSpaceH(10),
-                                        Row(
-                                          children: <Widget>[
-                                            Expanded(
-                                              child: Text(
-                                                aroundData[idx].cafeName,
-                                                style: TextStyle(
-                                                  color: Black,
-                                                  fontSize: 22,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                            Align(
-                                              alignment: Alignment.bottomRight,
-                                              child: gpsOn
-                                                  ? km.length >
-                                                          aroundData.length
-                                                      ? km.length + aroundData.length > idx + aroundData.length
-                                                          ? ((km.length + aroundData.length) != (0 + aroundData.length) &&
-                                                                  km[idx +
-                                                                          aroundRecoData
-                                                                              .length -
-                                                                          2]
-                                                                      .isNotEmpty)
-                                                              ? Text(
-                                                                  "${km[idx + aroundRecoData.length - 2]}")
-                                                              : Container()
-                                                          : Container()
-                                                      : Container()
-                                                  : Container(),
-                                            )
-                                          ],
-                                        ),
-                                        whiteSpaceH(20),
-                                        Row(
-                                          children: <Widget>[
-                                            Expanded(
-                                              child: Container(
-                                                width: MediaQuery.of(context)
-                                                    .size
-                                                    .width,
-                                              ),
-                                            ),
-                                            Text(
-                                              aroundData[idx].openCheck == 1
-                                                  ? "영업중"
-                                                  : "영업종료",
-                                              style: TextStyle(
-                                                  fontWeight: FontWeight.w600,
-                                                  fontSize: 10,
-                                                  color: aroundData[idx]
-                                                              .openCheck ==
-                                                          1
-                                                      ? mainColor
-                                                      : Color.fromARGB(
-                                                          255, 53, 159, 255)),
-                                            )
-                                          ],
-                                        ),
-                                        whiteSpaceH(30),
-                                        RichText(
-                                          text: TextSpan(
-                                              text: "다녀온 사람 ",
-                                              style: TextStyle(
-                                                  color: Color.fromARGB(
-                                                      255, 167, 167, 167),
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.w600),
-                                              children: <TextSpan>[
-                                                TextSpan(
-                                                    text:
-                                                        "${aroundRecoData[idx].visitor}",
-                                                    style: TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        fontSize: 12,
-                                                        color: Black))
-                                              ]),
-                                        ),
-                                        whiteSpaceH(5),
-                                        Expanded(
-                                          child: Text(
-                                            aroundData[idx].cafeAddress,
-                                            style: TextStyle(
-                                              color: Black,
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                        )
-                                      ],
-                                    ),
-                                  )),
-                            ),
-                      (aroundData[idx].cafeImg != null &&
-                              aroundData[idx].cafeImg != "")
-                          ? Padding(
-                              padding: EdgeInsets.only(top: 5),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(9),
-                                child: Image.asset(
-                                  aroundData[idx].cafeImg,
-                                  width: 140,
-                                  height: 140,
-                                  fit: BoxFit.fill,
-                                ),
-                              ),
-                            )
-                          : Container()
-                    ],
-                  ),
-                );
-              },
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              itemCount: aroundData.length,
-            ),
+                ),
+          Container(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height - 150,
+            child: cafeMyAround(),
           ),
         ],
       ),

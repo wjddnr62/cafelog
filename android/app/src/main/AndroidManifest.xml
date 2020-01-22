@@ -13,7 +13,8 @@
         android:name="io.flutter.app.FlutterApplication"
         android:label="카페로그"
         android:icon="@mipmap/ic_launcher"
-        android:allowBackup="false">
+        android:allowBackup="false"
+        >
         <meta-data android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyDYbcuR5RK-OXD0zSUedUZXTqLTCd6LpZI"/>
         <activity
@@ -33,6 +34,10 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="FLUTTER_NOTIFICATION_CLICK" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
     </application>
