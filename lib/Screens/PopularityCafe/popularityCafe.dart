@@ -85,9 +85,9 @@ class _PopularityCafe extends State<PopularityCafe> {
         for (int i = 0; i < tagListItem.length; i++) {
           tagClick.add(false);
         }
-        for (int i = 0; i < tagSplit.length; i++) {
-          tagClick[i] = true;
-        }
+//        for (int i = 0; i < tagSplit.length; i++) {
+//          tagClick[i] = true;
+//        }
         getData = false;
       });
     } else {
@@ -109,15 +109,15 @@ class _PopularityCafe extends State<PopularityCafe> {
   void initState() {
     super.initState();
 
-    if (widget.tags.isNotEmpty) {
-      print("widget.tags : ${widget.tags}");
-      if (widget.tags.substring(widget.tags.length - 1).contains(",")) {
-        widget.tags = widget.tags.substring(0, widget.tags.length - 1);
-        tagSet();
-      } else {
-        tagSet();
-      }
-    }
+//    if (widget.tags.isNotEmpty) {
+//      print("widget.tags : ${widget.tags}");
+//      if (widget.tags.substring(widget.tags.length - 1).contains(",")) {
+//        widget.tags = widget.tags.substring(0, widget.tags.length - 1);
+//        tagSet();
+//      } else {
+//        tagSet();
+//      }
+//    }
 
     setState(() {
       cafeLocation = widget.cafeLocation;
@@ -203,7 +203,8 @@ class _PopularityCafe extends State<PopularityCafe> {
                 print("태그 클릭 : " + tagListItem[position]);
               },
               child: Container(
-                width: 60,
+//                width: 60,
+              padding: EdgeInsets.only(left: 10, right: 10),
                 height: 30,
                 decoration:
                     tagClick[position] ? tagClickDecoration : tagDecoration,
@@ -332,53 +333,53 @@ class _PopularityCafe extends State<PopularityCafe> {
                   children: <Widget>[
                     menuBar("인기"),
                     Padding(
-                      padding: EdgeInsets.only(left: 15, top: 5),
+                      padding: EdgeInsets.only(left: 15, top: 0),
                       child: menuBar("최근 핫플"),
                     ),
-                    Expanded(
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: Padding(
-                          padding: EdgeInsets.only(top: 5, right: 15),
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                if (visitCafe) {
-                                  visitCafe = false;
-                                } else {
-                                  visitCafe = true;
-                                }
-                              });
-                            },
-                            child: Container(
-                              width: 90,
-                              height: 30,
-                              decoration: BoxDecoration(
-                                color: visitCafe == false
-                                    ? White
-                                    : Color.fromARGB(255, 240, 240, 240),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  "다녀온카페 제외",
-                                  style: visitCafe == false
-                                      ? TextStyle(
-                                          color: Color.fromARGB(
-                                              255, 122, 122, 122),
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 12)
-                                      : TextStyle(
-                                          color: Black,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    )
+//                    Expanded(
+//                      child: Align(
+//                        alignment: Alignment.centerRight,
+//                        child: Padding(
+//                          padding: EdgeInsets.only(top: 5, right: 15),
+//                          child: GestureDetector(
+//                            onTap: () {
+//                              setState(() {
+//                                if (visitCafe) {
+//                                  visitCafe = false;
+//                                } else {
+//                                  visitCafe = true;
+//                                }
+//                              });
+//                            },
+//                            child: Container(
+//                              width: 90,
+//                              height: 30,
+//                              decoration: BoxDecoration(
+//                                color: visitCafe == false
+//                                    ? White
+//                                    : Color.fromARGB(255, 240, 240, 240),
+//                                borderRadius: BorderRadius.circular(16),
+//                              ),
+//                              child: Center(
+//                                child: Text(
+//                                  "다녀온카페 제외",
+//                                  style: visitCafe == false
+//                                      ? TextStyle(
+//                                          color: Color.fromARGB(
+//                                              255, 122, 122, 122),
+//                                          fontWeight: FontWeight.w600,
+//                                          fontSize: 12)
+//                                      : TextStyle(
+//                                          color: Black,
+//                                          fontSize: 12,
+//                                          fontWeight: FontWeight.bold),
+//                                ),
+//                              ),
+//                            ),
+//                          ),
+//                        ),
+//                      ),
+//                    )
                   ],
                 ),
               ),
@@ -408,32 +409,39 @@ class _PopularityCafe extends State<PopularityCafe> {
 //                      )
                     Padding(
                         padding:
-                            EdgeInsets.only(bottom: 150, left: 35, top: 20),
+                            EdgeInsets.only(bottom: 150, left: 0, top: 110),
                         child: Container(
-                          width: MediaQuery.of(context).size.width,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              ClipOval(
-                                child: Container(
-                                  width: 15,
-                                  height: 15,
-                                  color: mainColor,
-                                ),
+                            width: MediaQuery.of(context).size.width,
+                            padding: EdgeInsets.only(top: 10),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(mainColor),
                               ),
-                              Padding(
-                                padding: EdgeInsets.only(top: 10),
-                                child: Text(
-                                  "카페 기록을\n검색 중입니다.",
-                                  style: TextStyle(
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              )
-                            ],
-                          ),
-                        ),
+                            )
+//                          Column(
+//                            mainAxisAlignment: MainAxisAlignment.center,
+//                            crossAxisAlignment: CrossAxisAlignment.start,
+//                            children: <Widget>[
+//                              ClipOval(
+//                                child: Container(
+//                                  width: 15,
+//                                  height: 15,
+//                                  color: mainColor,
+//                                ),
+//                              ),
+//                              Padding(
+//                                padding: EdgeInsets.only(top: 10),
+//                                child: Text(
+//                                  "카페 기록을\n검색 중입니다.",
+//                                  style: TextStyle(
+//                                      fontSize: 28,
+//                                      fontWeight: FontWeight.bold),
+//                                ),
+//                              )
+//                            ],
+//                          ),
+                            ),
                       )
                     : _cafeList.length != 0
                         ? Padding(
@@ -537,7 +545,8 @@ class _PopularityCafe extends State<PopularityCafe> {
                                                     .push(MaterialPageRoute(
                                                   builder: (context) =>
                                                       CafeDetail(
-                                                        identify: naverData.identify,
+                                                    identify:
+                                                        naverData.identify,
                                                     cafeName: naverData.name,
                                                     phone: naverData.phone,
                                                     address: naverData.addr,
@@ -705,7 +714,7 @@ class _PopularityCafe extends State<PopularityCafe> {
                                                                     Center(
                                                                       child:
                                                                           Text(
-                                                                        "최근1주일",
+                                                                        "최근1개월",
                                                                         style: TextStyle(
                                                                             fontSize:
                                                                                 8,

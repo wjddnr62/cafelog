@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cafelog/Bloc/mainBloc.dart';
 import 'package:cafelog/Model/streetsData.dart';
 import 'package:cafelog/Util/numberFormat.dart';
+import 'package:cafelog/Util/whiteSpace.dart';
 import 'package:cafelog/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -145,6 +146,16 @@ class _LocationSearch extends State<LocationSearch> {
                                         width:
                                             MediaQuery.of(context).size.width,
                                         height: 160,
+                                        decoration: BoxDecoration(
+                                            color: White,
+                                            borderRadius:
+                                            BorderRadius.circular(8),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                  color: Color.fromARGB(
+                                                      255, 219, 219, 219),
+                                                  blurRadius: 7),
+                                            ]),
                                         child: CachedNetworkImage(
                                           imageUrl: _cafeList[idx].picture,
                                           imageBuilder:
@@ -159,9 +170,16 @@ class _LocationSearch extends State<LocationSearch> {
                                               height: 160,
                                             ),
                                           ),
-                                          errorWidget: (context, url, error) => ClipRRect(
-                                            borderRadius: BorderRadius.circular(8.0),
-                                            child: Image.asset("assets/defaultImage.png", width: 40, height: 40, fit: BoxFit.fill,),
+                                          errorWidget: (context, url, error) =>
+                                              ClipRRect(
+                                            borderRadius:
+                                                BorderRadius.circular(8.0),
+                                            child: Image.asset(
+                                              "assets/defaultImage.png",
+                                              width: 40,
+                                              height: 40,
+                                              fit: BoxFit.fill,
+                                            ),
                                           ),
                                         )
 //                                    Image.asset(
@@ -216,39 +234,47 @@ class _LocationSearch extends State<LocationSearch> {
                     child: Container(
                       width: MediaQuery.of(context).size.width,
                       height: MediaQuery.of(context).padding.top + 40,
-                      child: Stack(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: <Widget>[
-                          Positioned(
-                            right: 0,
-                            top: 40,
-                            child: GestureDetector(
-                              onTap: () {
-                                print("전체 카페 보기");
-                                Navigator.of(context).pop("전체카페");
-                              },
+
+//                          Positioned.fill(
+//                            top: 30,
+//                            child:
+                            Expanded(
+                              child: Text(
+                                cafeLoadTitle,
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 24,
+                                    color: Black),
+                                textAlign: TextAlign.left,
+                              ),
+                            ),
+//                          ),
+                          GestureDetector(
+                            onTap: () {
+                              print("전체 카페 보기");
+                              Navigator.of(context).pop("전체카페");
+                            },
+                            child: Container(
+//                              child: Positioned(
+//                                top: 40,
+//                                right: 0,
                               child: Text(
                                 "전체 카페 보기",
                                 style: TextStyle(
                                     color: mainColor,
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600),
+//                                ),
                               ),
                             ),
                           ),
-                          Positioned.fill(
-                            top: 30,
-                            child: Text(
-                              cafeLoadTitle,
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 24,
-                                  color: Black),
-                              textAlign: TextAlign.left,
-                            ),
-                          )
                         ],
                       ),
                     )),
+                whiteSpaceH(10),
                 Expanded(
                   child: cafeListGrid(),
                 ),

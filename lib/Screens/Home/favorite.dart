@@ -601,7 +601,7 @@ class _Favorite extends State<Favorite> {
                                                                             children: <Widget>[
                                                                               Center(
                                                                                 child: Text(
-                                                                                  "최근1주일",
+                                                                                  "최근1개월",
                                                                                   style: TextStyle(fontSize: 8, fontWeight: FontWeight.w600, color: mainColor),
                                                                                   textAlign: TextAlign.center,
                                                                                 ),

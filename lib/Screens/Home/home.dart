@@ -67,7 +67,9 @@ class _Home extends State<Home> {
     if (_mainScroll.offset >= _mainScroll.position.maxScrollExtent &&
         !_mainScroll.position.outOfRange) {
       setState(() {
+        loading = true;
         firstData = false;
+//        mainListGrid();
       });
 //      setState(() {});
 //      });
@@ -119,7 +121,8 @@ class _Home extends State<Home> {
   final upPanelColor = const Color.fromARGB(255, 219, 219, 219);
   final mainUpPanelText =
       TextStyle(fontSize: 14.0, color: Black, fontWeight: FontWeight.bold);
-  final threePanelHover = TextStyle(fontSize: 14.0, color: White, fontWeight: FontWeight.bold);
+  final threePanelHover =
+      TextStyle(fontSize: 14.0, color: White, fontWeight: FontWeight.bold);
   final mainUpPanelHoverText =
       TextStyle(fontSize: 14.0, color: mainColor, fontWeight: FontWeight.bold);
   final instaPostDataNameText = TextStyle(
@@ -164,6 +167,8 @@ class _Home extends State<Home> {
   bool mapSelect = false;
 
   ScrollController _autoTagScroll = ScrollController();
+
+  bool loading = false;
 
   prefInit() async {
     if (prefsInit == 0) {
@@ -346,7 +351,7 @@ class _Home extends State<Home> {
       _mainBloc.getMainList().then((value) async {
         if (json.decode(value)['result'] != 0 &&
             (json.decode(value)['data'] != null &&
-                json.decode(value)['data'] != "")) {
+                json.decode(value)['data'] != "" && json.decode(value)['data'].length != 0)) {
           if (!firstData) {
             defaultOffSet += 1;
             print('value : ${json.decode(value)['data']}');
@@ -364,8 +369,16 @@ class _Home extends State<Home> {
               }
             }
             firstData = true;
+            loading = false;
           }
           setState(() {});
+        } else {
+          setState(() {
+            firstData = true;
+            loading = false;
+          });
+          CafeLogSnackBarWithOk(
+              context: context, okMsg: "확인", msg: "더 이상 표시할 카페 기록이 없습니다.");
         }
       }).catchError((error) {
         print("error : ${error}");
@@ -373,7 +386,17 @@ class _Home extends State<Home> {
     }
     if (keywordSearching) {
       print("lenlen : " + _cafeList.length.toString());
-      if (_cafeList.length == 0) {
+      if (!firstData) {
+        return Padding(
+          padding:
+              EdgeInsets.only(bottom: MediaQuery.of(context).size.height / 5),
+          child: Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(mainColor),
+            ),
+          ),
+        );
+      } else if (_cafeList.length == 0 && firstData == true) {
         return keywordSearch(keyword);
       } else {
         return firstData == false
@@ -486,73 +509,79 @@ class _Home extends State<Home> {
                 ),
               ),
             )
-          : Padding(
-              padding:
-                  EdgeInsets.only(top: 10, bottom: 150, left: 15, right: 15),
-              child: StaggeredGridView.countBuilder(
-                controller: _mainScroll,
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                itemCount: _cafeList.length,
-                itemBuilder: (context, idx) => GestureDetector(
-                  onTap: () {
-                    print("Name : ${_cafeList[idx].search_tag}");
-
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => InstaDetail(
-                            name: _cafeList[idx].search_tag,
-                            instaUrl: _cafeList[idx].url,
-                            offset: _mainScroll.offset,
-                            type: 0,
-                          ),
-                        )).then((result) {
-                      _mainScroll.animateTo(result,
-                          duration: null, curve: null);
-                    });
-                  },
-                  child: Stack(
-                    children: <Widget>[
-                      Padding(
+          : (_cafeList.length == 0 && firstData == true)
+              ? keywordSearch(keyword)
+              : Stack(
+                  children: <Widget>[
+                    Padding(
                         padding: EdgeInsets.only(
-                          bottom: 10,
-                        ),
-                        child: Container(
-                          child: ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: CachedNetworkImage(
-                                imageUrl: _cafeList[idx].pic,
+                            top: 10, bottom: 150, left: 15, right: 15),
+                        child: StaggeredGridView.countBuilder(
+                          controller: _mainScroll,
+                          crossAxisCount: 2,
+                          shrinkWrap: true,
+                          itemCount: _cafeList.length,
+                          itemBuilder: (context, idx) => GestureDetector(
+                            onTap: () {
+                              print("Name : ${_cafeList[idx].search_tag}");
+
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => InstaDetail(
+                                      name: _cafeList[idx].search_tag,
+                                      instaUrl: _cafeList[idx].url,
+                                      offset: _mainScroll.offset,
+                                      type: 0,
+                                    ),
+                                  )).then((result) {
+                                _mainScroll.animateTo(result,
+                                    duration: null, curve: null);
+                              });
+                            },
+                            child: Stack(
+                              children: <Widget>[
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                    bottom: 10,
+                                  ),
+                                  child: Container(
+                                    child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: CachedNetworkImage(
+                                          imageUrl: _cafeList[idx].pic,
 //                              placeholder: (context, url) =>
 //                                  CircularProgressIndicator(
 //                                    valueColor:
 //                                    AlwaysStoppedAnimation<Color>(mainColor),
 //                                  ),
-                                errorWidget: (context, url, error) =>
-                                    Image.asset(
-                                  "assets/defaultImage.png",
-                                  fit: BoxFit.fill,
-                                ),
-                              )
+                                          errorWidget: (context, url, error) =>
+                                              Image.asset(
+                                            "assets/defaultImage.png",
+                                            fit: BoxFit.fill,
+                                          ),
+                                        )
 //                            Image.network(
 //                              _cafeList[idx].pic,
 //                              fit: BoxFit.fill,
 //                            ),
-                              ),
-                        ),
-                      ),
-                      Positioned(
-                        child: Text(
-                          "@" + _cafeList[idx].nickname,
-                          style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: White,
-                              shadows: [Shadow(color: Black, blurRadius: 5)]),
-                        ),
-                        bottom: 20,
-                        left: 15,
-                      ),
+                                        ),
+                                  ),
+                                ),
+                                Positioned(
+                                  child: Text(
+                                    "@" + _cafeList[idx].nickname,
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: White,
+                                        shadows: [
+                                          Shadow(color: Black, blurRadius: 5)
+                                        ]),
+                                  ),
+                                  bottom: 20,
+                                  left: 15,
+                                ),
 //                      instaPostData[idx].img.length == 2
 //                          ? Positioned(
 //                              child: Icon(
@@ -564,12 +593,26 @@ class _Home extends State<Home> {
 //                              bottom: 15,
 //                            )
 //                          : Container()
-                    ],
-                  ),
-                ),
-                staggeredTileBuilder: (idx) => StaggeredTile.fit(1),
-                crossAxisSpacing: 10.0,
-              ));
+                              ],
+                            ),
+                          ),
+                          staggeredTileBuilder: (idx) => StaggeredTile.fit(1),
+                          crossAxisSpacing: 10.0,
+                        )),
+                    loading
+                        ? Padding(
+                            padding: EdgeInsets.only(
+                                bottom: MediaQuery.of(context).size.height / 5),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(mainColor),
+                              ),
+                            ),
+                          )
+                        : Container(),
+                  ],
+                );
     }
   }
 
@@ -1162,7 +1205,7 @@ class _Home extends State<Home> {
                     } else {
                       clickNum = position;
                       keyword = tagListItem[position];
-                      keywordSearching = true;
+//                      keywordSearching = true;
                       if (autoTag) {
                         autoTag = false;
                         autoing = true;
@@ -1188,13 +1231,14 @@ class _Home extends State<Home> {
                     }
                   });
                 } else if (type == 1) {
-                  if (upPanelMenuType == 0 && searchTagList.length > 0) {
-                    CafeLogSnackBarWithOk(
-                        msg: "홈에서 태그검색은 한 가지만 가능합니다.",
-                        context: context,
-                        okMsg: "확인");
-                  } else {
+//                  if (searchTagList.length > 0) {
+//                    CafeLogSnackBarWithOk(
+//                        msg: "홈에서 태그검색은 한 가지만 가능합니다.",
+//                        context: context,
+//                        okMsg: "확인");
+//                  } else {
                     setState(() {
+                      searchTagList.clear();
                       addTagList(tagListItemSearch[position]);
                       tagOr = true;
                       autoTag = false;
@@ -1202,12 +1246,13 @@ class _Home extends State<Home> {
                       autoTagList.clear();
                     });
                     lastTagMove();
-                  }
+//                  }
                 }
                 print("태그 클릭 : " + tagListItemSearch[position]);
               },
               child: Container(
-                width: 60,
+//                width: 60,
+                padding: EdgeInsets.only(left: 10, right: 10),
                 height: 30,
                 decoration: type == 0
                     ? clickNum == position ? tagClickDecoration : tagDecoration
@@ -1236,23 +1281,27 @@ class _Home extends State<Home> {
           flex: 2,
           child: GestureDetector(
             onTap: () {
-              if (sharedPreferences.getString("accessToken") != "" && sharedPreferences.getString("accessToken") != null && sharedPreferences.getString("accessToken").isNotEmpty) {
+              if (sharedPreferences.getString("accessToken") != "" &&
+                  sharedPreferences.getString("accessToken") != null &&
+                  sharedPreferences.getString("accessToken").isNotEmpty) {
                 setState(() {
                   upPanelMenuType = menuType;
                 });
               } else {
-                Navigator.of(context).pushNamedAndRemoveUntil('/LoginMain', (Route<dynamic> route) => false);
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                    '/LoginMain', (Route<dynamic> route) => false);
               }
 
 //              Navigator.of(context).pushNamed("/MyCafeLog");
             },
             child: Padding(
-              padding: EdgeInsets.only(left: 20, right: 20,top: 5),
+              padding: EdgeInsets.only(left: 20, right: 20, top: 5),
               child: Container(
                 decoration: BoxDecoration(
-                    color: upPanelMenuType != menuType ? Color.fromARGB(255, 247, 247, 247) : mainColor,
-                    borderRadius: BorderRadius.circular(19)
-                ),
+                    color: upPanelMenuType != menuType
+                        ? Color.fromARGB(255, 247, 247, 247)
+                        : mainColor,
+                    borderRadius: BorderRadius.circular(19)),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
@@ -1261,7 +1310,9 @@ class _Home extends State<Home> {
                         padding: EdgeInsets.only(top: 25 / 2),
                         child: Text(
                           menuName,
-                          style: upPanelMenuType != menuType ? mainUpPanelText : threePanelHover,
+                          style: upPanelMenuType != menuType
+                              ? mainUpPanelText
+                              : threePanelHover,
                         ),
                       ),
                     ),
@@ -1420,6 +1471,16 @@ class _Home extends State<Home> {
                     upPanelMenu(0, "홈"),
                     upPanelMenu(1, "인기카페"),
                     upPanelMenu(2, "내 주변"),
+                    Padding(
+                      padding: EdgeInsets.only(top: 5),
+                      child: Center(
+                        child: Container(
+                          width: 0.2,
+                          height: 20,
+                          color: Color.fromARGB(255, 151, 151, 151),
+                        ),
+                      ),
+                    ),
                     upPanelMenu(3, "즐겨찾기")
                   ],
                 ),
@@ -1427,27 +1488,29 @@ class _Home extends State<Home> {
             ],
           ),
         ),
-        body: upPanelMenuType == 3 ? Favorite() : directSearching == false
-            ? upPanelMenuType == 1
-                ? cafeSelect
-                    ? PopularityCafe(
-                        cafeLocation: cafeLocation,
-                        tags: tag,
-                      )
-                    : Container()
-                : upPanelMenuType == 2
-                    ? mapSelect
-                        ? Center(
-                            child: CircularProgressIndicator(
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(mainColor),
-                            ),
+        body: upPanelMenuType == 3
+            ? Favorite()
+            : directSearching == false
+                ? upPanelMenuType == 1
+                    ? cafeSelect
+                        ? PopularityCafe(
+                            cafeLocation: cafeLocation,
+                            tags: tag,
                           )
-                        : MyAround(
-                            tag: tag2,
-                          )
-                    : body()
-            : searchBody(),
+                        : Container()
+                    : upPanelMenuType == 2
+                        ? mapSelect
+                            ? Center(
+                                child: CircularProgressIndicator(
+                                  valueColor:
+                                      AlwaysStoppedAnimation<Color>(mainColor),
+                                ),
+                              )
+                            : MyAround(
+                                tag: tag2,
+                              )
+                        : body()
+                : searchBody(),
       );
 
   menuBar(content) => GestureDetector(
@@ -1569,7 +1632,7 @@ class _Home extends State<Home> {
                 children: <Widget>[
                   menuBar("인기"),
                   Padding(
-                    padding: EdgeInsets.only(left: 15, top: 5),
+                    padding: EdgeInsets.only(left: 15),
                     child: menuBar("최신"),
                   )
                 ],
@@ -1630,7 +1693,7 @@ class _Home extends State<Home> {
                 tagListItem.insert(0, searchTagList[0]);
                 clickNum = 0;
                 keyword = tagListItem[0];
-                keywordSearching = true;
+//                keywordSearching = true;
                 for (int i = 0; i < searchTagList.length; i++) {
                   prefSetValue(searchTagList[i]);
                 }
@@ -1796,17 +1859,24 @@ class _Home extends State<Home> {
                                                 prefSet();
                                               });
                                             },
-                                            child: Text(
-                                              "전체삭제",
-                                              style: TextStyle(
-                                                  fontSize: 14,
-                                                  color: mainColor,
-                                                  fontWeight: FontWeight.w600),
+                                            child: Container(
+//                                              width: 100,
+                                              height: 20,
+                                              color: White,
+                                              child: Text(
+                                                "전체삭제",
+                                                style: TextStyle(
+                                                    fontSize: 14,
+                                                    color: mainColor,
+                                                    fontWeight:
+                                                        FontWeight.w600),
+                                              ),
                                             ),
                                           ),
                                         ],
                                       ),
                                     ),
+                              whiteSpaceH(10),
                               (searchList.length == 0)
                                   ? Padding(
                                       padding: EdgeInsets.only(top: 20),
@@ -1878,14 +1948,22 @@ class _Home extends State<Home> {
                                                   ),
                                                   GestureDetector(
                                                     onTap: () {
-                                                      searchList.removeAt(idx);
-                                                      prefSet();
+                                                      setState(() {
+                                                        searchList
+                                                            .removeAt(idx);
+                                                        prefSet();
+                                                      });
                                                     },
-                                                    child: Text(
-                                                      "X",
-                                                      style: TextStyle(
-                                                          color: Black,
-                                                          fontSize: 14),
+                                                    child: Container(
+                                                      width: 10,
+                                                      height: 20,
+                                                      color: White,
+                                                      child: Text(
+                                                        "X",
+                                                        style: TextStyle(
+                                                            color: Black,
+                                                            fontSize: 14),
+                                                      ),
                                                     ),
                                                   )
                                                 ],
@@ -2076,7 +2154,7 @@ class _Home extends State<Home> {
                                                 },
                                                 child: RichText(
                                                   text: TextSpan(
-                                                      text: "#",
+                                                      text: "",
                                                       style: TextStyle(
                                                           color: Black,
                                                           fontSize: 14),
@@ -2202,24 +2280,36 @@ class _Home extends State<Home> {
         return null;
       },
       child: Scaffold(
-        appBar: directSearching == false ? upPanelMenuType == 3 ? AppBar(
-          backgroundColor: White,
-          elevation: 0.0,
-          centerTitle: true,
-          title: Text("즐겨찾기", style: TextStyle(
-            color: Black, fontSize: 16, fontWeight: FontWeight.bold
-          ),),
-          actions: <Widget>[
-            IconButton(
-              onPressed: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) => Setting(
-                  id: accessToken,
-                )));
-              },
-              icon: Icon(Icons.settings, color: Color.fromARGB(255, 167, 167, 167),),
-            )
-          ],
-        ) : homeAppBar() : searchingAppBar(),
+        appBar: directSearching == false
+            ? upPanelMenuType == 3
+                ? AppBar(
+                    backgroundColor: White,
+                    elevation: 0.0,
+                    centerTitle: true,
+                    title: Text(
+                      "즐겨찾기",
+                      style: TextStyle(
+                          color: Black,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold),
+                    ),
+                    actions: <Widget>[
+                      IconButton(
+                        onPressed: () {
+                          Navigator.of(context).push(MaterialPageRoute(
+                              builder: (context) => Setting(
+                                    id: accessToken,
+                                  )));
+                        },
+                        icon: Icon(
+                          Icons.settings,
+                          color: Color.fromARGB(255, 167, 167, 167),
+                        ),
+                      )
+                    ],
+                  )
+                : homeAppBar()
+            : searchingAppBar(),
         backgroundColor: White,
         resizeToAvoidBottomInset: true,
         body: slidingUpPanelBody(),

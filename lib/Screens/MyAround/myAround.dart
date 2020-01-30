@@ -188,7 +188,8 @@ class _MyAround extends State<MyAround> {
                 print("태그 클릭 : " + tagListItem[position]);
               },
               child: Container(
-                width: 60,
+//                width: 60,
+              padding: EdgeInsets.only(left: 10, right: 10),
                 height: 30,
                 decoration:
                     tagClick[position] ? tagClickDecoration : tagDecoration,
@@ -767,47 +768,47 @@ class _MyAround extends State<MyAround> {
                     ),
                   ),
                 ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Padding(
-                    padding: EdgeInsets.only(top: 5, right: 15),
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          if (visitCafe) {
-                            visitCafe = false;
-                          } else {
-                            visitCafe = true;
-                          }
-                        });
-                      },
-                      child: Container(
-                        width: 100,
-                        height: 30,
-                        decoration: BoxDecoration(
-                          color: visitCafe == false
-                              ? White
-                              : Color.fromARGB(255, 240, 240, 240),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Center(
-                          child: Text(
-                            "다녀온카페 제외",
-                            style: visitCafe == false
-                                ? TextStyle(
-                                    color: Color.fromARGB(255, 122, 122, 122),
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 12)
-                                : TextStyle(
-                                    color: Black,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                )
+//                Align(
+//                  alignment: Alignment.centerRight,
+//                  child: Padding(
+//                    padding: EdgeInsets.only(top: 5, right: 15),
+//                    child: GestureDetector(
+//                      onTap: () {
+//                        setState(() {
+//                          if (visitCafe) {
+//                            visitCafe = false;
+//                          } else {
+//                            visitCafe = true;
+//                          }
+//                        });
+//                      },
+//                      child: Container(
+//                        width: 100,
+//                        height: 30,
+//                        decoration: BoxDecoration(
+//                          color: visitCafe == false
+//                              ? White
+//                              : Color.fromARGB(255, 240, 240, 240),
+//                          borderRadius: BorderRadius.circular(16),
+//                        ),
+//                        child: Center(
+//                          child: Text(
+//                            "다녀온카페 제외",
+//                            style: visitCafe == false
+//                                ? TextStyle(
+//                                    color: Color.fromARGB(255, 122, 122, 122),
+//                                    fontWeight: FontWeight.w600,
+//                                    fontSize: 12)
+//                                : TextStyle(
+//                                    color: Black,
+//                                    fontSize: 12,
+//                                    fontWeight: FontWeight.bold),
+//                          ),
+//                        ),
+//                      ),
+//                    ),
+//                  ),
+//                )
               ],
             ),
           ),

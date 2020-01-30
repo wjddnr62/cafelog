@@ -14,7 +14,7 @@ class _LoginMain extends State<LoginMain> {
   String mainTitle = "전국 핫한 카페를\n내 손 안에";
   String subTitle =
       "카페로그는 SNS와 포털 사이트에\n있는 카페 정보를 정확하게\n분류해주는 국내 최초 카페 전용\n플랫폼입니다.";
-  String notifiText = "인스타그램 로그인 시,\n지금까지의 카페투어 기록이 자동 정리됩니다.";
+  String notifiText = "인스타그램 아이디를 1번만 연동하시면\n카페로그를 더욱 편하게 이용하실 수 있습니다.";
 
   TextStyle mainTitleStyle =
       TextStyle(fontSize: 28, fontWeight: FontWeight.bold);
@@ -173,13 +173,13 @@ class _LoginMain extends State<LoginMain> {
                           padding: EdgeInsets.zero,
                           child: Container(
                             width: MediaQuery.of(context).size.width,
-                            height: 40,
+                            height: 50,
                             decoration: BoxDecoration(
                                 gradient: instaGradient,
                                 borderRadius: BorderRadius.circular(10)),
                             child: Center(
                               child: Text(
-                                "인스타그램으로 시작하기",
+                                "인스타그램 연동하기",
                                 style: TextStyle(fontSize: 14, color: White),
                               ),
                             ),
@@ -188,15 +188,15 @@ class _LoginMain extends State<LoginMain> {
                       ),
                     ),
                     whiteSpaceH(10),
-                    Padding(
-                      padding: EdgeInsets.only(left: 40, right: 40),
-                      child: Container(
-                        width: MediaQuery.of(context).size.width,
-                        height: 1,
-                        color: Color.fromARGB(255, 151, 151, 151),
-                      ),
-                    ),
-                    whiteSpaceH(20),
+//                    Padding(
+//                      padding: EdgeInsets.only(left: 40, right: 40),
+//                      child: Container(
+//                        width: MediaQuery.of(context).size.width,
+//                        height: 1,
+//                        color: Color.fromARGB(255, 151, 151, 151),
+//                      ),
+//                    ),
+                    whiteSpaceH(5),
                     GestureDetector(
                       onTap: (){
                         permissionCheck().then((pass) {
@@ -212,12 +212,13 @@ class _LoginMain extends State<LoginMain> {
                       },
                       child: Container(
                         width: MediaQuery.of(context).size.width,
+                        height: 35,
                         color: White,
                         child: Center(
                           child: Text(
                             "바로시작",
                             style: TextStyle(
-                                foreground: Paint()..shader = startGradient, fontSize: 14),
+                                foreground: Paint()..shader = startGradient, fontSize: 14, fontWeight: FontWeight.w600),
                           ),
                         ),
                       ),

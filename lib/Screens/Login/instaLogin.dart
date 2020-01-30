@@ -17,8 +17,8 @@ class InstaLogin extends StatefulWidget {
 }
 
 class _InstaLogin extends State<InstaLogin> {
-  String redirectUrl = "http://laonstory.com";
-  String testClientId = "6b1dffbc60234670a25aa8336334bf0e";
+  String redirectUrl = "http://localhost";
+  String testClientId = "bd2c70203343cda3aad96fe0873a16a7";
 
   String instaLoginUrl;
   String loadCompleteUrl;

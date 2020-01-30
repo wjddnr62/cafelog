@@ -59,117 +59,144 @@ class _InstaDetail extends State<InstaDetail> {
         height: 60,
         child: !getData
             ? Center(
-                child: Text(
-                  "표시할 카페 정보가 없습니다.",
-                  style: TextStyle(
-                      fontSize: 16, color: Black, fontWeight: FontWeight.w600),
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(mainColor),
                 ),
               )
-            : GestureDetector(
-                onTap: () {
-                  print("touch");
-                  Navigator.of(context).push(MaterialPageRoute(builder: (context) => CafeDetail(
-                    cafeName: naverData.name,
-                    identify: naverData.identify,
-                    phone: naverData.phone,
-                    address: naverData.addr,
-                    convenien: naverData.convenien,
-                    distance: (double.parse(distanceLocation
-                        .toStringAsFixed(1)) /
-                        1000)
-                        .toStringAsFixed(1) +
-                        "km",
-                    imgUrl: imgUrl,
-                    menu: naverData.menu,
-                    naverUrl: naverData.url,
-                    subName: naverData.subname,
-                    latLng: latLng,
-                    openTime: naverData.opentime,
-                  ),));
-                },
-                child: Container(
-                    width: MediaQuery.of(context).size.width,
-                    height: MediaQuery.of(context).size.height,
-                    color: White,
-                    child: Column(
-                      children: <Widget>[
-                        Padding(
-                          padding:
-                              EdgeInsets.only(top: 15, left: 25, right: 25),
-                          child: Row(
-                            children: <Widget>[
-                              Container(
-                                width: 30,
-                                height: 30,
-                                child: ClipOval(
-                                  child: ClipRRect(
-                                    child: Image.network(
-                                      imgUrl,
-                                      fit: BoxFit.fill,
+            : (getData && notData)
+                ? Center(
+                    child: Text(
+                      "표시할 카페 정보가 없습니다.",
+                      style: TextStyle(
+                          fontSize: 16,
+                          color: Black,
+                          fontWeight: FontWeight.w600),
+                    ),
+                  )
+                : GestureDetector(
+                    onTap: () {
+                      print("touch");
+                      Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) => CafeDetail(
+                          cafeName: naverData.name,
+                          identify: naverData.identify,
+                          phone: naverData.phone,
+                          address: naverData.addr,
+                          convenien: naverData.convenien,
+                          distance: (double.parse(
+                                          distanceLocation.toStringAsFixed(1)) /
+                                      1000)
+                                  .toStringAsFixed(1) +
+                              "km",
+                          imgUrl: imgUrl,
+                          menu: naverData.menu,
+                          naverUrl: naverData.url,
+                          subName: naverData.subname,
+                          latLng: latLng,
+                          openTime: naverData.opentime,
+                        ),
+                      ));
+                    },
+                    child: Container(
+                        width: MediaQuery.of(context).size.width,
+                        height: MediaQuery.of(context).size.height,
+                        color: White,
+                        child: Column(
+                          children: <Widget>[
+                            Padding(
+                              padding:
+                                  EdgeInsets.only(top: 15, left: 25, right: 25),
+                              child: Row(
+                                children: <Widget>[
+                                  Container(
+                                    width: 30,
+                                    height: 30,
+                                    child: ClipOval(
+                                      child: ClipRRect(
+                                        child: Image.network(
+                                          imgUrl,
+                                          fit: BoxFit.fill,
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ),
-                              whiteSpaceW(5),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: <Widget>[
-                                    Row(
+                                  whiteSpaceW(5),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: <Widget>[
-                                        Text(
-                                          naverData.name,
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 16,
-                                              color: Black),
+                                        Row(
+                                          children: <Widget>[
+                                            Text(
+                                              naverData.name,
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16,
+                                                  color: Black),
+                                            ),
+                                            whiteSpaceW(5),
+                                            Text(
+                                              (double.parse(distanceLocation
+                                                              .toStringAsFixed(
+                                                                  1)) /
+                                                          1000)
+                                                      .toStringAsFixed(1) +
+                                                  "km",
+                                              style: TextStyle(
+                                                  fontSize: 12, color: Black),
+                                            )
+                                          ],
                                         ),
-                                        whiteSpaceW(5),
+                                        whiteSpaceH(2),
                                         Text(
-                                          (double.parse(distanceLocation
-                                                          .toStringAsFixed(1)) /
-                                                      1000)
-                                                  .toStringAsFixed(1) +
-                                              "km",
+                                          naverData.addr,
                                           style: TextStyle(
-                                              fontSize: 12, color: Black),
+                                              color: Color.fromARGB(
+                                                  255, 135, 135, 135),
+                                              fontSize: 10),
                                         )
                                       ],
                                     ),
-                                    whiteSpaceH(2),
-                                    Text(
-                                      naverData.addr,
-                                      style: TextStyle(
-                                          color: Color.fromARGB(
-                                              255, 135, 135, 135),
-                                          fontSize: 10),
-                                    )
-                                  ],
-                                ),
+                                  ),
+                                  Icon(Icons.arrow_forward)
+                                ],
                               ),
-                              Icon(Icons.arrow_forward)
-                            ],
-                          ),
-                        )
-                      ],
-                    )),
-              ),
+                            )
+                          ],
+                        )),
+                  ),
       ),
       body: Padding(
-        padding: EdgeInsets.only(bottom: widget.type == 0 ? 85 : 25),
-        child: WebView(
-          initialUrl: widget.instaUrl,
-          javascriptMode: JavascriptMode.unrestricted,
-          onWebViewCreated: (_webController) {
-            _webController.clearCache();
-            _webViewController = _webController;
-          },
-          onPageFinished: (url) {
-            if (firstLoad == false) {
-              loadCompleteUrl = url;
-              firstLoad = true;
-            }
-          },
+        padding: EdgeInsets.only(bottom: widget.type == 0 ? 40 : 25),
+        child: Stack(
+          children: <Widget>[
+            WebView(
+              initialUrl: widget.instaUrl,
+              javascriptMode: JavascriptMode.unrestricted,
+              onWebViewCreated: (_webController) {
+                _webController.clearCache();
+                _webViewController = _webController;
+              },
+              onPageFinished: (url) {
+                if (firstLoad == false) {
+                  loadCompleteUrl = url;
+                  firstLoad = true;
+                }
+              },
+            ),
+            Container(
+              width: MediaQuery.of(context).size.width,
+              height: 30,
+              color: White,
+              padding: EdgeInsets.only(top: 15),
+              child: Center(
+                child: Text("인스타 게시글", style: TextStyle(
+                  fontWeight: FontWeight.w600, fontSize: 14, color: Black
+                ), textAlign: TextAlign.center,),
+              ),
+            ),
+          ],
         ),
       ));
 
@@ -193,6 +220,7 @@ class _InstaDetail extends State<InstaDetail> {
   NaverData naverData;
   String imgUrl;
   LatLng latLng;
+  bool notData = false;
 
   @override
   void initState() {
@@ -226,7 +254,8 @@ class _InstaDetail extends State<InstaDetail> {
         print(
             "coordinates : ${first.coordinates.latitude}, ${first.coordinates.longitude}");
 
-        latLng = LatLng(first.coordinates.latitude, first.coordinates.longitude);
+        latLng =
+            LatLng(first.coordinates.latitude, first.coordinates.longitude);
 
         try {
           currentLocation = await location.getLocation();
@@ -259,6 +288,10 @@ class _InstaDetail extends State<InstaDetail> {
 
         print("naverCheck : ${naverData.url}");
       } else {
+        setState(() {
+          getData = true;
+          notData = true;
+        });
         print("notData");
       }
     });
@@ -290,7 +323,7 @@ class _InstaDetail extends State<InstaDetail> {
             children: <Widget>[
               slidingUpPanelBody(),
               Padding(
-                padding: EdgeInsets.only(right: 30, bottom: 100),
+                padding: EdgeInsets.only(right: 30, bottom: 90),
                 child: Align(
                   alignment: Alignment.bottomRight,
                   child: backFab(),

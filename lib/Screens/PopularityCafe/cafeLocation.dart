@@ -179,7 +179,7 @@ class _CafeLocation extends State<CafeLocation> {
                     padding: EdgeInsets.only(top: 0),
                     child: GestureDetector(
                       onTap: () {
-                        appLaunch(2);
+                        appLaunch(0);
                         setState(() {
                           panelHeight = 0;
                           upPanel = false;
@@ -212,7 +212,7 @@ class _CafeLocation extends State<CafeLocation> {
                   ),
                   GestureDetector(
                     onTap: () {
-                      appLaunch(0);
+                      appLaunch(2);
                       setState(() {
                         panelHeight = 0;
                         upPanel = false;

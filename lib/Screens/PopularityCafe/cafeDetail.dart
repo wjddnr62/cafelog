@@ -172,6 +172,7 @@ class _CafeDetail extends State<CafeDetail> {
             defaultLength += 10;
           }
         }
+        loading = true;
         firstData = false;
       });
       setState(() {});
@@ -319,7 +320,7 @@ class _CafeDetail extends State<CafeDetail> {
       mainBloc.getMainList().then((value) async {
         if (json.decode(value)['result'] != 0 &&
             (json.decode(value)['data'] != null &&
-                json.decode(value)['data'] != "")) {
+                json.decode(value)['data'] != "" && json.decode(value)['data'].length != 0)) {
           if (!firstData) {
             defaultOffSet += 1;
             print('value : ${json.decode(value)['data']}');
@@ -337,8 +338,15 @@ class _CafeDetail extends State<CafeDetail> {
               }
             }
             firstData = true;
+            loading = false;
           }
           setState(() {});
+        } else {
+          setState(() {
+            firstData = true;
+            loading = false;
+          });
+          CafeLogSnackBarWithOk(context: context, okMsg: "확인", msg: "더 이상 표시할 카페 기록이 없습니다.");
         }
       }).catchError((error) {
         print("error : ${error}");
@@ -711,8 +719,8 @@ class _CafeDetail extends State<CafeDetail> {
                                             Center(
                                               child: Text(
                                                 getData
-                                                    ? "최근 1주일 ${numberFormat.format(detailStreet.recentNum)} 명"
-                                                    : "최근 1주일 0 명",
+                                                    ? "최근 1개월 ${numberFormat.format(detailStreet.recentNum)} 명"
+                                                    : "최근 1개월 0 명",
                                                 style: TextStyle(
                                                     fontWeight: FontWeight.w600,
                                                     fontSize: 10,
@@ -890,7 +898,7 @@ class _CafeDetail extends State<CafeDetail> {
 //                                  whiteSpaceH(60),
                                   Center(
                                     child: Text(
-                                      "인기메뉴",
+                                      "인기키워드",
                                       style: TextStyle(
                                           color: Black,
                                           fontWeight: FontWeight.bold,
@@ -938,25 +946,25 @@ class _CafeDetail extends State<CafeDetail> {
                                                               TextAlign.left,
                                                         ),
                                                       )),
-                                                  Expanded(
-                                                    flex: 2,
-                                                    child: Container(
-                                                        width: 60,
-                                                        child: Text(
-                                                          "먹어본 사람",
-                                                          style: TextStyle(
-                                                              color: Color
-                                                                  .fromARGB(
-                                                                      255,
-                                                                      167,
-                                                                      167,
-                                                                      167),
-                                                              fontSize: 12,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w600),
-                                                        )),
-                                                  ),
+//                                                  Expanded(
+//                                                    flex: 2,
+//                                                    child: Container(
+//                                                        width: 60,
+//                                                        child: Text(
+//                                                          "먹어본 사람",
+//                                                          style: TextStyle(
+//                                                              color: Color
+//                                                                  .fromARGB(
+//                                                                      255,
+//                                                                      167,
+//                                                                      167,
+//                                                                      167),
+//                                                              fontSize: 12,
+//                                                              fontWeight:
+//                                                                  FontWeight
+//                                                                      .w600),
+//                                                        )),
+//                                                  ),
                                                   Expanded(
                                                     child: Text(
                                                       numberFormat.format(
@@ -980,7 +988,7 @@ class _CafeDetail extends State<CafeDetail> {
                                         )
                                       : Center(
                                           child: Text(
-                                            "아직 메뉴 정보가 부족합니다.",
+                                            "키워드 정보가 부족합니다.",
                                             style: TextStyle(
                                                 fontSize: 12,
                                                 color: Color.fromARGB(
@@ -996,7 +1004,7 @@ class _CafeDetail extends State<CafeDetail> {
                                           },
                                           child: Center(
                                             child: Text(
-                                              "메뉴 더보기",
+                                              "메뉴 보기",
                                               style: TextStyle(
                                                   color: mainColor,
                                                   fontSize: 14,
