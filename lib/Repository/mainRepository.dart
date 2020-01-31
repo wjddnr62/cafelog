@@ -27,7 +27,7 @@ class MainRepository {
 
   Future<String> userAuth(userId, fcm, deviceName, deviceOs, userName, userPicture) => _mainProvier.userAuth(userId, fcm, deviceName, deviceOs, userName, userPicture);
 
-  Future<String> instaUserData(accessToken) => _mainProvier.instaUserData(accessToken);
+  Future<String> instaUserData(code) => _mainProvier.instaUserData(code);
 
   Future<String> getMyAround(addr, addr2, cafe, myAroundTag) => _mainProvier.getMyAround(addr, addr2, cafe, myAroundTag);
 
@@ -44,4 +44,6 @@ class MainRepository {
   Future<String> deleteAuth(id) => _mainProvier.deleteAuth(id);
 
   Future<String> deleteAuthFavorite(id) => _mainProvier.deleteAuthFavorite(id);
+
+  Future<String> updateFcmKey(fcm, id) => _mainProvier.updateFcmKey(fcm, id);
 }

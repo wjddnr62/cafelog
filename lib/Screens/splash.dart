@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 
 import '../theme.dart';

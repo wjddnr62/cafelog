@@ -5,6 +5,7 @@ class MyAroundData {
   String subname;
   String phone;
   String addr;
+  String category;
   String opentime;
   String menu;
   String homepage;
@@ -19,6 +20,7 @@ class MyAroundData {
       this.subname,
       this.phone,
       this.addr,
+      this.category,
       this.opentime,
       this.menu,
       this.homepage,
@@ -35,6 +37,7 @@ class MyAroundData {
           subname: data['subname'],
           phone: data['phone'],
           addr: data['addr'],
+          category: data['category'],
           opentime: data['opentime'],
           menu: data['menu'],
           homepage: data['homepage'],

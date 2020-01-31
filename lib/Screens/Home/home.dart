@@ -801,11 +801,7 @@ class _Home extends State<Home> {
                       duration: const Duration(milliseconds: 100),
                     ));
           },
-          icon: Icon(
-            Icons.search,
-            color: Color.fromARGB(255, 122, 122, 122),
-            size: 30,
-          ),
+          icon: Image.asset("assets/search.png", color: Color.fromARGB(255, 122, 122, 122), width: 23, height: 23,),
         ),
         actions: <Widget>[
           upPanelMenuType != 2
@@ -1009,12 +1005,14 @@ class _Home extends State<Home> {
 
   searchingAppBar() => searchAppBar = AppBar(
         automaticallyImplyLeading: false,
+        titleSpacing: 0.0,
         title: Padding(
-          padding: EdgeInsets.only(top: 5, bottom: 5),
+          padding: EdgeInsets.only(top: 5, bottom: 5, left: 10, right: 10),
           child: Container(
             width: MediaQuery.of(context).size.width,
             child: Row(
               mainAxisSize: MainAxisSize.max,
+              mainAxisAlignment: MainAxisAlignment.start,
               children: <Widget>[
                 Expanded(
                   flex: 6,
@@ -1027,12 +1025,8 @@ class _Home extends State<Home> {
                       child: Row(
                         children: <Widget>[
                           Padding(
-                            padding: EdgeInsets.only(left: 10),
-                            child: Icon(
-                              Icons.search,
-                              color: Color.fromARGB(255, 122, 122, 122),
-                              size: 34,
-                            ),
+                            padding: EdgeInsets.only(left: 6.5),
+                            child: Image.asset("assets/search.png", color: Color.fromARGB(255, 122, 122, 122), width: 23, height: 23,),
                           ),
                           // 태그 or list 들어갈 부분
                           tagOr == false
@@ -1155,6 +1149,8 @@ class _Home extends State<Home> {
                         },
                         child: Container(
                           color: White,
+                          width: 40,
+                          height: 20,
                           child: Text(
                             "취소",
                             style: TextStyle(
@@ -1232,10 +1228,10 @@ class _Home extends State<Home> {
                   });
                 } else if (type == 1) {
 //                  if (searchTagList.length > 0) {
-//                    CafeLogSnackBarWithOk(
-//                        msg: "홈에서 태그검색은 한 가지만 가능합니다.",
-//                        context: context,
-//                        okMsg: "확인");
+                    CafeLogSnackBarWithOk(
+                        msg: "홈에서 태그검색은 한 가지만 가능합니다.",
+                        context: context,
+                        okMsg: "확인");
 //                  } else {
                     setState(() {
                       searchTagList.clear();

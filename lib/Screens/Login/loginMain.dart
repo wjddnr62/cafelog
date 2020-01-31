@@ -1,6 +1,8 @@
+import 'package:cafelog/Bloc/mainBloc.dart';
 import 'package:cafelog/Util/whiteSpace.dart';
 import 'package:cafelog/Widgets/snackbar.dart';
 import 'package:cafelog/colors.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,9 +13,9 @@ class LoginMain extends StatefulWidget {
 }
 
 class _LoginMain extends State<LoginMain> {
-  String mainTitle = "전국 핫한 카페를\n내 손 안에";
+  String mainTitle = "전국 모든 카페를\n내 손 안에";
   String subTitle =
-      "카페로그는 SNS와 포털 사이트에\n있는 카페 정보를 정확하게\n분류해주는 국내 최초 카페 전용\n플랫폼입니다.";
+      "카페로그는 SNS와 포털 사이트에\n있는 카페 정보를 정확하게\n제공해주는 국내 최초 카페\n검색 플랫폼입니다.";
   String notifiText = "인스타그램 아이디를 1번만 연동하시면\n카페로그를 더욱 편하게 이용하실 수 있습니다.";
 
   TextStyle mainTitleStyle =
@@ -63,12 +65,22 @@ class _LoginMain extends State<LoginMain> {
   }
 
   SharedPreferences prefs;
+  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
+  bool check = false;
 
   loginCheck() async {
+    setState(() {
+      check = true;
+    });
     prefs = await SharedPreferences.getInstance();
-    print("accessToken : ${prefs.getString("accessToken")}");
-    if (prefs.getString("accessToken") != null && prefs.getString("accessToken") != "") {
+    print("accessToken : ${prefs.getString("userId")}");
+    if (prefs.getString("userId") != null && prefs.getString("userId") != "") {
+      mainBloc.updateFcmKey(prefs.getString(await _firebaseMessaging.getToken()), prefs.getString("userId"));
       Navigator.of(context).pushNamedAndRemoveUntil("/Home", (Route<dynamic> route) => false);
+    } else {
+      setState(() {
+        check = false;
+      });
     }
   }
 
@@ -100,7 +112,7 @@ class _LoginMain extends State<LoginMain> {
                     mainAxisSize: MainAxisSize.max,
                     children: <Widget>[
                       Padding(
-                        padding: EdgeInsets.only(left: 30, right: 30),
+                        padding: EdgeInsets.only(left: 30, right: 10),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -128,7 +140,7 @@ class _LoginMain extends State<LoginMain> {
                       Expanded(
                         child: Align(
                           alignment: Alignment.centerRight,
-                          child: Image.asset('assets/login/Rectangle1.png'),
+                          child: Image.asset('assets/firstimage.png', fit: BoxFit.fill,),
                         ),
                       )
                     ],
@@ -156,16 +168,18 @@ class _LoginMain extends State<LoginMain> {
                         padding: EdgeInsets.only(left: 15, right: 15),
                         child: RaisedButton(
                           onPressed: (){
-                            permissionCheck().then((pass) {
-                              if (pass) {
-                                Navigator.of(context).pushNamed('/InstaLogin');
-                              } else {
-                                CafeLogSnackBarWithOk(
-                                    context: context,
-                                    msg: "위치 권한을 동의해주세요.",
-                                    okMsg: "확인");
-                              }
-                            });
+                            if (!check) {
+                              permissionCheck().then((pass) {
+                                if (pass) {
+                                  Navigator.of(context).pushNamed('/InstaLogin');
+                                } else {
+                                  CafeLogSnackBarWithOk(
+                                      context: context,
+                                      msg: "위치 권한을 동의해주세요.",
+                                      okMsg: "확인");
+                                }
+                              });
+                            }
                           },
                           color: Colors.white,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -199,16 +213,19 @@ class _LoginMain extends State<LoginMain> {
                     whiteSpaceH(5),
                     GestureDetector(
                       onTap: (){
-                        permissionCheck().then((pass) {
-                          if (pass) {
-                            Navigator.of(context).pushNamedAndRemoveUntil("/Home", (Route<dynamic> route) => false);
-                          } else {
-                            CafeLogSnackBarWithOk(
-                                context: context,
-                                msg: "위치 권한을 동의해주세요.",
-                                okMsg: "확인");
-                          }
-                        });
+                        if (!check) {
+                          permissionCheck().then((pass) {
+                            if (pass) {
+                              Navigator.of(context).pushNamedAndRemoveUntil("/Home", (Route<dynamic> route) => false);
+                            } else {
+                              CafeLogSnackBarWithOk(
+                                  context: context,
+                                  msg: "위치 권한을 동의해주세요.",
+                                  okMsg: "확인");
+                            }
+                          });
+                        }
+
                       },
                       child: Container(
                         width: MediaQuery.of(context).size.width,

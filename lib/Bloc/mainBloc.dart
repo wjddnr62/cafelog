@@ -247,6 +247,10 @@ class MainBloc {
 
   Future<String> deleteAuthFavorite() => _mainRepository.deleteAuthFavorite(_favoriteId.value);
 
+  // updateFcmKey
+
+  Future<String> updateFcmKey(fcm, id) => _mainRepository.updateFcmKey(fcm, id);
+
   //
 
   Observable<String> get keyword => _keyword.stream;
