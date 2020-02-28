@@ -7,12 +7,14 @@ class NaverData {
   final String phone;
   final String addr;
   final String opentime;
+  final String lat;
+  final String lon;
   final String menu;
   final String homepage;
   final String convenien;
   final String description;
 
-  NaverData({this.url, this.identify, this.name, this.category, this.subname, this.phone, this.addr, this.opentime, this.menu, this.homepage, this.convenien, this.description});
+  NaverData({this.url, this.identify, this.name, this.category, this.subname, this.phone, this.addr, this.opentime, this.lat, this.lon, this.menu, this.homepage, this.convenien, this.description});
 
   factory NaverData.fromJson(Map<dynamic, dynamic> data) {
     if (data['result'] == 1) {
@@ -26,6 +28,8 @@ class NaverData {
           phone: data['phone'],
           addr: data['addr'],
           opentime: data['opentime'],
+          lat: data['lat'],
+          lon: data['lon'],
           menu: data['menu'],
           homepage: data['homepage'],
           convenien: data['convenien'],

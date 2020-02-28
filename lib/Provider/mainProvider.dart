@@ -60,9 +60,9 @@ class MainProvider {
     return utf8.decode(response.bodyBytes);
   }
 
-  Future<String> getPopularityCafe(location, type, streetTag) async {
+  Future<String> getPopularityCafe(location, type) async {
     final response = await _client.get(
-        "${_restUrl}popularly-street?location=${location == null ? "" : location}&type=${type == null ? "0" : type}&tag=${streetTag == null ? "" : streetTag}");
+        "${_restUrl}popularly-street?location=${location == null ? "" : location}&type=${type == null ? "0" : type}");
 
     return utf8.decode(response.bodyBytes);
   }
@@ -174,6 +174,24 @@ class MainProvider {
 
   Future<String> updateFcmKey(fcm, id) async {
     final response = await _client.get("${_restUrl}update-fcm-key?fcm=${fcm}&id=${id}");
+
+    return utf8.decode(response.bodyBytes);
+  }
+
+  Future<String> getCategory(cafe) async {
+    final response = await _client.get("${_restUrl}get-category?cafe=${cafe}");
+
+    return utf8.decode(response.bodyBytes);
+  }
+
+  Future<String> getCafeLocation() async {
+    final response = await _client.get("${_restUrl}cafe-location");
+
+    return utf8.decode(response.bodyBytes);
+  }
+  
+  Future<String> getCafeList(location, offset) async {
+    final response = await _client.get("${_restUrl}get-cafe-list?location=${(location != null && location != "") ? location : ""}&offset=$offset");
 
     return utf8.decode(response.bodyBytes);
   }

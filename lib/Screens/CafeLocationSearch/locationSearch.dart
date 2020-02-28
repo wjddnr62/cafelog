@@ -3,10 +3,12 @@ import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cafelog/Bloc/mainBloc.dart';
 import 'package:cafelog/Model/streetsData.dart';
+import 'package:cafelog/Screens/PopularityCafe/cafeLocation.dart';
 import 'package:cafelog/Util/numberFormat.dart';
 import 'package:cafelog/Util/whiteSpace.dart';
 import 'package:cafelog/colors.dart';
 import 'package:flutter/material.dart';
+import 'package:cafelog/Model/cafeLocationData.dart';
 import 'package:intl/intl.dart';
 
 class LocationSearch extends StatefulWidget {
@@ -21,7 +23,7 @@ class LocationSearch extends StatefulWidget {
 class _LocationSearch extends State<LocationSearch> {
   MainBloc _mainBloc = MainBloc();
   String cafeLoadTitle = "";
-  List<StreetsData> _cafeList = List();
+  List<CafeLocationData> _cafeList = List();
   String cafeLocation;
 
   @override
@@ -34,19 +36,20 @@ class _LocationSearch extends State<LocationSearch> {
   }
 
   cafeListGrid() => StreamBuilder(
-        stream: _mainBloc.getStreets(),
+        stream: _mainBloc.getCafeLocation(),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             List<dynamic> valueList =
-                json.decode(snapshot.data)['data']['streets'];
+                json.decode(snapshot.data)['data'];
             _cafeList.clear();
 
             for (int i = 0; i < valueList.length; i++) {
-              _cafeList.add(StreetsData(
+              print(valueList[i]['image']);
+              _cafeList.add(CafeLocationData(
                   user_num: valueList[i]['user_num'],
                   cafe_num: valueList[i]['cafe_num'],
                   location: valueList[i]['location'],
-                  picture: valueList[i]['picture']));
+                  image: valueList[i]['image']));
             }
 
             if (_cafeList != null &&
@@ -157,7 +160,7 @@ class _LocationSearch extends State<LocationSearch> {
                                                   blurRadius: 7),
                                             ]),
                                         child: CachedNetworkImage(
-                                          imageUrl: _cafeList[idx].picture,
+                                          imageUrl: _cafeList[idx].image,
                                           imageBuilder:
                                               (context, imageProvider) =>
                                                   ClipRRect(
@@ -275,9 +278,12 @@ class _LocationSearch extends State<LocationSearch> {
                       ),
                     )),
                 whiteSpaceH(10),
-                Expanded(
-                  child: cafeListGrid(),
-                ),
+                Flexible(
+                  child: MediaQuery.removePadding(context: context, child: cafeListGrid(), removeTop: true,),
+                )
+//                Expanded(
+//                  child: cafeListGrid(),
+//                ),
               ],
             ),
           ),

@@ -101,16 +101,12 @@ class _MyAround extends State<MyAround> {
     currentLocation = await location.getLocation();
   }
 
-  Future<String> getDistance(cafeAddress) async {
-    var address = await Geocoder.local.findAddressesFromQuery(cafeAddress);
-    var first = address.first;
+  Future<String> getDistance(lat, lon) async {
 
-    final coordinates = first.coordinates;
-
-    _latLng = LatLng(coordinates.latitude, coordinates.longitude);
+    _latLng = LatLng(double.parse(lat), double.parse(lon));
 
     String km =
-        "${distance(currentLocation.latitude, currentLocation.longitude, coordinates.latitude, coordinates.longitude)}km";
+        "${distance(currentLocation.latitude, currentLocation.longitude, double.parse(lat), double.parse(lon))}km";
 
     return km;
   }
@@ -245,28 +241,37 @@ class _MyAround extends State<MyAround> {
                 } else {
                   category = valueList[i]['category'];
                 }
-                aroundData.add(MyAroundData(
-                  user_num: valueList[i]['user_num'],
-                  pic: valueList[i]['pic'],
-                  convenien: valueList[i]['convenien'],
-                  homepage: valueList[i]['homepage'],
-                  menu: valueList[i]['menu'],
-                  opentime: valueList[i]['opentime'],
-                  addr: valueList[i]['addr'],
-                  category: category,
-                  phone: valueList[i]['phone'],
-                  subname: valueList[i]['subname'],
-                  name: valueList[i]['name'],
-                  url: valueList[i]['url'],
-                ));
 
-                await getDistance(valueList[i]['addr']).then((value) async {
+                String km = "";
+
+                await getDistance(valueList[i]['lat'], valueList[i]['lon']).then((value) async {
                   print("distance : ${value}");
-                  setState(() {
-                    km.add(value);
-                  });
+                  aroundData.add(MyAroundData(
+                      user_num: valueList[i]['user_num'],
+                      pic: valueList[i]['pic'],
+                      convenien: valueList[i]['convenien'],
+                      homepage: valueList[i]['homepage'],
+                      menu: valueList[i]['menu'],
+                      opentime: valueList[i]['opentime'],
+                      lat: valueList[i]['lat'],
+                      lon: valueList[i]['lon'],
+                      addr: valueList[i]['addr'],
+                      category: category,
+                      phone: valueList[i]['phone'],
+                      subname: valueList[i]['subname'],
+                      name: valueList[i]['name'],
+                      url: valueList[i]['url'],
+                      km: value
+                  ));
                 });
+
               }
+
+              setState(() {
+                aroundData.sort((a, b) => a.km.toString().compareTo(b.km.toString()));
+              });
+
+
 //            setState(() {
 //
 //            });
@@ -291,7 +296,7 @@ class _MyAround extends State<MyAround> {
     }
     return (firstData == false && getData == false)
         ? Padding(
-            padding: EdgeInsets.only(left: 35, bottom: 150),
+            padding: EdgeInsets.only(left: 35, bottom: 75),
             child: Container(
 //          color: Black,
               width: MediaQuery.of(context).size.width,
@@ -321,7 +326,7 @@ class _MyAround extends State<MyAround> {
           )
         : (firstData == true && getData == true)
             ? Padding(
-                padding: EdgeInsets.only(left: 15, top: 15, bottom: 150),
+                padding: EdgeInsets.only(left: 15, top: 15, bottom: 75),
                 child: ListView.builder(
                   itemBuilder: (context, idx) {
                     return GestureDetector(
@@ -333,7 +338,7 @@ class _MyAround extends State<MyAround> {
                               identify: aroundData[idx].identify,
                               address: aroundData[idx].addr,
                               convenien: aroundData[idx].convenien,
-                              distance: km[idx],
+                              distance: aroundData[idx].km,
                               imgUrl: aroundData[idx].pic,
                               menu: aroundData[idx].menu,
                               naverUrl: aroundData[idx].url,
@@ -404,16 +409,15 @@ class _MyAround extends State<MyAround> {
                                                           alignment: Alignment
                                                               .bottomRight,
                                                           child: gpsOn
-                                                              ? km.length != 0
-                                                                  ? Text(
-                                                                      "${km[idx]}",
+                                                              ? Text(
+                                                                      aroundData[idx].km,
                                                                       style: TextStyle(
                                                                           fontSize:
                                                                               12,
                                                                           color:
                                                                               Black),
                                                                     )
-                                                                  : Container()
+
                                                               : Container(),
                                                         ),
                                                       ],
@@ -534,16 +538,15 @@ class _MyAround extends State<MyAround> {
                                                       alignment:
                                                           Alignment.bottomRight,
                                                       child: gpsOn
-                                                          ? km.length != 0
-                                                              ? Text(
-                                                                  "${km[idx]}",
+                                                          ? Text(
+                                                                  aroundData[idx].km,
                                                                   style: TextStyle(
                                                                       fontSize:
                                                                           12,
                                                                       color:
                                                                           Black),
                                                                 )
-                                                              : Container()
+
                                                           : Container(),
                                                     )
                                                   ],
@@ -798,47 +801,47 @@ class _MyAround extends State<MyAround> {
                 Expanded(
                   child: Container(),
                 ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Padding(
-                    padding: EdgeInsets.only(top: 5, right: 5),
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          if (open) {
-                            open = false;
-                          } else {
-                            open = true;
-                          }
-                        });
-                      },
-                      child: Container(
-                        width: 50,
-                        height: 30,
-                        decoration: BoxDecoration(
-                          color: open == false
-                              ? White
-                              : Color.fromARGB(255, 240, 240, 240),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Center(
-                          child: Text(
-                            "영업중",
-                            style: open == false
-                                ? TextStyle(
-                                    color: Color.fromARGB(255, 122, 122, 122),
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 12)
-                                : TextStyle(
-                                    color: Black,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+//                Align(
+//                  alignment: Alignment.centerRight,
+//                  child: Padding(
+//                    padding: EdgeInsets.only(top: 5, right: 5),
+//                    child: GestureDetector(
+//                      onTap: () {
+//                        setState(() {
+//                          if (open) {
+//                            open = false;
+//                          } else {
+//                            open = true;
+//                          }
+//                        });
+//                      },
+//                      child: Container(
+//                        width: 50,
+//                        height: 30,
+//                        decoration: BoxDecoration(
+//                          color: open == false
+//                              ? White
+//                              : Color.fromARGB(255, 240, 240, 240),
+//                          borderRadius: BorderRadius.circular(16),
+//                        ),
+//                        child: Center(
+//                          child: Text(
+//                            "영업중",
+//                            style: open == false
+//                                ? TextStyle(
+//                                    color: Color.fromARGB(255, 122, 122, 122),
+//                                    fontWeight: FontWeight.w600,
+//                                    fontSize: 12)
+//                                : TextStyle(
+//                                    color: Black,
+//                                    fontSize: 12,
+//                                    fontWeight: FontWeight.bold),
+//                          ),
+//                        ),
+//                      ),
+//                    ),
+//                  ),
+//                ),
 //                Align(
 //                  alignment: Alignment.centerRight,
 //                  child: Padding(
@@ -883,13 +886,13 @@ class _MyAround extends State<MyAround> {
               ],
             ),
           ),
-          Padding(
-            padding: EdgeInsets.only(left: 15, top: 10, right: 10),
-            child: Container(
-              height: 30,
-              child: tagList(),
-            ),
-          ),
+//          Padding(
+//            padding: EdgeInsets.only(left: 15, top: 10, right: 10),
+//            child: Container(
+//              height: 30,
+//              child: tagList(),
+//            ),
+//          ),
 //          Padding(
 //            padding: EdgeInsets.only(left: 15, top: 15, right: 15),
 //            child: Align(

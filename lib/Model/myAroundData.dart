@@ -7,11 +7,14 @@ class MyAroundData {
   String addr;
   String category;
   String opentime;
+  String lat;
+  String lon;
   String menu;
   String homepage;
   String convenien;
   String pic;
   int user_num;
+  String km;
 
   MyAroundData(
       {this.url,
@@ -22,11 +25,13 @@ class MyAroundData {
       this.addr,
       this.category,
       this.opentime,
+      this.lat,
+      this.lon,
       this.menu,
       this.homepage,
       this.convenien,
       this.pic,
-      this.user_num});
+      this.user_num, this.km});
 
   factory MyAroundData.fromJson(Map<dynamic, dynamic> data) {
     if (data['result'] == 1) {
@@ -39,6 +44,8 @@ class MyAroundData {
           addr: data['addr'],
           category: data['category'],
           opentime: data['opentime'],
+          lat: data['lat'],
+          lon: data['lon'],
           menu: data['menu'],
           homepage: data['homepage'],
           convenien: data['convenien'],

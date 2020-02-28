@@ -29,6 +29,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:cafelog/Model/cafeGoogleData.dart';
+import 'package:cafelog/Screens/Home/googleDetail.dart';
 
 customErrorWidget(context, error) {
   return Container();
@@ -40,8 +42,6 @@ class Home extends StatefulWidget {
 }
 
 class _Home extends State<Home> {
-  MainBloc _mainBloc = MainBloc();
-
   bool filterButton = false;
 
   BoxDecoration selectFilterDeco =
@@ -50,9 +50,10 @@ class _Home extends State<Home> {
   TextStyle nonSelectFilterStyle =
       TextStyle(color: Color.fromARGB(255, 122, 122, 122), fontSize: 12);
 
-  List<CafeListData> _cafeList = [];
+  List<CafeGoogleData> _cafeList = [];
   int defaultLength = 10;
-  ScrollController _mainScroll = ScrollController(keepScrollOffset: true);
+  ScrollController _mainScroll =
+      ScrollController(keepScrollOffset: true, initialScrollOffset: 0.0);
   int defaultOffSet = 0;
 
   SharedPreferences sharedPreferences;
@@ -169,6 +170,8 @@ class _Home extends State<Home> {
   ScrollController _autoTagScroll = ScrollController();
 
   bool loading = false;
+
+  double scrollOffset = 0.0;
 
   prefInit() async {
     if (prefsInit == 0) {
@@ -346,12 +349,13 @@ class _Home extends State<Home> {
   mainListGrid() {
     if (!firstData) {
       print("defaultOffSet : ${defaultOffSet}");
-      _mainBloc.setLimit(defaultOffSet);
+      mainBloc.setLimit(defaultOffSet);
 
-      _mainBloc.getMainList().then((value) async {
+      mainBloc.getCafeList().then((value) async {
         if (json.decode(value)['result'] != 0 &&
             (json.decode(value)['data'] != null &&
-                json.decode(value)['data'] != "" && json.decode(value)['data'].length != 0)) {
+                json.decode(value)['data'] != "" &&
+                json.decode(value)['data'].length != 0)) {
           if (!firstData) {
             defaultOffSet += 1;
             print('value : ${json.decode(value)['data']}');
@@ -359,19 +363,24 @@ class _Home extends State<Home> {
             print(valueList.length);
             if (valueList.length != 0) {
               for (int i = 0; i < valueList.length; i++) {
-                _cafeList.add(CafeListData(
+                _cafeList.add(CafeGoogleData(
+                    idx: valueList[i]['idx'],
+                    search_item: valueList[i]['search_item'],
+                    keyword: valueList[i]['keyword'],
+                    cafe_name: valueList[i]['cafe_name'],
+                    title: valueList[i]['title'],
                     url: valueList[i]['url'],
-                    nickname: valueList[i]['nickname'],
-                    pic: valueList[i]['pic'],
-                    date: valueList[i]['date'],
-                    like: valueList[i]['like'],
-                    search_tag: valueList[i]['search_tag']));
+                    image: valueList[i]['image'],
+                    thumbnail: valueList[i]['thumbnail'],
+                    location: valueList[i]['location']));
               }
             }
-            firstData = true;
-            loading = false;
+            setState(() {
+              firstData = true;
+              loading = false;
+            });
           }
-          setState(() {});
+//          setState(() {});
         } else {
           setState(() {
             firstData = true;
@@ -432,25 +441,44 @@ class _Home extends State<Home> {
                     EdgeInsets.only(top: 10, bottom: 150, left: 15, right: 15),
                 child: StaggeredGridView.countBuilder(
                   controller: _mainScroll,
+//                  physics: NeverScrollableScrollPhysics(),
                   crossAxisCount: 2,
                   shrinkWrap: true,
                   itemCount: _cafeList.length,
                   itemBuilder: (context, idx) => GestureDetector(
                     onTap: () {
-                      print("Name : ${_cafeList[idx].search_tag}");
-
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => InstaDetail(
-                              name: _cafeList[idx].search_tag,
-                              instaUrl: _cafeList[idx].url,
-                              offset: _mainScroll.offset,
-                            ),
-                          )).then((result) {
-                        _mainScroll.animateTo(result,
-                            duration: null, curve: null);
-                      });
+                      if (!loading) {
+//                        Navigator.push(
+//                            context,
+//                            MaterialPageRoute(
+//                              builder: (context) => InstaDetail(
+//                                name: _cafeList[idx].cafe_name,
+//                                instaUrl: _cafeList[idx].url,
+//                                offset: _mainScroll.offset,
+//                              ),
+//                            )).then((result) {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => GoogleDetail(
+                                title: _cafeList[idx].title,
+                                image: _cafeList[idx].image,
+                                cafeName: _cafeList[idx].cafe_name,
+                                link: _cafeList[idx].url,
+                                searchItem: _cafeList[idx].search_item,
+                                location: _cafeList[idx].location,
+                                homeOffset: _mainScroll.offset,
+                              ),
+                            )).then((result) {
+                          setState(() {
+                            if (result != 0.0) {
+                              print("jumpTo1");
+                              _mainScroll.jumpTo(result);
+                              _mainScroll.jumpTo(result);
+                            }
+                          });
+                        });
+                      }
                     },
                     child: Stack(
                       children: <Widget>[
@@ -462,24 +490,24 @@ class _Home extends State<Home> {
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(10),
                               child: Image.network(
-                                _cafeList[idx].pic,
+                                _cafeList[idx].image,
                                 fit: BoxFit.fill,
                               ),
                             ),
                           ),
                         ),
-                        Positioned(
-                          child: Text(
-                            "@" + _cafeList[idx].nickname,
-                            style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: White,
-                                shadows: [Shadow(color: Black, blurRadius: 5)]),
-                          ),
-                          bottom: 20,
-                          left: 15,
-                        ),
+//                        Positioned(
+//                          child: Text(
+//                            "@" + _cafeList[idx].nickname,
+//                            style: TextStyle(
+//                                fontSize: 12,
+//                                fontWeight: FontWeight.bold,
+//                                color: White,
+//                                shadows: [Shadow(color: Black, blurRadius: 5)]),
+//                          ),
+//                          bottom: 20,
+//                          left: 15,
+//                        ),
 //                      instaPostData[idx].img.length == 2
 //                          ? Positioned(
 //                              child: Icon(
@@ -496,16 +524,20 @@ class _Home extends State<Home> {
                   ),
                   staggeredTileBuilder: (idx) => StaggeredTile.fit(1),
                   crossAxisSpacing: 10.0,
-                ));
+                ),
+              );
       }
     } else {
       return (_cafeList.length == 0 && firstData == false)
-          ? Padding(
-              padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(context).size.height / 5),
-              child: Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(mainColor),
+          ? Container(
+              height: MediaQuery.of(context).size.height - 75,
+              child: Padding(
+                padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).size.height / 5),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(mainColor),
+                  ),
                 ),
               ),
             )
@@ -517,27 +549,48 @@ class _Home extends State<Home> {
                         padding: EdgeInsets.only(
                             top: 10, bottom: 150, left: 15, right: 15),
                         child: StaggeredGridView.countBuilder(
-                          controller: _mainScroll,
+//                              controller: _mainScroll,
+                          physics: NeverScrollableScrollPhysics(),
                           crossAxisCount: 2,
                           shrinkWrap: true,
                           itemCount: _cafeList.length,
                           itemBuilder: (context, idx) => GestureDetector(
                             onTap: () {
-                              print("Name : ${_cafeList[idx].search_tag}");
-
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => InstaDetail(
-                                      name: _cafeList[idx].search_tag,
-                                      instaUrl: _cafeList[idx].url,
-                                      offset: _mainScroll.offset,
-                                      type: 0,
-                                    ),
-                                  )).then((result) {
-                                _mainScroll.animateTo(result,
-                                    duration: null, curve: null);
-                              });
+                              if (!loading) {
+//                                Navigator.push(
+//                                    context,
+//                                    MaterialPageRoute(
+//                                      builder: (context) => InstaDetail(
+//                                        name: _cafeList[idx].cafe_name,
+//                                        instaUrl: _cafeList[idx].url,
+//                                        offset: _mainScroll.offset,
+//                                        type: 0,
+//                                      ),
+//                                    )).then((result) {
+                              mainBloc.offset = _mainScroll.offset;
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => GoogleDetail(
+                                        title: _cafeList[idx].title,
+                                        image: _cafeList[idx].image,
+                                        cafeName: _cafeList[idx].cafe_name,
+                                        link: _cafeList[idx].url,
+                                        searchItem: _cafeList[idx].search_item,
+                                        location: _cafeList[idx].location,
+                                        homeOffset: _mainScroll.offset,
+                                      ),
+                                    )).then((result) {
+                                  setState(() {
+                                    print("resultOffset : ${result}");
+                                    if (result != 0.0) {
+                                      print("jumpTo2");
+                                      _mainScroll.jumpTo(mainBloc.offset);
+                                      _mainScroll.jumpTo(mainBloc.offset);
+                                    }
+                                  });
+                                });
+                              }
                             },
                             child: Stack(
                               children: <Widget>[
@@ -549,7 +602,7 @@ class _Home extends State<Home> {
                                     child: ClipRRect(
                                         borderRadius: BorderRadius.circular(10),
                                         child: CachedNetworkImage(
-                                          imageUrl: _cafeList[idx].pic,
+                                          imageUrl: _cafeList[idx].image,
 //                              placeholder: (context, url) =>
 //                                  CircularProgressIndicator(
 //                                    valueColor:
@@ -568,20 +621,20 @@ class _Home extends State<Home> {
                                         ),
                                   ),
                                 ),
-                                Positioned(
-                                  child: Text(
-                                    "@" + _cafeList[idx].nickname,
-                                    style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        color: White,
-                                        shadows: [
-                                          Shadow(color: Black, blurRadius: 5)
-                                        ]),
-                                  ),
-                                  bottom: 20,
-                                  left: 15,
-                                ),
+//                                Positioned(
+//                                  child: Text(
+//                                    "@" + _cafeList[idx].nickname,
+//                                    style: TextStyle(
+//                                        fontSize: 12,
+//                                        fontWeight: FontWeight.bold,
+//                                        color: White,
+//                                        shadows: [
+//                                          Shadow(color: Black, blurRadius: 5)
+//                                        ]),
+//                                  ),
+//                                  bottom: 20,
+//                                  left: 15,
+//                                ),
 //                      instaPostData[idx].img.length == 2
 //                          ? Positioned(
 //                              child: Icon(
@@ -599,18 +652,20 @@ class _Home extends State<Home> {
                           staggeredTileBuilder: (idx) => StaggeredTile.fit(1),
                           crossAxisSpacing: 10.0,
                         )),
-                    loading
-                        ? Padding(
-                            padding: EdgeInsets.only(
-                                bottom: MediaQuery.of(context).size.height / 5),
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(mainColor),
-                              ),
-                            ),
-                          )
-                        : Container(),
+//                    loading
+//                        ? Positioned.fill(
+//                      top: MediaQuery.of(context).size.height - 75,
+//                        child: Padding(
+//                      padding: EdgeInsets.only(
+//                          bottom: MediaQuery.of(context).size.height / 5),
+//                      child: Center(
+//                        child: CircularProgressIndicator(
+//                          valueColor:
+//                          AlwaysStoppedAnimation<Color>(mainColor),
+//                        ),
+//                      ),
+//                    ))
+//                        : Container(),
                   ],
                 );
     }
@@ -701,19 +756,19 @@ class _Home extends State<Home> {
                     setState(() {
                       cafeLocation = result.toString();
                       cafeSelect = true;
-//                      _mainBloc.setStreet(cafeLocation);
+//                      mainBloc.setStreet(cafeLocation);
                       if (cafeLocation == "전체카페") {
-                        _mainBloc.setMainStreet("");
+                        mainBloc.setMainStreet("");
                         _cafeList.clear();
                         defaultOffSet = 0;
-                        _mainBloc.setLimit(defaultOffSet);
+                        mainBloc.setLimit(defaultOffSet);
                         firstData = false;
                         mainListGrid();
                       } else {
-                        _mainBloc.setMainStreet(cafeLocation);
+                        mainBloc.setMainStreet(cafeLocation);
                         _cafeList.clear();
                         defaultOffSet = 0;
-                        _mainBloc.setLimit(defaultOffSet);
+                        mainBloc.setLimit(defaultOffSet);
                         firstData = false;
                         mainListGrid();
                       }
@@ -787,25 +842,32 @@ class _Home extends State<Home> {
                 ),
               ),
         // bloc 에 카페명 저장하여 관리
-        leading: IconButton(
-          onPressed: () {
-            print("검색");
-            setState(() {
-              directSearching = true;
-            });
-            Timer(
-                Duration(milliseconds: 1000),
-                () => _autoTagScroll.animateTo(
-                      _autoTagScroll.position.maxScrollExtent,
-                      curve: Curves.easeOut,
-                      duration: const Duration(milliseconds: 100),
-                    ));
-          },
-          icon: Image.asset("assets/search.png", color: Color.fromARGB(255, 122, 122, 122), width: 23, height: 23,),
-        ),
+//        leading: IconButton(
+//          onPressed: () {
+//            print("검색");
+//            setState(() {
+//              directSearching = true;
+//            });
+//            scrollOffset = _mainScroll.offset;
+//            Timer(
+//                Duration(milliseconds: 1000),
+//                () => _autoTagScroll.animateTo(
+//                      _autoTagScroll.position.maxScrollExtent,
+//                      curve: Curves.easeOut,
+//                      duration: const Duration(milliseconds: 100),
+//                    ));
+//          },
+//          icon: Image.asset(
+//            "assets/search.png",
+//            color: Color.fromARGB(255, 122, 122, 122),
+//            width: 23,
+//            height: 23,
+//          ),
+//        ),
         actions: <Widget>[
           upPanelMenuType != 2
-              ? whiteSpaceW(MediaQuery.of(context).size.width / 5)
+              ? Container()
+//          whiteSpaceW(MediaQuery.of(context).size.width / 5)
               : GestureDetector(
                   onTap: () {
                     print("현위치로");
@@ -918,7 +980,7 @@ class _Home extends State<Home> {
                                     setState(() {
                                       autoTag = true;
                                       setSearchEnable(value);
-                                      _mainBloc.setKeyword(value);
+                                      mainBloc.setKeyword(value);
 //                              getAutoTag();
                                     });
                                   }
@@ -1026,7 +1088,12 @@ class _Home extends State<Home> {
                         children: <Widget>[
                           Padding(
                             padding: EdgeInsets.only(left: 6.5),
-                            child: Image.asset("assets/search.png", color: Color.fromARGB(255, 122, 122, 122), width: 23, height: 23,),
+                            child: Image.asset(
+                              "assets/search.png",
+                              color: Color.fromARGB(255, 122, 122, 122),
+                              width: 23,
+                              height: 23,
+                            ),
                           ),
                           // 태그 or list 들어갈 부분
                           tagOr == false
@@ -1080,7 +1147,7 @@ class _Home extends State<Home> {
                                         setState(() {
                                           setSearchEnable(value);
                                           autoTag = true;
-                                          _mainBloc.setKeyword(value);
+                                          mainBloc.setKeyword(value);
 //                                          getAutoTag();
                                         });
                                       }
@@ -1192,7 +1259,7 @@ class _Home extends State<Home> {
                         autoing = false;
                       }
                       searchTagList.clear();
-                      _mainBloc.setTag(null);
+                      mainBloc.setTag(null);
                       _cafeList.clear();
                       defaultOffSet = 0;
                       firstData = false;
@@ -1218,7 +1285,7 @@ class _Home extends State<Home> {
                           tag += searchTagList[i] + ",";
                         }
                       }
-                      _mainBloc.setTag(tag);
+                      mainBloc.setTag(tag);
                       _cafeList.clear();
                       defaultOffSet = 0;
                       firstData = false;
@@ -1228,20 +1295,20 @@ class _Home extends State<Home> {
                   });
                 } else if (type == 1) {
 //                  if (searchTagList.length > 0) {
-                    CafeLogSnackBarWithOk(
-                        msg: "홈에서 태그검색은 한 가지만 가능합니다.",
-                        context: context,
-                        okMsg: "확인");
+                  CafeLogSnackBarWithOk(
+                      msg: "홈에서 태그검색은 한 가지만 가능합니다.",
+                      context: context,
+                      okMsg: "확인");
 //                  } else {
-                    setState(() {
-                      searchTagList.clear();
-                      addTagList(tagListItemSearch[position]);
-                      tagOr = true;
-                      autoTag = false;
-                      _searchController.text = "";
-                      autoTagList.clear();
-                    });
-                    lastTagMove();
+                  setState(() {
+                    searchTagList.clear();
+                    addTagList(tagListItemSearch[position]);
+                    tagOr = true;
+                    autoTag = false;
+                    _searchController.text = "";
+                    autoTagList.clear();
+                  });
+                  lastTagMove();
 //                  }
                 }
                 print("태그 클릭 : " + tagListItemSearch[position]);
@@ -1277,16 +1344,16 @@ class _Home extends State<Home> {
           flex: 2,
           child: GestureDetector(
             onTap: () {
-              if (sharedPreferences.getString("accessToken") != "" &&
-                  sharedPreferences.getString("accessToken") != null &&
-                  sharedPreferences.getString("accessToken").isNotEmpty) {
-                setState(() {
-                  upPanelMenuType = menuType;
-                });
-              } else {
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                    '/LoginMain', (Route<dynamic> route) => false);
-              }
+//              if (sharedPreferences.getString("accessToken") != "" &&
+//                  sharedPreferences.getString("accessToken") != null &&
+//                  sharedPreferences.getString("accessToken").isNotEmpty) {
+//                setState(() {
+//                  upPanelMenuType = menuType;
+//                });
+//              } else {
+//                Navigator.of(context).pushNamedAndRemoveUntil(
+//                    '/LoginMain', (Route<dynamic> route) => false);
+//              }
 
 //              Navigator.of(context).pushNamed("/MyCafeLog");
             },
@@ -1303,7 +1370,7 @@ class _Home extends State<Home> {
                   children: <Widget>[
                     Container(
                       child: Padding(
-                        padding: EdgeInsets.only(top: 25 / 2),
+                        padding: EdgeInsets.only(top: 20 / 2),
                         child: Text(
                           menuName,
                           style: upPanelMenuType != menuType
@@ -1372,7 +1439,7 @@ class _Home extends State<Home> {
                             clickNum = null;
                             keyword = "";
                             keywordSearching = false;
-                            _mainBloc.setTag(null);
+                            mainBloc.setTag(null);
                             _cafeList.clear();
                             defaultOffSet = 0;
                             firstData = false;
@@ -1397,7 +1464,7 @@ class _Home extends State<Home> {
                         clickNum = null;
                         keyword = "";
                         keywordSearching = false;
-                        _mainBloc.setTag(null);
+                        mainBloc.setTag(null);
                         _cafeList.clear();
                         defaultOffSet = 0;
                         firstData = false;
@@ -1505,7 +1572,45 @@ class _Home extends State<Home> {
                             : MyAround(
                                 tag: tag2,
                               )
-                        : body()
+                        : Stack(
+                            children: <Widget>[
+                              body(),
+                              loading
+                                  ? Padding(
+                                      padding: EdgeInsets.only(
+                                          bottom: MediaQuery.of(context)
+                                                      .size
+                                                      .height /
+                                                  5 -
+                                              75),
+                                      child: Center(
+                                        child: CircularProgressIndicator(
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                  mainColor),
+                                        ),
+                                      ),
+                                    )
+//                              Positioned(
+//                                      top: MediaQuery.of(context).size.height -
+//                                          75,
+//                                      child: Padding(
+//                                        padding: EdgeInsets.only(
+//                                            bottom: MediaQuery.of(context)
+//                                                    .size
+//                                                    .height /
+//                                                5),
+//                                        child: Center(
+//                                          child: CircularProgressIndicator(
+//                                            valueColor:
+//                                                AlwaysStoppedAnimation<Color>(
+//                                                    mainColor),
+//                                          ),
+//                                        ),
+//                                      ))
+                                  : Container(),
+                            ],
+                          )
                 : searchBody(),
       );
 
@@ -1514,10 +1619,10 @@ class _Home extends State<Home> {
           if (content == "인기") {
             if (filterButton == true) {
               setState(() {
-                _mainBloc.setType("0");
+                mainBloc.setType("0");
                 _cafeList.clear();
                 defaultOffSet = 0;
-                _mainBloc.setLimit(defaultOffSet);
+                mainBloc.setLimit(defaultOffSet);
                 firstData = false;
                 mainListGrid();
                 filterButton = false;
@@ -1526,10 +1631,10 @@ class _Home extends State<Home> {
           } else if (content == "최신") {
             if (filterButton == false) {
               setState(() {
-                _mainBloc.setType("1");
+                mainBloc.setType("1");
                 _cafeList.clear();
                 defaultOffSet = 0;
-                _mainBloc.setLimit(defaultOffSet);
+                mainBloc.setLimit(defaultOffSet);
                 firstData = false;
                 mainListGrid();
                 filterButton = true;
@@ -1620,50 +1725,72 @@ class _Home extends State<Home> {
   }
 
   body() => SingleChildScrollView(
-        child: Column(
+        child:
+//          height: MediaQuery.of(context).size.height,
+//          padding: EdgeInsets.only(bottom: 140),
+            Stack(
           children: <Widget>[
-            Padding(
-              padding: EdgeInsets.only(left: 15, top: 5),
-              child: Row(
-                children: <Widget>[
-                  menuBar("인기"),
-                  Padding(
-                    padding: EdgeInsets.only(left: 15),
-                    child: menuBar("최신"),
-                  )
-                ],
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.only(left: 15, top: 10, right: 10),
-              child: Container(
-                height: 30,
-                child: tagList(0),
-              ),
-            ),
-            whiteSpaceH(10),
-            keywordSearching == true
-                ? _cafeList.length == 0
-                    ? whiteSpaceH(MediaQuery.of(context).size.height / 4.5)
-                    : SizedBox()
-                : SizedBox(),
-            keywordSearching == false
+            Column(
+              children: <Widget>[
+//                Padding(
+//                  padding: EdgeInsets.only(left: 15, top: 5),
+//                  child: Row(
+//                    children: <Widget>[
+//                      menuBar("인기"),
+//                      Padding(
+//                        padding: EdgeInsets.only(left: 15),
+//                        child: menuBar("최신"),
+//                      )
+//                    ],
+//                  ),
+//                ),
+//                Padding(
+//                  padding: EdgeInsets.only(left: 15, top: 10, right: 10),
+//                  child: Container(
+//                    height: 30,
+//                    child: tagList(0),
+//                  ),
+//                ),
+//                whiteSpaceH(10),
+                keywordSearching == true
+                    ? _cafeList.length == 0
+                        ? whiteSpaceH(MediaQuery.of(context).size.height / 4.5)
+                        : SizedBox()
+                    : SizedBox(),
+                keywordSearching == false
 //                ? instaCafePost()
-                ? Container(
-                    width: MediaQuery.of(context).size.width,
-                    height: MediaQuery.of(context).size.height - 80,
-                    child: mainListGrid(),
-                  )
-                : Container(
-                    width: MediaQuery.of(context).size.width,
-                    height: _cafeList.length != 0
-                        ? MediaQuery.of(context).size.height - 80
-                        : MediaQuery.of(context).size.height / 2.5,
-                    child: mainListGrid(),
-                  ),
+                    ? Container(
+                        width: MediaQuery.of(context).size.width,
+//                    height: MediaQuery.of(context).size.height - 75,
+                        child: mainListGrid(),
+                      )
+                    : Container(
+                        width: MediaQuery.of(context).size.width,
+                        height: _cafeList.length != 0
+                            ? MediaQuery.of(context).size.height - 75
+                            : MediaQuery.of(context).size.height / 2.5,
+                        child: mainListGrid(),
+                      ),
+              ],
+            ),
+//                Positioned.fill(
+//                  top: MediaQuery.of(context).size.height / 2 + 105,
+//                  child: loading
+//                    ? Padding(
+//                  padding: EdgeInsets.only(
+//                      bottom: MediaQuery.of(context).size.height / 5),
+//                  child: Center(
+//                    child: CircularProgressIndicator(
+//                      valueColor:
+//                      AlwaysStoppedAnimation<Color>(mainColor),
+//                    ),
+//                  ),
+//                )
+//                    : Container(),)
           ],
         ),
-        physics: NeverScrollableScrollPhysics(),
+//        physics: NeverScrollableScrollPhysics(),
+        controller: _mainScroll,
       );
 
   bool searchCheck = false;
@@ -1684,8 +1811,8 @@ class _Home extends State<Home> {
                 autoTagList.clear();
                 autoTag = false;
                 _searchController.text = "";
-                _mainBloc.setInsertTag(searchTagList[0]);
-                _mainBloc.setAutoTag();
+                mainBloc.setInsertTag(searchTagList[0]);
+                mainBloc.setAutoTag();
                 tagListItem.insert(0, searchTagList[0]);
                 clickNum = 0;
                 keyword = tagListItem[0];
@@ -1704,7 +1831,7 @@ class _Home extends State<Home> {
                     tag += searchTagList[i] + ",";
                   }
                 }
-                _mainBloc.setTag(tag);
+                mainBloc.setTag(tag);
                 _cafeList.clear();
                 defaultOffSet = 0;
                 firstData = false;
@@ -1975,7 +2102,7 @@ class _Home extends State<Home> {
                             ],
                           )
                         : StreamBuilder(
-                            stream: _mainBloc.getAutoTag(),
+                            stream: mainBloc.getAutoTag(),
                             builder: (context, snapshot) {
                               if (snapshot.hasError) {
                                 print("error");

@@ -1,13 +1,16 @@
 import 'dart:convert';
 import 'dart:math' show cos, sqrt, asin;
 
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cafelog/Bloc/mainBloc.dart';
+import 'package:cafelog/Model/cafeGoogleData.dart';
 import 'package:cafelog/Model/cafeListData.dart';
 import 'package:cafelog/Model/instaPostData.dart';
 import 'package:cafelog/Model/popularMenu.dart';
 import 'package:cafelog/Model/popularityCafeData.dart';
 import 'package:cafelog/Model/streetsData.dart';
+import 'package:cafelog/Screens/Home/googleDetail.dart';
 import 'package:cafelog/Screens/Home/instaDetail.dart';
 import 'package:cafelog/Screens/PopularityCafe/morePicture.dart';
 import 'package:cafelog/Screens/PopularityCafe/naverCafeInfo.dart';
@@ -74,8 +77,8 @@ class _CafeDetail extends State<CafeDetail> {
   String cafeDes = "커피보다 스콘이 맛있는 카페";
   String cafeAddress = "서울특별시 중구 충무로9길 0223 1층 ACAFE";
 
-  int personNumAll = 52100;
-  int personWeek = 500;
+  int personNumAll = 0;
+  int personWeek = 0;
 
   List<String> serviceTag = List();
 
@@ -96,7 +99,7 @@ class _CafeDetail extends State<CafeDetail> {
 
 //  int defaultLeftLength = 10;
 //  int defaultRightLength = 10;
-  List<CafeListData> _cafeList = [];
+  List<CafeGoogleData> _cafeList = [];
   int defaultLength = 10;
   int defaultOffSet = 0;
 
@@ -126,7 +129,6 @@ class _CafeDetail extends State<CafeDetail> {
     accessToken = sharedPreferences.getString("accessToken");
     checkFavorite();
   }
-
 
   cal() {
     // 거리 계산 메소드 이용
@@ -172,7 +174,7 @@ class _CafeDetail extends State<CafeDetail> {
             defaultLength += 10;
           }
         }
-        loading = true;
+//        loading = true;
         firstData = false;
       });
       setState(() {});
@@ -210,7 +212,7 @@ class _CafeDetail extends State<CafeDetail> {
     gpsCheck();
 
     List<String> tagSplit;
-    if (widget.convenien.isNotEmpty && widget.convenien != "") {
+    if (widget.convenien != null) {
       tagSplit = widget.convenien.split(", ");
 
       if (tagSplit.length > 0) {
@@ -247,9 +249,9 @@ class _CafeDetail extends State<CafeDetail> {
 
 //      print("data : ${json.decode(value)['data']}");
 
-      detailStreet = PopularityCafeData(
-          userNum: json.decode(value)['data']['user_num'],
-          recentNum: json.decode(value)['data']['recent_num']);
+//      detailStreet = PopularityCafeData(
+//          userNum: json.decode(value)['data']['user_num'],
+//          recentNum: json.decode(value)['data']['recent_num']);
       setState(() {
         getData = true;
       });
@@ -260,30 +262,38 @@ class _CafeDetail extends State<CafeDetail> {
     return Container(
       child: FloatingActionButton(
         onPressed: () {
-          if (favoriteCheck == false) {
-            mainBloc.setFavoriteId(accessToken);
-            mainBloc.setFavoriteName(widget.cafeName);
-            mainBloc.setFavoriteIdentify(widget.identify);
+          if (widget.identify != null) {
+            if (favoriteCheck == false) {
+              mainBloc.setFavoriteId(accessToken);
+              mainBloc.setFavoriteName(widget.cafeName);
+              mainBloc.setFavoriteIdentify(widget.identify);
 
-            mainBloc.insertFavorite().then((value) {
-              CafeLogSnackBarWithOk(context: context, okMsg: "확인", msg: "\"${widget.cafeName}\"가 즐겨찾기에 추가되었습니다.");
-            });
-            setState(() {
-              favoriteCheck = true;
-            });
-          } else {
-            mainBloc.setFavoriteIdentify(widget.identify);
+              mainBloc.insertFavorite().then((value) {
+                CafeLogSnackBarWithOk(
+                    context: context,
+                    okMsg: "확인",
+                    msg: "\"${widget.cafeName}\"가 즐겨찾기에 추가되었습니다.");
+              });
+              setState(() {
+                favoriteCheck = true;
+              });
+            } else {
+              mainBloc.setFavoriteIdentify(widget.identify);
 
-            mainBloc.deleteFavorite().then((value) {
-              CafeLogSnackBarWithOk(context: context, okMsg: "확인", msg: "\"${widget.cafeName}\"가 즐겨찾기에 제거되었습니다.");
-            });
-            setState(() {
-              favoriteCheck = false;
-            });
+              mainBloc.deleteFavorite().then((value) {
+                CafeLogSnackBarWithOk(
+                    context: context,
+                    okMsg: "확인",
+                    msg: "\"${widget.cafeName}\"가 즐겨찾기에 제거되었습니다.");
+              });
+              setState(() {
+                favoriteCheck = false;
+              });
+            }
           }
         },
         child: Icon(
-          favoriteCheck ? Icons.star: Icons.star_border,
+          favoriteCheck ? Icons.star : Icons.star_border,
           color: mainColor,
         ),
         backgroundColor: Colors.white,
@@ -310,128 +320,6 @@ class _CafeDetail extends State<CafeDetail> {
     );
   }
 
-  mainListGrid() {
-    if (!firstData) {
-      print("defaultOffSet : ${defaultOffSet}");
-      mainBloc.setLimit(defaultOffSet);
-      mainBloc.setTag(widget.cafeName);
-      mainBloc.setType("1");
-
-      mainBloc.getMainList().then((value) async {
-        if (json.decode(value)['result'] != 0 &&
-            (json.decode(value)['data'] != null &&
-                json.decode(value)['data'] != "" && json.decode(value)['data'].length != 0)) {
-          if (!firstData) {
-            defaultOffSet += 1;
-            print('value : ${json.decode(value)['data']}');
-            List<dynamic> valueList = await json.decode(value)['data'];
-            print(valueList.length);
-            if (valueList.length != 0) {
-              for (int i = 0; i < valueList.length; i++) {
-                _cafeList.add(CafeListData(
-                    url: valueList[i]['url'],
-                    nickname: valueList[i]['nickname'],
-                    pic: valueList[i]['pic'],
-                    date: valueList[i]['date'],
-                    like: valueList[i]['like'],
-                    search_tag: valueList[i]['search_tag']));
-              }
-            }
-            firstData = true;
-            loading = false;
-          }
-          setState(() {});
-        } else {
-          setState(() {
-            firstData = true;
-            loading = false;
-          });
-          CafeLogSnackBarWithOk(context: context, okMsg: "확인", msg: "더 이상 표시할 카페 기록이 없습니다.");
-        }
-      }).catchError((error) {
-        print("error : ${error}");
-      });
-    }
-    return (_cafeList.length == 0 && firstData == false)
-        ? Padding(
-            padding:
-                EdgeInsets.only(bottom: MediaQuery.of(context).size.height / 5),
-            child: Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(mainColor),
-              ),
-            ),
-          )
-        : Padding(
-            padding: EdgeInsets.only(top: 10, bottom: 10, left: 15, right: 15),
-            child: StaggeredGridView.countBuilder(
-//            controller: _scrollController,
-              physics: NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              itemCount: _cafeList.length,
-              itemBuilder: (context, idx) => GestureDetector(
-                onTap: () {
-                  print("Name : ${_cafeList[idx].search_tag}");
-
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => InstaDetail(
-                          name: _cafeList[idx].search_tag,
-                          instaUrl: _cafeList[idx].url,
-                          offset: _scrollController.offset,
-                          type: 1,
-                        ),
-                      )).then((result) {
-                    _scrollController.animateTo(result,
-                        duration: null, curve: null);
-                  });
-                },
-                child: Stack(
-                  children: <Widget>[
-                    Padding(
-                      padding: EdgeInsets.only(
-                        bottom: 10,
-                      ),
-                      child: Container(
-                        child: ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: CachedNetworkImage(
-                              imageUrl: _cafeList[idx].pic,
-//                              placeholder: (context, url) =>
-//                                  CircularProgressIndicator(
-//                                valueColor:
-//                                    AlwaysStoppedAnimation<Color>(mainColor),
-//                              ),
-                              errorWidget: (context, url, error) => Image.asset(
-                                "assets/defaultImage.png",
-                                fit: BoxFit.fill,
-                              ),
-                            )
-//                        FadeInImage(image: NetworkImage(_cafeList[idx].pic), fit: BoxFit.fill, placeholder: AssetImage("assets/defaultImage.png"), ),
-                            ),
-                      ),
-                    ),
-                    Positioned(
-                      child: Text(
-                        "@" + _cafeList[idx].nickname,
-                        style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: White,
-                            shadows: [Shadow(color: Black, blurRadius: 5)]),
-                      ),
-                      bottom: 20,
-                      left: 15,
-                    ),
-                  ],
-                ),
-              ),
-              staggeredTileBuilder: (idx) => StaggeredTile.fit(1),
-              crossAxisSpacing: 10.0,
-            ));
-  }
 
 //  instaCafePost() => Padding(
 //        padding: EdgeInsets.only(left: 10, right: 10),
@@ -495,14 +383,27 @@ class _CafeDetail extends State<CafeDetail> {
 
   mainImage() => mainImageCheck
       ? Padding(
-          padding: EdgeInsets.only(left: 15, right: 15, top: 20 + topHeight),
-          // CachedNetworkImage 로 변경할 것
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Image.network(
-              widget.imgUrl,
-              width: MediaQuery.of(context).size.width,
-              fit: BoxFit.fitWidth,
+          padding: EdgeInsets.all(0),
+//          EdgeInsets.only(left: 15, right: 15, top: 20 + topHeight),
+          child: Container(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.width,
+            decoration: BoxDecoration(
+                color: White,
+//                borderRadius: BorderRadius.circular(10),
+//                boxShadow: [
+//                  BoxShadow(
+//                      color: Color.fromARGB(255, 219, 219, 219), blurRadius: 7)
+//                ]
+            ),
+            child: ClipRRect(
+//              borderRadius: BorderRadius.circular(10),
+              child: CachedNetworkImage(
+                imageUrl: widget.imgUrl,
+                width: MediaQuery.of(context).size.width,
+                height: MediaQuery.of(context).size.width,
+                fit: BoxFit.fill,
+              ),
             ),
           ),
         )
@@ -517,6 +418,22 @@ class _CafeDetail extends State<CafeDetail> {
     return Scaffold(
       backgroundColor: White,
       resizeToAvoidBottomInset: true,
+      appBar: AppBar(
+        backgroundColor: White,
+        leading: IconButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          icon: Icon(Icons.arrow_back_ios, color: Black,),
+        ),
+        elevation: 0.0,
+        actions: <Widget>[
+          InkWell(
+            onTap: () {},
+            child: Image.asset("assets/starCopy2.png", width: 20, height: 20, fit: BoxFit.fill, color: mainColor,),
+          )
+        ],
+      ),
       body: Stack(
         children: <Widget>[
           SingleChildScrollView(
@@ -526,70 +443,64 @@ class _CafeDetail extends State<CafeDetail> {
                   children: <Widget>[
                     Padding(
                       padding: EdgeInsets.only(
-                        left: 10,
-                        right: 10,
+                        left: 0,
+                        right: 0,
                       ),
                       child: Stack(
                         children: <Widget>[
                           Padding(
-                            padding: EdgeInsets.only(
-                                top: !mainImageCheck
-                                    ? 20 + topHeight
-                                    : 165 + topHeight,
-                                bottom: 10),
+                            padding: EdgeInsets.all(0),
+//                            EdgeInsets.only(
+//                                top: !mainImageCheck
+//                                    ? 20 + topHeight
+//                                    : 165 + topHeight,
+//                                bottom: 10),
                             child: Container(
                               width: MediaQuery.of(context).size.width,
                               decoration: BoxDecoration(
                                   color: White,
-                                  borderRadius: BorderRadius.circular(6),
-                                  boxShadow: [
-                                    BoxShadow(
-                                        color:
-                                            Color.fromARGB(255, 167, 167, 167),
-                                        blurRadius: 8),
-                                  ]),
+//                                  borderRadius: BorderRadius.circular(6),
+//                                  boxShadow: [
+//                                    BoxShadow(
+//                                        color:
+//                                            Color.fromARGB(255, 167, 167, 167),
+//                                        blurRadius: 8),
+//                                  ]
+                              ),
                               child: Column(
                                 children: <Widget>[
                                   Padding(
                                       padding: EdgeInsets.only(
-                                          top: mainImageCheck ? 205 : 20),
+                                          top: mainImageCheck ? MediaQuery.of(context).size.width + 20 : 20),
                                       child: Stack(
                                         children: <Widget>[
                                           Align(
                                             alignment: Alignment.center,
                                             child: Container(
-                                              width: 120,
+                                                width: 120,
 //                                    padding: EdgeInsets.only(left: 80, right: 80),
-                                              child: Text(
-                                                widget.cafeName,
-                                                style: TextStyle(
+                                                child: AutoSizeText(
+                                                  widget.cafeName,
+                                                  maxLines: 1,
+                                                  minFontSize: 12,
+                                                  style: TextStyle(
+                                                    color: Black,
                                                     fontSize: 22,
                                                     fontWeight: FontWeight.bold,
-                                                    color: Black),
-                                                softWrap: true,
-                                                textAlign: TextAlign.center,
-                                              ),
-                                            ),
-                                          ),
-                                          Positioned.fill(
-                                            left: 50,
-                                            child: Align(
-                                              alignment: Alignment.center,
-                                              child: Padding(
-                                                padding:
-                                                    EdgeInsets.only(left: 120),
-                                                child: gpsOn
-                                                    ? Text(
-                                                        widget.distance,
-                                                        style: TextStyle(
-                                                            color: Black,
-                                                            fontSize: 12),
-                                                        textAlign:
-                                                            TextAlign.center,
-                                                      )
-                                                    : Text(""),
-                                              ),
-                                            ),
+                                                  ),
+                                                  textAlign: TextAlign.center,
+                                                  softWrap: true,
+                                                )
+//                                              Text(
+//                                                widget.cafeName,
+//                                                style: TextStyle(
+//                                                    fontSize: 22,
+//                                                    fontWeight: FontWeight.bold,
+//                                                    color: Black),
+//                                                softWrap: true,
+//                                                textAlign: TextAlign.center,
+//                                              ),
+                                                ),
                                           ),
                                           Positioned.fill(
                                               child: Align(
@@ -613,17 +524,35 @@ class _CafeDetail extends State<CafeDetail> {
                                           ))
                                         ],
                                       )),
-                                  whiteSpaceH(30),
-                                  Text(
+                                  widget.distance != null ? Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: <Widget>[
+                                      Padding(
+                                        padding:
+                                            EdgeInsets.only(left: 0, top: 15),
+                                        child: gpsOn
+                                            ? Text(
+                                                widget.distance,
+                                                style: TextStyle(
+                                                    color: Black, fontSize: 12),
+                                                textAlign: TextAlign.center,
+                                              )
+                                            : Text(""),
+                                      ),
+                                    ],
+                                  ) : Container(),
+                                  widget.subName != null ? whiteSpaceH(30) : Container(),
+                                  widget.subName != null ? Text(
                                     widget.subName,
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                         color:
                                             Color.fromARGB(255, 122, 122, 122),
                                         fontSize: 12),
-                                  ),
-                                  whiteSpaceH(10),
-                                  Stack(
+                                  ) : Container(),
+                                  widget.subName != null ? whiteSpaceH(10) : Container(),
+                                  widget.address != null ? whiteSpaceH(30) : Container(),
+                                  widget.address != null ? Stack(
                                     children: <Widget>[
                                       Align(
                                         alignment: Alignment.center,
@@ -674,21 +603,23 @@ class _CafeDetail extends State<CafeDetail> {
                                                   }
                                                 });
                                               },
-                                              child: Text(
-                                                "지도보기",
-                                                style: TextStyle(
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: mainColor),
-                                                textAlign: TextAlign.center,
+                                              child: ClipOval(
+                                                child: Container(
+                                                  width: 30,
+                                                  height: 30,
+                                                  color: Color.fromARGB(255, 247, 247, 247),
+                                                  child: Center(
+                                                    child: Icon(Icons.arrow_forward_ios, color: Black, size: 12,),
+                                                  ),
+                                                ),
                                               ),
                                             ),
                                           ),
                                         ),
                                       )
                                     ],
-                                  ),
-                                  whiteSpaceH(55),
+                                  ) : Container(),
+                                  widget.address != null ? whiteSpaceH(55) : whiteSpaceH(30),
                                   Center(
                                     child: Text(
                                       "다녀온 사람",
@@ -738,13 +669,13 @@ class _CafeDetail extends State<CafeDetail> {
                                                 style: TextStyle(
                                                     color: Color.fromARGB(
                                                         255, 122, 122, 122),
-                                                    fontSize: 12),
+                                                    fontSize: 12), textAlign: TextAlign.center,
                                               ),
                                             )
                                           ],
                                         ),
-                                  whiteSpaceH(40),
-                                  Center(
+                                  widget.phone != null ? whiteSpaceH(40) : Container(),
+                                  widget.phone != null ? Center(
                                     child: GestureDetector(
                                       onTap: () {
                                         print('전화걸기');
@@ -840,8 +771,8 @@ class _CafeDetail extends State<CafeDetail> {
                                             color: mainColor),
                                       ),
                                     ),
-                                  ),
-                                  whiteSpaceH(40),
+                                  ) : Container(),
+                                  widget.phone != null ? whiteSpaceH(40) : Container(),
                                   Padding(
                                     padding:
                                         EdgeInsets.only(left: 40, right: 40),
@@ -850,12 +781,12 @@ class _CafeDetail extends State<CafeDetail> {
                                       height: 120,
                                       child: serviceTag.length == 0
                                           ? Center(
-                                              child: Text(
+                                              child: AutoSizeText(
                                                 "아직 편의시설 정보가 부족합니다.",
                                                 style: TextStyle(
                                                     color: Color.fromARGB(
                                                         255, 122, 122, 122),
-                                                    fontSize: 12),
+                                                    fontSize: 12), minFontSize: 8,
                                                 textAlign: TextAlign.center,
                                               ),
                                             )
@@ -865,13 +796,15 @@ class _CafeDetail extends State<CafeDetail> {
                                               childAspectRatio: 2,
                                               children: List.generate(
                                                   serviceTag.length, (idx) {
-                                                return Text(
-                                                  "#${serviceTag[idx]}",
-                                                  style: TextStyle(
-                                                      color: Color.fromARGB(
-                                                          255, 122, 122, 122),
-                                                      fontSize: 12),
-                                                  textAlign: TextAlign.center,
+                                                return Center(
+                                                  child: Text(
+                                                    "#${serviceTag[idx]}",
+                                                    style: TextStyle(
+                                                        color: Color.fromARGB(
+                                                            255, 122, 122, 122),
+                                                        fontSize: 12),
+                                                    textAlign: TextAlign.center,
+                                                  ),
                                                 );
                                               }),
                                               physics:
@@ -879,7 +812,7 @@ class _CafeDetail extends State<CafeDetail> {
                                             ),
                                     ),
                                   ),
-                                  whiteSpaceH(20),
+//                                  whiteSpaceH(20),
 //                                  Center(
 //                                    child: GestureDetector(
 //                                      onTap: () {
@@ -895,106 +828,6 @@ class _CafeDetail extends State<CafeDetail> {
 //                                      ),
 //                                    ),
 //                                  ),
-//                                  whiteSpaceH(60),
-                                  Center(
-                                    child: Text(
-                                      "인기키워드",
-                                      style: TextStyle(
-                                          color: Black,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 24),
-                                    ),
-                                  ),
-                                  menuExist ? whiteSpaceH(30) : whiteSpaceH(40),
-                                  menuExist
-                                      ? ListView.builder(
-                                          physics:
-                                              NeverScrollableScrollPhysics(),
-                                          itemBuilder: (context, idx) {
-                                            return Padding(
-                                              padding: EdgeInsets.only(
-                                                  top: 8,
-                                                  bottom: 8,
-                                                  left: 25,
-                                                  right: 25),
-                                              child: Row(
-                                                children: <Widget>[
-                                                  Text(
-                                                    "${idx + 1}",
-                                                    style: TextStyle(
-                                                        color: Color.fromARGB(
-                                                            255, 167, 167, 167),
-                                                        fontSize: 14,
-                                                        fontWeight:
-                                                            FontWeight.bold),
-                                                  ),
-                                                  Expanded(
-                                                      flex: 6,
-                                                      child: Padding(
-                                                        padding:
-                                                            EdgeInsets.only(
-                                                                left: 10),
-                                                        child: Text(
-                                                          "#${popularMenuList[idx].menuName}",
-                                                          style: TextStyle(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                              fontSize: 16,
-                                                              color: Black),
-                                                          textAlign:
-                                                              TextAlign.left,
-                                                        ),
-                                                      )),
-//                                                  Expanded(
-//                                                    flex: 2,
-//                                                    child: Container(
-//                                                        width: 60,
-//                                                        child: Text(
-//                                                          "먹어본 사람",
-//                                                          style: TextStyle(
-//                                                              color: Color
-//                                                                  .fromARGB(
-//                                                                      255,
-//                                                                      167,
-//                                                                      167,
-//                                                                      167),
-//                                                              fontSize: 12,
-//                                                              fontWeight:
-//                                                                  FontWeight
-//                                                                      .w600),
-//                                                        )),
-//                                                  ),
-                                                  Expanded(
-                                                    child: Text(
-                                                      numberFormat.format(
-                                                          popularMenuList[idx]
-                                                              .eatPerson),
-                                                      style: TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                          fontSize: 12,
-                                                          color: Black),
-                                                      textAlign:
-                                                          TextAlign.center,
-                                                    ),
-                                                  )
-                                                ],
-                                              ),
-                                            );
-                                          },
-                                          shrinkWrap: true,
-                                          itemCount: popularMenuList.length,
-                                        )
-                                      : Center(
-                                          child: Text(
-                                            "키워드 정보가 부족합니다.",
-                                            style: TextStyle(
-                                                fontSize: 12,
-                                                color: Color.fromARGB(
-                                                    255, 122, 122, 122)),
-                                          ),
-                                        ),
                                   menuExist ? whiteSpaceH(60) : whiteSpaceH(90),
                                   menuExist
                                       ? GestureDetector(
@@ -1014,7 +847,7 @@ class _CafeDetail extends State<CafeDetail> {
                                         )
                                       : Container(),
                                   menuExist ? whiteSpaceH(60) : Container(),
-                                  GestureDetector(
+                                  widget.naverUrl != null ? GestureDetector(
                                     onTap: () {
 //                                      Navigator.of(context)
 //                                          .pushNamed('/NaverCafeInfo');
@@ -1028,7 +861,7 @@ class _CafeDetail extends State<CafeDetail> {
                                     },
                                     child: Container(
                                       width: 200,
-                                      height: 30,
+                                      height: 40,
                                       decoration: BoxDecoration(
                                           borderRadius:
                                               BorderRadius.circular(15.5),
@@ -1047,70 +880,16 @@ class _CafeDetail extends State<CafeDetail> {
                                         ),
                                       ),
                                     ),
-                                  ),
+                                  ) : Container(),
                                   cafeUserImage
                                       ? whiteSpaceH(80)
                                       : whiteSpaceH(60),
                                   cafeUserImage
                                       ? Column(
                                           children: <Widget>[
-                                            Center(
-                                              child: Text(
-                                                "총 기록 ${numberFormat.format(allRecord)}",
-                                                style: TextStyle(
-                                                    fontSize: 16,
-                                                    color: Black,
-                                                    fontWeight:
-                                                        FontWeight.bold),
-                                              ),
-                                            ),
-                                            whiteSpaceH(10),
-                                            Align(
-                                              alignment: Alignment.centerRight,
-                                              child: Padding(
-                                                padding:
-                                                    EdgeInsets.only(right: 20),
-                                                child: GestureDetector(
-                                                  onTap: () {
-                                                    Navigator.push(
-                                                        context,
-                                                        MaterialPageRoute(
-                                                          builder: (context) =>
-                                                              MorePicture(
-                                                            cafeName:
-                                                                widget.cafeName,
-                                                          ),
-                                                        ));
-                                                  },
-                                                  child: Text(
-                                                    "전체보기",
-                                                    style: TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        color: mainColor,
-                                                        fontSize: 14),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
                                             whiteSpaceH(10),
                                             mainListGrid(),
                                             whiteSpaceH(40),
-//                                            Center(
-//                                              child: GestureDetector(
-//                                                onTap: () {
-//                                                  Navigator.of(context).pushNamed("/MorePicture");
-//                                                },
-//                                                child: Text(
-//                                                  "사진 더보기",
-//                                                  style: TextStyle(
-//                                                      fontSize: 14,
-//                                                      color: mainColor,
-//                                                      fontWeight:
-//                                                          FontWeight.w600),
-//                                                ),
-//                                              ),
-//                                            )
                                           ],
                                         )
                                       : Center(
@@ -1137,27 +916,27 @@ class _CafeDetail extends State<CafeDetail> {
                 )),
             controller: _scrollController,
           ),
-          Container(
-            height: MediaQuery.of(context).size.height,
-            child: Stack(
-              children: <Widget>[
-                Padding(
-                  padding: EdgeInsets.only(left: 15, bottom: 15),
-                  child: Align(
-                    alignment: Alignment.bottomLeft,
-                    child: favoriteFab(),
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.only(right: 15, bottom: 15),
-                  child: Align(
-                    alignment: Alignment.bottomRight,
-                    child: backFab(),
-                  ),
-                )
-              ],
-            ),
-          ),
+//          Container(
+//            height: MediaQuery.of(context).size.height,
+//            child: Stack(
+//              children: <Widget>[
+//                Padding(
+//                  padding: EdgeInsets.only(left: 15, bottom: 15),
+//                  child: Align(
+//                    alignment: Alignment.bottomLeft,
+//                    child: favoriteFab(),
+//                  ),
+//                ),
+//                Padding(
+//                  padding: EdgeInsets.only(right: 15, bottom: 15),
+//                  child: Align(
+//                    alignment: Alignment.bottomRight,
+//                    child: backFab(),
+//                  ),
+//                )
+//              ],
+//            ),
+//          ),
           loading == true
               ? Positioned.fill(
                   child: Center(
@@ -1169,5 +948,106 @@ class _CafeDetail extends State<CafeDetail> {
         ],
       ),
     );
+  }
+
+  mainListGrid() {
+    if (!firstData) {
+      mainBloc.setLimit(defaultOffSet);
+
+      mainBloc.getCafeList().then((value) async {
+        if (json.decode(value)['result'] != 0 &&
+            (json.decode(value)['data'] != null &&
+                json.decode(value)['data'] != "" &&
+                json.decode(value)['data'].length != 0)) {
+          if (!firstData) {
+            defaultOffSet += 1;
+            print('value : ${json.decode(value)['data']}');
+            List<dynamic> valueList = await json.decode(value)['data'];
+            print(valueList.length);
+            if (valueList.length != 0) {
+              for (int i = 0; i < valueList.length; i++) {
+                _cafeList.add(CafeGoogleData(
+                    idx: valueList[i]['idx'],
+                    search_item: valueList[i]['search_item'],
+                    keyword: valueList[i]['keyword'],
+                    cafe_name: valueList[i]['cafe_name'],
+                    title: valueList[i]['title'],
+                    url: valueList[i]['url'],
+                    image: valueList[i]['image'],
+                    thumbnail: valueList[i]['thumbnail'],
+                    location: valueList[i]['location']));
+              }
+            }
+            firstData = true;
+          }
+          setState(() {});
+        } else {
+          setState(() {
+            firstData = true;
+          });
+          CafeLogSnackBarWithOk(
+              context: context, okMsg: "확인", msg: "더 이상 표시할 카페 기록이 없습니다.");
+        }
+      }).catchError((error) {
+        print("error : ${error}");
+      });
+    }
+    return (_cafeList.length == 0 && firstData == false)
+        ? Padding(
+      padding:
+      EdgeInsets.only(bottom: MediaQuery.of(context).size.height / 5),
+      child: Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(mainColor),
+        ),
+      ),
+    )
+        : Padding(
+        padding: EdgeInsets.only(top: 10, bottom: 10, left: 15, right: 15),
+        child: StaggeredGridView.countBuilder(
+          physics: NeverScrollableScrollPhysics(),
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          itemCount: _cafeList.length,
+          itemBuilder: (context, idx) => GestureDetector(
+            onTap: () {
+              Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => GoogleDetail(
+                      title: _cafeList[idx].title,
+                      image: _cafeList[idx].image,
+                      cafeName: _cafeList[idx].cafe_name,
+                      link: _cafeList[idx].url,
+                      searchItem: _cafeList[idx].search_item,
+                      location: _cafeList[idx].location,
+                      detailOffset: _scrollController.offset,
+                    ),
+                  ));
+            },
+            child: Stack(
+              children: <Widget>[
+                Padding(
+                  padding: EdgeInsets.only(
+                    bottom: 10,
+                  ),
+                  child: Container(
+                    child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: CachedNetworkImage(
+                          imageUrl: _cafeList[idx].image,
+                          errorWidget: (context, url, error) => Image.asset(
+                            "assets/defaultImage.png",
+                            fit: BoxFit.fill,
+                          ),
+                        )),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          staggeredTileBuilder: (idx) => StaggeredTile.fit(1),
+          crossAxisSpacing: 10.0,
+        ));
   }
 }

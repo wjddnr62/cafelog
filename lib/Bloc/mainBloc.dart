@@ -113,7 +113,7 @@ class MainBloc {
   Function(int) get setPopType => _popType.sink.add;
   Function(String) get setStreetTag => _streetTag.sink.add;
 
-  Future<String> getPopularityCafe() => _mainRepository.getPopularityCafe(_street.value, _popType.value, _streetTag.value);
+  Future<String> getPopularityCafe() => _mainRepository.getPopularityCafe(_street.value, _popType.value);
 
   // insertTagHistory(insert-tag-history)
   final _insertTag = BehaviorSubject<String>();
@@ -251,7 +251,29 @@ class MainBloc {
 
   Future<String> updateFcmKey(fcm, id) => _mainRepository.updateFcmKey(fcm, id);
 
+  // getCategory
+
+  final _categoryCafe = BehaviorSubject<String>();
+
+  Observable<String> get categoryCafe => _categoryCafe.stream;
+
+  Function(String) get setCategoryCafe => _categoryCafe.sink.add;
+
+  Future<String> getCategory() => _mainRepository.getCategory(_categoryCafe.value);
+
+  // cafeLocation
+
+  final _location = BehaviorSubject<String>();
+
+  Observable<String> get location => _location.stream;
+
+  Function(String) get setLocation => _location.sink.add;
+
+  Future<String> getCafeList() => _mainRepository.getCafeList(_mainStreet.value, _limit.value);
+
   //
+
+  Stream<String> getCafeLocation() => Stream.fromFuture(_mainRepository.getCafeLocation());
 
   Observable<String> get keyword => _keyword.stream;
 
@@ -292,6 +314,14 @@ class MainBloc {
 
   set tagSelectList(value) {
     _tagSelectList = value;
+  }
+
+  double _offset;
+
+  double get offset => _offset;
+
+  set offset(double value) {
+    _offset = value;
   }
 
 

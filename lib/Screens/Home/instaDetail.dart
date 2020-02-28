@@ -4,8 +4,10 @@ import 'package:cafelog/Bloc/mainBloc.dart';
 import 'package:cafelog/Model/naverData.dart';
 import 'package:cafelog/Screens/PopularityCafe/cafeDetail.dart';
 import 'package:cafelog/Util/whiteSpace.dart';
+import 'package:cafelog/Widgets/snackbar.dart';
 import 'package:cafelog/colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_webview_plugin/flutter_webview_plugin.dart';
 import 'package:geocoder/geocoder.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -30,6 +32,7 @@ class _InstaDetail extends State<InstaDetail> {
   MainBloc _mainBloc = MainBloc();
 
   WebViewController _webViewController;
+  final flutterWebviewPlugin = FlutterWebviewPlugin();
   String loadCompleteUrl;
   bool firstLoad = false;
   bool getData = false;
@@ -177,8 +180,12 @@ class _InstaDetail extends State<InstaDetail> {
               onWebViewCreated: (_webController) {
                 _webController.clearCache();
                 _webViewController = _webController;
+
               },
               onPageFinished: (url) {
+                print("url : ${url}");
+//                _webViewController.evaluateJavascript('document.getElementsByClassName("xZ2Xk").style.visibility = "none"');
+                _webViewController.evaluateJavascript("alert('Hi, I just executed')");
                 if (firstLoad == false) {
                   loadCompleteUrl = url;
                   firstLoad = true;
@@ -191,9 +198,12 @@ class _InstaDetail extends State<InstaDetail> {
               color: White,
               padding: EdgeInsets.only(top: 15),
               child: Center(
-                child: Text("인스타 게시글", style: TextStyle(
-                  fontWeight: FontWeight.w600, fontSize: 14, color: Black
-                ), textAlign: TextAlign.center,),
+                child: Text(
+                  "인스타 게시글",
+                  style: TextStyle(
+                      fontWeight: FontWeight.w600, fontSize: 14, color: Black),
+                  textAlign: TextAlign.center,
+                ),
               ),
             ),
           ],
@@ -221,80 +231,97 @@ class _InstaDetail extends State<InstaDetail> {
   String imgUrl;
   LatLng latLng;
   bool notData = false;
+  bool isDisposed = false;
+
+
+  @override
+  void dispose() {
+    super.dispose();
+    isDisposed = true;
+  }
 
   @override
   void initState() {
     super.initState();
 
-    print("getName : ${widget.name}");
-    _mainBloc.setName(widget.name);
+    if (this.mounted && !isDisposed) {
+      print("getName : ${widget.name}");
+      _mainBloc.setName(widget.name);
 
-    _mainBloc.getNaverData().then((value) async {
-      if (json.decode(value)['result'] != 0 &&
-          json.decode(value)['data'] != null) {
-        print("naverData : ${json.decode(value)['data']}");
-        dynamic valueList = await json.decode(value)['data'];
-        naverData = NaverData(
-            url: valueList['url'],
-            identify: valueList['identify'],
-            name: valueList['name'],
-            category: valueList['category'],
-            subname: valueList['subname'],
-            phone: valueList['phone'],
-            addr: valueList['addr'],
-            opentime: valueList['opentime'],
-            menu: valueList['menu'],
-            homepage: valueList['homepage'],
-            convenien: valueList['convenien'],
-            description: valueList['description']);
+      _mainBloc.getNaverData().then((value) async {
+        if (json.decode(value)['result'] != 0 &&
+            json.decode(value)['data'] != null) {
+          print("naverData : ${json.decode(value)['data']}");
+          dynamic valueList = await json.decode(value)['data'];
+          naverData = NaverData(
+              url: valueList['url'],
+              identify: valueList['identify'],
+              name: valueList['name'],
+              category: valueList['category'],
+              subname: valueList['subname'],
+              phone: valueList['phone'],
+              addr: valueList['addr'],
+              opentime: valueList['opentime'],
+              menu: valueList['menu'],
+              homepage: valueList['homepage'],
+              convenien: valueList['convenien'],
+              description: valueList['description']);
 
-        final query = naverData.addr;
-        var address = await Geocoder.local.findAddressesFromQuery(query);
-        var first = address.first;
-        print(
-            "coordinates : ${first.coordinates.latitude}, ${first.coordinates.longitude}");
-
-        latLng =
-            LatLng(first.coordinates.latitude, first.coordinates.longitude);
-
-        try {
-          currentLocation = await location.getLocation();
+          final query = naverData.addr;
+          var address = await Geocoder.local.findAddressesFromQuery(query);
+          var first = address.first;
           print(
-              "currentLocation : ${currentLocation.latitude}, ${currentLocation.longitude}");
+              "coordinates : ${first.coordinates.latitude}, ${first.coordinates.longitude}");
 
-          distanceLocation = await Geolocator().distanceBetween(
-              currentLocation.latitude,
-              currentLocation.longitude,
-              first.coordinates.latitude,
-              first.coordinates.longitude);
+          latLng =
+              LatLng(first.coordinates.latitude, first.coordinates.longitude);
 
-          print(
-              "distance : ${(double.parse(distanceLocation.toStringAsFixed(1)) / 1000).toStringAsFixed(1)}km");
-        } on Exception catch (e) {
-          print(e.toString());
-          currentLocation = null;
-        }
-        _mainBloc.getPopularPic().then((value) async {
-          if (json.decode(value)['result'] != 0 &&
-              json.decode(value)['data'] != null) {
-            dynamic valueList = await json.decode(value)['data'];
-            imgUrl = valueList['pic'];
-            print("imgUrl : ${imgUrl}");
-            setState(() {
-              getData = true;
-            });
+          try {
+            currentLocation = await location.getLocation();
+            print(
+                "currentLocation : ${currentLocation.latitude}, ${currentLocation.longitude}");
+
+            distanceLocation = await Geolocator().distanceBetween(
+                currentLocation.latitude,
+                currentLocation.longitude,
+                first.coordinates.latitude,
+                first.coordinates.longitude);
+
+            print(
+                "distance : ${(double.parse(distanceLocation.toStringAsFixed(1)) / 1000).toStringAsFixed(1)}km");
+          } on Exception catch (e) {
+            print(e.toString());
+            currentLocation = null;
           }
-        });
+          _mainBloc.getPopularPic().then((value) async {
+            if (json.decode(value)['result'] != 0 &&
+                json.decode(value)['data'] != null) {
+              dynamic valueList = await json.decode(value)['data'];
+              imgUrl = valueList['pic'];
+              print("imgUrl : ${imgUrl}");
 
-        print("naverCheck : ${naverData.url}");
-      } else {
-        setState(() {
-          getData = true;
-          notData = true;
-        });
-        print("notData");
-      }
-    });
+              if (this.mounted) {
+                setState(() {
+                  getData = true;
+                });
+              }
+            }
+          });
+
+          print("naverCheck : ${naverData.url}");
+        } else {
+          setState(() {
+            getData = true;
+            notData = true;
+          });
+          print("notData");
+        }
+      });
+    } else {
+      CafeLogSnackBarWithOk(context: context, okMsg: "확인", msg: "데이터를 불러오는 도중 오류가 발생하였습니다. 잠시 후 다시시도해주세요.");
+      Navigator.of(context).pop(widget.offset);
+    }
+
   }
 
   @override

@@ -1,6 +1,9 @@
 import 'dart:async';
 
+import 'package:cafelog/Bloc/mainBloc.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../theme.dart';
 
@@ -28,11 +31,28 @@ class _Splash extends State<Splash> {
     );
   }
 
+  SharedPreferences prefs;
+  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging();
+
+  loginCheck() async {
+    prefs = await SharedPreferences.getInstance();
+    print("accessToken : ${prefs.getString("userId")}");
+    if (prefs.getString("userId") != null && prefs.getString("userId") != "") {
+      mainBloc.updateFcmKey(
+          prefs.getString(await _firebaseMessaging.getToken()),
+          prefs.getString("userId"));
+      Navigator.of(context)
+          .pushNamedAndRemoveUntil("/Home", (Route<dynamic> route) => false);
+    } else {
+      startTime();
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    startTime();
+
+    loginCheck();
   }
 
   startTime() async {
@@ -41,7 +61,7 @@ class _Splash extends State<Splash> {
   }
 
   void navigationPage() {
-    Navigator.of(context).pushReplacementNamed('/LoginMain');
+    Navigator.of(context).pushReplacementNamed('/Home');
   }
 
 }

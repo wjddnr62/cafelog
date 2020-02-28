@@ -15,7 +15,7 @@ class MainRepository {
 
   Future<String> getStreets() => _mainProvier.getStreets();
 
-  Future<String> getPopularityCafe(location, type, streetTag) => _mainProvier.getPopularityCafe(location, type, streetTag);
+  Future<String> getPopularityCafe(location, type) => _mainProvier.getPopularityCafe(location, type);
 
   Future<String> getCafeDetailPerson(name) => _mainProvier.getCafeDetailPerson(name);
 
@@ -46,4 +46,10 @@ class MainRepository {
   Future<String> deleteAuthFavorite(id) => _mainProvier.deleteAuthFavorite(id);
 
   Future<String> updateFcmKey(fcm, id) => _mainProvier.updateFcmKey(fcm, id);
+
+  Future<String> getCategory(cafe) => _mainProvier.getCategory(cafe);
+
+  Future<String> getCafeLocation() => _mainProvier.getCafeLocation();
+
+  Future<String> getCafeList(location, offset) => _mainProvier.getCafeList(location, offset);
 }

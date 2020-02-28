@@ -1,11 +1,14 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cafelog/Bloc/mainBloc.dart';
+import 'package:cafelog/Model/categoryData.dart';
 import 'package:cafelog/Model/naverData.dart';
 import 'package:cafelog/Model/popularityCafeData.dart';
 import 'package:cafelog/Util/whiteSpace.dart';
 import 'package:cafelog/Widgets/snackbar.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoder/geocoder.dart';
 import 'package:geolocator/geolocator.dart';
@@ -66,6 +69,7 @@ class _PopularityCafe extends State<PopularityCafe> {
 
   String cafeLocation;
   List<PopularityCafeData> _cafeList = List();
+  List<CategoryData> _cateGory = List();
 
   var location = new Location();
   var currentLocation;
@@ -136,6 +140,7 @@ class _PopularityCafe extends State<PopularityCafe> {
     }
 
     cafeList();
+//    getCategory();
   }
 
   tagList() => ListView.builder(
@@ -167,6 +172,7 @@ class _PopularityCafe extends State<PopularityCafe> {
                     }
                     _mainBloc.setStreetTag(tag);
                     cafeList();
+//                    getCategory();
                     // 선택
                   } else {
                     tagClick[position] = false;
@@ -197,6 +203,7 @@ class _PopularityCafe extends State<PopularityCafe> {
                     }
                     _mainBloc.setStreetTag(tag);
                     cafeList();
+//                    getCategory();
                     // 선택해제
                   }
                 });
@@ -204,7 +211,7 @@ class _PopularityCafe extends State<PopularityCafe> {
               },
               child: Container(
 //                width: 60,
-              padding: EdgeInsets.only(left: 10, right: 10),
+                padding: EdgeInsets.only(left: 10, right: 10),
                 height: 30,
                 decoration:
                     tagClick[position] ? tagClickDecoration : tagDecoration,
@@ -231,6 +238,7 @@ class _PopularityCafe extends State<PopularityCafe> {
                 _mainBloc.setPopType(0);
                 getData = false;
                 cafeList();
+//                getCategory();
                 filterButton = false;
               });
             }
@@ -240,6 +248,7 @@ class _PopularityCafe extends State<PopularityCafe> {
                 _mainBloc.setPopType(1);
                 getData = false;
                 cafeList();
+//                getCategory();
                 filterButton = true;
               });
             }
@@ -297,23 +306,93 @@ class _PopularityCafe extends State<PopularityCafe> {
   bool getData = false;
   LatLng latLng;
   String imgUrl;
+  List<String> cafeNameList = List();
 
-  cafeList() {
-    _mainBloc.getPopularityCafe().then((value) {
+  cafeList() async {
+    await _mainBloc.getPopularityCafe().then((value) async {
       List<dynamic> valueList = json.decode(value)['data'];
       _cafeList.clear();
+      _cateGory.clear();
+
       for (int i = 0; i < valueList.length; i++) {
         _cafeList.add(PopularityCafeData(
-            picture: valueList[i]['pic'],
-            name: valueList[i]['name'],
+            picture: valueList[i]['image'],
+            name: valueList[i]['cafe_name'],
             userNum: valueList[i]['user_num'],
-            recentNum: valueList[i]['recent_num']));
+            recentNum: valueList[i]['recent_num'],
+        category: valueList[i]['category']));
+
+        print("valueListName : ${valueList[i]['name']}");
+        cafeNameList.add(valueList[i]['name']);
       }
+
+      print("getDateLength : ${_cafeList.length}, ${_cateGory.length}");
 
       setState(() {
         getData = true;
       });
+//
+//      getCategory();
     });
+  }
+
+  getCategory() {
+    print("getCategory123");
+//    _cateGory.clear();
+    for (int i = 0; i < cafeNameList.length; i++) {
+      _mainBloc.setCategoryCafe(cafeNameList[i]);
+      print("cafeNames : ${i}, ${cafeNameList[i]}");
+     _mainBloc.getCategory().then((value) {
+        print("categoryValue : ${value}");
+        dynamic valueList = json.decode(value)['data'];
+        print("valueLIst : ${valueList}");
+        if (valueList != null) {
+          List<String> categorySplit =
+          valueList['ca_category'].toString().split(",");
+          String category = "";
+          if (categorySplit.length > 0) {
+            for (int i = 0; i < categorySplit.length; i++) {
+              if (i < 3) {
+                if (i == 2) {
+                  category += categorySplit[i];
+                } else {
+                  category += categorySplit[i] + " ·";
+                }
+              }
+            }
+          } else {
+            category = valueList['ca_category'];
+          }
+
+          if (category.contains(" ·")) {
+            category = category.substring(0, category.length - 2);
+          }
+          _cateGory.add(CategoryData(
+            ca_category: category,
+            ca_name: valueList['ca_name'],
+          ));
+
+          setState(() {
+
+          });
+        } else {
+          _cateGory.add(CategoryData(
+            ca_category: "",
+            ca_name: "",
+          ));
+          setState(() {
+
+          });
+        }
+
+        if (_cafeList.length == _cateGory.length) {
+          setState(() {
+
+          });
+        }
+        print("getDateLength2 : ${_cafeList.length}, ${_cateGory.length}");
+      });
+    }
   }
 
   bool touchedCafe = false;
@@ -383,13 +462,13 @@ class _PopularityCafe extends State<PopularityCafe> {
                   ],
                 ),
               ),
-              Padding(
-                padding: EdgeInsets.only(left: 15, top: 10, right: 10),
-                child: Container(
-                  height: 30,
-                  child: tagList(),
-                ),
-              ),
+//              Padding(
+//                padding: EdgeInsets.only(left: 15, top: 10, right: 10),
+//                child: Container(
+//                  height: 30,
+//                  child: tagList(),
+//                ),
+//              ),
               Container(
                 width: MediaQuery.of(context).size.width,
                 height: MediaQuery.of(context).size.height -
@@ -479,6 +558,8 @@ class _PopularityCafe extends State<PopularityCafe> {
                                                 ['menu'],
                                             opentime: json.decode(value)['data']
                                                 ['opentime'],
+                                            lat: json.decode(value)['data']['lat'],
+                                            lon: json.decode(value)['data']['lon'],
                                             addr: json.decode(value)['data']
                                                 ['addr'],
                                             phone: json.decode(value)['data']
@@ -493,17 +574,6 @@ class _PopularityCafe extends State<PopularityCafe> {
                                                 ['subname'],
                                           );
 
-                                          final query = naverData.addr;
-                                          var address = await Geocoder.local
-                                              .findAddressesFromQuery(query);
-                                          var first = address.first;
-                                          print(
-                                              "coordinates : ${first.coordinates.latitude}, ${first.coordinates.longitude}");
-
-                                          latLng = LatLng(
-                                              first.coordinates.latitude,
-                                              first.coordinates.longitude);
-
                                           try {
                                             currentLocation =
                                                 await location.getLocation();
@@ -517,25 +587,11 @@ class _PopularityCafe extends State<PopularityCafe> {
                                                             .latitude,
                                                         currentLocation
                                                             .longitude,
-                                                        first.coordinates
-                                                            .latitude,
-                                                        first.coordinates
-                                                            .longitude);
+                                                        double.parse(naverData.lat),
+                                                        double.parse(naverData.lon));
 
                                             print(
                                                 "distance : ${(double.parse(distanceLocation.toStringAsFixed(1)) / 1000).toStringAsFixed(1)}km");
-
-                                            _mainBloc
-                                                .getPopularPic()
-                                                .then((value) async {
-                                              if (json.decode(
-                                                          value)['result'] !=
-                                                      0 &&
-                                                  json.decode(value)['data'] !=
-                                                      null) {
-                                                dynamic valueList = await json
-                                                    .decode(value)['data'];
-                                                imgUrl = valueList['pic'];
 
                                                 setState(() {
                                                   touchedCafe = false;
@@ -560,7 +616,7 @@ class _PopularityCafe extends State<PopularityCafe> {
                                                             .toStringAsFixed(
                                                                 1) +
                                                         "km",
-                                                    imgUrl: imgUrl,
+                                                    imgUrl: _cafeList[idx].picture,
                                                     menu: naverData.menu,
                                                     naverUrl: naverData.url,
                                                     subName: naverData.subname,
@@ -569,18 +625,34 @@ class _PopularityCafe extends State<PopularityCafe> {
                                                         naverData.opentime,
                                                   ),
                                                 ));
-                                              }
-                                            });
+
                                           } on Exception catch (e) {
                                             print(e.toString());
                                             currentLocation = null;
                                           }
                                         } else {
-                                          CafeLogSnackBarWithOk(
-                                              msg:
-                                                  "카페 정보가 부족하여 상세 정보를 볼 수 없습니다.",
-                                              context: context,
-                                              okMsg: "확인");
+                                          Navigator.of(context)
+                                              .push(MaterialPageRoute(
+                                            builder: (context) => CafeDetail(
+                                              identify: "",
+                                              cafeName: _cafeList[idx].name,
+                                              phone: "",
+                                              address: "",
+                                              convenien: "",
+                                              distance: "",
+                                              imgUrl: _cafeList[idx].picture,
+                                              menu: "",
+                                              naverUrl: "",
+                                              subName: "",
+                                              latLng: null,
+                                              openTime: "",
+                                            ),
+                                          ));
+//                                          CafeLogSnackBarWithOk(
+//                                              msg:
+//                                                  "카페 정보가 부족하여 상세 정보를 볼 수 없습니다.",
+//                                              context: context,
+//                                              okMsg: "확인");
                                         }
                                       });
                                     },
@@ -603,7 +675,7 @@ class _PopularityCafe extends State<PopularityCafe> {
                                           Expanded(
                                             child: Padding(
                                               padding: EdgeInsets.only(
-                                                left: 15,
+                                                left: 10,
                                               ),
                                               child: Stack(
                                                 children: <Widget>[
@@ -637,21 +709,45 @@ class _PopularityCafe extends State<PopularityCafe> {
                                                           Padding(
                                                             padding:
                                                                 EdgeInsets.only(
-                                                                    left: 30),
-                                                            child: Container(
-                                                              width: 110,
-                                                              child: Text(
-                                                                _cafeList[idx]
-                                                                    .name,
-                                                                style: TextStyle(
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .bold,
-                                                                    fontSize:
-                                                                        12,
-                                                                    color:
-                                                                        Black),
-                                                              ),
+                                                                    left: 30, top: 5, bottom: 5),
+                                                            child: Column(
+                                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                                              children: <
+                                                                  Widget>[
+                                                                Expanded(
+                                                                  child: Container(
+                                                                    width: 110,
+                                                                    child: Text(
+                                                                      _cafeList[
+                                                                      idx]
+                                                                          .name,
+                                                                      style: TextStyle(
+                                                                          fontWeight:
+                                                                          FontWeight
+                                                                              .bold,
+                                                                          fontSize:
+                                                                          12,
+                                                                          color:
+                                                                          Black),
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                                _cateGory.length != 0 ? _cateGory[idx].ca_name == _cafeList[idx].name ? Text(
+                                                                  _cateGory[
+                                                                      idx].ca_category,
+                                                                  style: TextStyle(
+                                                                      fontSize:
+                                                                          10,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .bold,
+                                                                      color: Color.fromARGB(
+                                                                          255,
+                                                                          167,
+                                                                          167,
+                                                                          167)),
+                                                                ) : Container() : Container()
+                                                              ],
                                                             ),
                                                           ),
                                                           Expanded(
